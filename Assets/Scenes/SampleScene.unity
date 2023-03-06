@@ -330,10 +330,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b15f4f30040cc7a4bb879c7932fadbd5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tilePrefab: {fileID: 6393153745293525936, guid: fb910190580e2cb4aa0fb51632ca2adb,
-    type: 3}
+  gameConfig: {fileID: 11400000, guid: c6361d11a4172dd409595e50670966ce, type: 2}
   horizontalSpacing: 1.8
   verticalSpacing: 1.5
+  WoodTile: {fileID: 5174837544054087723, guid: fdef3154fbd8bd54abda613ad0b2deae,
+    type: 3}
+  ClayTile: {fileID: 4275895577202392747, guid: 65717b7ee22c15547814d5ecb9cbc187,
+    type: 3}
+  SheepTile: {fileID: 5799304943962764923, guid: 560246340d3b3b2438b69a7163b2816f,
+    type: 3}
+  WheatTile: {fileID: 4837849007097611830, guid: 6a1f041f36c3aef4a8ccbebbdce926f2,
+    type: 3}
+  OreTile: {fileID: 7355053520602925453, guid: 049ff4aca0d21534fbd7a182ff703a1d, type: 3}
+  DesertTile: {fileID: 278714691926240667, guid: bebaf9202b61a4c469349909961e0e11,
+    type: 3}
 --- !u!4 &2069979700
 Transform:
   m_ObjectHideFlags: 0

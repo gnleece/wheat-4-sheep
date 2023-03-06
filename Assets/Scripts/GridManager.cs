@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using static UnityEditor.Progress;
 
 public class GridManager : MonoBehaviour
 {
@@ -41,13 +43,26 @@ public class GridManager : MonoBehaviour
     private const int GRID_SIZE = 2;
 
     [SerializeField]
-    private GameObject tilePrefab;
+    private GameConfig gameConfig;
 
     [SerializeField]
     private float horizontalSpacing = 1.5f;
 
     [SerializeField]
     private float verticalSpacing = 1.5f;
+
+    [SerializeField]
+    private GameObject WoodTile;
+    [SerializeField]
+    private GameObject ClayTile;
+    [SerializeField]
+    private GameObject SheepTile;
+    [SerializeField]
+    private GameObject WheatTile;
+    [SerializeField]
+    private GameObject OreTile;
+    [SerializeField]
+    private GameObject DesertTile;
 
     private Dictionary<AxialCoord, HexTile> tileMap = new Dictionary<AxialCoord, HexTile>();
 
@@ -64,9 +79,7 @@ public class GridManager : MonoBehaviour
             InitializeGrid(GRID_SIZE);
         }
     }
-
     
-
     private void InitializeGrid(int size)
     {
         for (int q = -size; q <= size; q++)
@@ -83,6 +96,8 @@ public class GridManager : MonoBehaviour
             }
         }
 
+        var tileTypesList = GetTileTypesList();
+        var tileCount = 0;
         foreach (var tile in tileMap.Values)
         {
             var offsetCoord = AxialToOffsetCoord(tile.AxialCoordinates);
@@ -92,8 +107,13 @@ public class GridManager : MonoBehaviour
             {
                 tilePosition.x -= horizontalSpacing / 2;
             }
+
+            var tilePrefab = GetTilePrefab(tileTypesList[tileCount]);
+
             var tileObject = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
             tile.TileObject = tileObject;
+
+            tileCount++;
         }
     }
 
@@ -101,10 +121,39 @@ public class GridManager : MonoBehaviour
     {
         foreach (var tile in tileMap.Values)
         {
-            GameObject.Destroy(tile.TileObject);
+            Destroy(tile.TileObject);
         }
 
         tileMap.Clear();
+    }
+
+    private List<ResourceType> GetTileTypesList()
+    {
+        var tileCounts = gameConfig.GetTileCounts();
+        var tileTypesList = new List<ResourceType>();
+        foreach (var type in tileCounts.Keys)
+        {
+            var count = tileCounts[type];
+            tileTypesList.AddRange(Enumerable.Repeat(type, count));
+        }
+
+        Util.Shuffle(tileTypesList);
+
+        return tileTypesList;
+    }
+
+    private GameObject GetTilePrefab(ResourceType type)
+    {
+        switch (type)
+        {
+            case ResourceType.Wood:     return WoodTile;
+            case ResourceType.Clay:     return ClayTile;
+            case ResourceType.Sheep:    return SheepTile;
+            case ResourceType.Wheat:    return WheatTile;
+            case ResourceType.Ore:      return OreTile;
+            case ResourceType.None:     return DesertTile;
+            default:                    return null;
+        }
     }
 
     private Vector2 AxialToOffsetCoord(AxialCoord axialCoord)
