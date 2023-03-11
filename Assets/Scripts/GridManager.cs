@@ -6,10 +6,20 @@ using static UnityEditor.Progress;
 
 public class GridManager : MonoBehaviour
 {
+    private enum VertexOrientation
+    {
+        North,
+        South
+    }
+
     private struct AxialCoord
     {
         public int q;
         public int r;
+
+        public int s => -q - r;
+
+        public int Ring => Mathf.Max(Mathf.Abs(q), Mathf.Abs(r), Mathf.Abs(s));
 
         public AxialCoord(int q, int r)
         {
@@ -17,22 +27,33 @@ public class GridManager : MonoBehaviour
             this.r = r;
         }
 
-        public override string ToString()
+        public override string ToString() => $"({q},{r})";
+
+        public override int GetHashCode() => (q, r).GetHashCode();
+    }
+
+    private struct VertexCoord
+    {
+        public AxialCoord AxialCoord;
+        public VertexOrientation Orientation;
+
+        public VertexCoord(AxialCoord axialCoord, VertexOrientation orientation)
         {
-            return $"({q},{r})";
+            AxialCoord = axialCoord;
+            Orientation = orientation;
         }
 
-        public override int GetHashCode()
-        {
-            return (q, r).GetHashCode();
-        }
+        public override string ToString() => $"({AxialCoord.q},{AxialCoord.r},{Orientation})";
+
+        public override int GetHashCode() => (AxialCoord.q, AxialCoord.r, Orientation).GetHashCode();
     }
 
     private class HexTile
     {
         public AxialCoord AxialCoordinates { get; private set; }
+        public int Ring => AxialCoordinates.Ring;
 
-        public GameObject TileObject { get; set; }
+        public HexTileObject TileObject { get; set; }
 
         public HexTile(AxialCoord coord)
         {
@@ -40,7 +61,20 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private const int GRID_SIZE = 2;
+    private class HexVertex
+    {
+        public VertexCoord VertexCoord { get; private set; }
+
+        public GameObject VertexObject { get; set; }
+
+        public HexVertex(VertexCoord coord)
+        {
+            this.VertexCoord = coord;
+        }
+    }
+
+    private const int INNER_SHUFFLEABLE_GRID_SIZE = 2;
+    private const int FULL_GRID_SIZE = 3;
 
     [SerializeField]
     private GameConfig gameConfig;
@@ -52,23 +86,29 @@ public class GridManager : MonoBehaviour
     private float verticalSpacing = 1.5f;
 
     [SerializeField]
-    private GameObject WoodTile;
+    private GameObject WoodTilePrefab;
     [SerializeField]
-    private GameObject ClayTile;
+    private GameObject ClayTilePrefab;
     [SerializeField]
-    private GameObject SheepTile;
+    private GameObject SheepTilePrefab;
     [SerializeField]
-    private GameObject WheatTile;
+    private GameObject WheatTilePrefab;
     [SerializeField]
-    private GameObject OreTile;
+    private GameObject OreTilePrefab;
     [SerializeField]
-    private GameObject DesertTile;
+    private GameObject DesertTilePrefab;
+    [SerializeField]
+    private GameObject WaterTilePrefab;
 
-    private Dictionary<AxialCoord, HexTile> tileMap = new Dictionary<AxialCoord, HexTile>();
+    [SerializeField]
+    private GameObject HexVertexPrefab;
+
+    private Dictionary<AxialCoord, HexTile> hexMap = new Dictionary<AxialCoord, HexTile>();
+    private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
 
     private void Start()
     {
-        InitializeGrid(GRID_SIZE);
+        InitializeGrid(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
     }
 
     private void Update()
@@ -76,31 +116,46 @@ public class GridManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             ClearGrid();
-            InitializeGrid(GRID_SIZE);
+            InitializeGrid(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            ClearGrid();
         }
     }
     
-    private void InitializeGrid(int size)
+    private void InitializeGrid(int shuffleableGridSize, int fullGridSize)
     {
-        for (int q = -size; q <= size; q++)
+        // Initialize data structure for full grid
+        for (int q = -fullGridSize; q <= fullGridSize; q++)
         {
-            for (int r = -size; r <= size; r++)
+            for (int r = -fullGridSize; r <= fullGridSize; r++)
             {
-                if (q+r >= -size && q+r <= size)
+                if (q+r >= -fullGridSize && q+r <= fullGridSize)
                 {
                     var coord = new AxialCoord(q, r);
                     var hexTile = new HexTile(coord);
+                    hexMap.Add(coord, hexTile);
 
-                    tileMap.Add(coord, hexTile);
+                    var northVertexCoord = new VertexCoord(coord, VertexOrientation.North);
+                    var northVertex = new HexVertex(northVertexCoord);
+                    vertexMap.Add(northVertexCoord, northVertex);
+
+                    var southVertexCoord = new VertexCoord(coord, VertexOrientation.South);
+                    var southVertex = new HexVertex(southVertexCoord);
+                    vertexMap.Add(southVertexCoord, southVertex);
                 }
             }
         }
 
-        var tileTypesList = GetTileTypesList();
-        var tileCount = 0;
-        foreach (var tile in tileMap.Values)
+        // Spawn tile objects for the full grid.
+        // Tiles within the inner shuffleable region will get randomized tiles.
+        // Tiles outside the shuffleable area witll get water tiles.
+        var tileTypesList = GetShuffledTileTypes();
+        var shuffledTileCount = 0;
+        foreach (var hex in hexMap.Values)
         {
-            var offsetCoord = AxialToOffsetCoord(tile.AxialCoordinates);
+            var offsetCoord = AxialToOffsetCoord(hex.AxialCoordinates);
             
             var tilePosition = new Vector3(offsetCoord.x * horizontalSpacing, 0, offsetCoord.y * verticalSpacing);
             if (offsetCoord.y % 2 == 0)
@@ -108,29 +163,62 @@ public class GridManager : MonoBehaviour
                 tilePosition.x -= horizontalSpacing / 2;
             }
 
-            var tilePrefab = GetTilePrefab(tileTypesList[tileCount]);
+            var tilePrefab = WaterTilePrefab;
+            if (hex.Ring <= shuffleableGridSize)
+            {
+                tilePrefab = GetTilePrefab(tileTypesList[shuffledTileCount]);
+                shuffledTileCount++;
+            }
 
             var tileObject = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
-            tile.TileObject = tileObject;
+            var tileObjectComponent = tileObject.GetComponent<HexTileObject>();
+            hex.TileObject = tileObjectComponent;
+        }
 
-            tileCount++;
+        // Spawn vertex objects
+        foreach (var vertex in vertexMap.Values)
+        {
+            if (hexMap.TryGetValue(vertex.VertexCoord.AxialCoord, out var hex))
+            {
+                var vertexObject = Instantiate(HexVertexPrefab, Vector3.zero, Quaternion.identity);
+                if (vertex.VertexCoord.Orientation == VertexOrientation.North)
+                {
+                    vertexObject.transform.parent = hex.TileObject.NorthVertexTransform;
+                }
+                else
+                {
+                    vertexObject.transform.parent = hex.TileObject.SouthVertexTransform;
+                }
+                
+                vertexObject.transform.localPosition = Vector3.zero;
+                vertex.VertexObject  = vertexObject;
+            }
+            else
+            {
+                Debug.LogError($"Could not find parent hex for vertex {vertex}");
+            }
         }
     }
 
     private void ClearGrid()
     {
-        foreach (var tile in tileMap.Values)
+        foreach (var tile in hexMap.Values)
         {
-            Destroy(tile.TileObject);
+            Destroy(tile.TileObject.gameObject);
         }
+        hexMap.Clear();
 
-        tileMap.Clear();
+        foreach (var vertex in vertexMap.Values)
+        {
+            Destroy(vertex.VertexObject);
+        }
+        vertexMap.Clear();
     }
 
-    private List<ResourceType> GetTileTypesList()
+    private List<TileType> GetShuffledTileTypes()
     {
-        var tileCounts = gameConfig.GetTileCounts();
-        var tileTypesList = new List<ResourceType>();
+        var tileCounts = gameConfig.GetShuffleableTileCounts();
+        var tileTypesList = new List<TileType>();
         foreach (var type in tileCounts.Keys)
         {
             var count = tileCounts[type];
@@ -142,17 +230,18 @@ public class GridManager : MonoBehaviour
         return tileTypesList;
     }
 
-    private GameObject GetTilePrefab(ResourceType type)
+    private GameObject GetTilePrefab(TileType type)
     {
         switch (type)
         {
-            case ResourceType.Wood:     return WoodTile;
-            case ResourceType.Clay:     return ClayTile;
-            case ResourceType.Sheep:    return SheepTile;
-            case ResourceType.Wheat:    return WheatTile;
-            case ResourceType.Ore:      return OreTile;
-            case ResourceType.None:     return DesertTile;
-            default:                    return null;
+            case TileType.Wood:     return WoodTilePrefab;
+            case TileType.Clay:     return ClayTilePrefab;
+            case TileType.Sheep:    return SheepTilePrefab;
+            case TileType.Wheat:    return WheatTilePrefab;
+            case TileType.Ore:      return OreTilePrefab;
+            case TileType.Desert:   return DesertTilePrefab;
+            case TileType.Water:    return WaterTilePrefab;
+            default:                return null;
         }
     }
 

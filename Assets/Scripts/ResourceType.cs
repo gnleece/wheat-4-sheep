@@ -4,10 +4,10 @@ using UnityEngine;
 
 public enum ResourceType
 {
-    None = 0,
-    Wood,
+    Wood = 0,
     Clay,
     Sheep,
     Wheat,
-    Ore
+    Ore,
+    None
 }

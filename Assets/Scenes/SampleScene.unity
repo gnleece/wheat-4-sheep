@@ -293,14 +293,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0.4482194, y: -0, z: -0, w: 0.8939236}
-  m_LocalPosition: {x: 0, y: 7.8, z: -5.49}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -1, y: 12, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 53.259, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!1 &2069979698
 GameObject:
   m_ObjectHideFlags: 0
@@ -333,16 +333,21 @@ MonoBehaviour:
   gameConfig: {fileID: 11400000, guid: c6361d11a4172dd409595e50670966ce, type: 2}
   horizontalSpacing: 1.8
   verticalSpacing: 1.5
-  WoodTile: {fileID: 5174837544054087723, guid: fdef3154fbd8bd54abda613ad0b2deae,
+  WoodTilePrefab: {fileID: 5174837544054087723, guid: fdef3154fbd8bd54abda613ad0b2deae,
     type: 3}
-  ClayTile: {fileID: 4275895577202392747, guid: 65717b7ee22c15547814d5ecb9cbc187,
+  ClayTilePrefab: {fileID: 4275895577202392747, guid: 65717b7ee22c15547814d5ecb9cbc187,
     type: 3}
-  SheepTile: {fileID: 5799304943962764923, guid: 560246340d3b3b2438b69a7163b2816f,
+  SheepTilePrefab: {fileID: 5799304943962764923, guid: 560246340d3b3b2438b69a7163b2816f,
     type: 3}
-  WheatTile: {fileID: 4837849007097611830, guid: 6a1f041f36c3aef4a8ccbebbdce926f2,
+  WheatTilePrefab: {fileID: 4837849007097611830, guid: 6a1f041f36c3aef4a8ccbebbdce926f2,
     type: 3}
-  OreTile: {fileID: 7355053520602925453, guid: 049ff4aca0d21534fbd7a182ff703a1d, type: 3}
-  DesertTile: {fileID: 278714691926240667, guid: bebaf9202b61a4c469349909961e0e11,
+  OreTilePrefab: {fileID: 7355053520602925453, guid: 049ff4aca0d21534fbd7a182ff703a1d,
+    type: 3}
+  DesertTilePrefab: {fileID: 278714691926240667, guid: bebaf9202b61a4c469349909961e0e11,
+    type: 3}
+  WaterTilePrefab: {fileID: 7119111873892639185, guid: 5374bde773ce30b41988e076729e3ecb,
+    type: 3}
+  HexVertexPrefab: {fileID: 3049046381786106406, guid: 9d458d272332173479efcc68bfb0632e,
     type: 3}
 --- !u!4 &2069979700
 Transform:

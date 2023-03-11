@@ -18,3 +18,4 @@ MonoBehaviour:
   WheatTileCount: 4
   OreTileCount: 3
   DesertTileCount: 1
+  WaterTileCount: 18
