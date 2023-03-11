@@ -297,6 +297,7 @@ public class GridManager : MonoBehaviour
                 }
 
                 edgeObject.transform.localPosition = Vector3.zero;
+                edgeObject.transform.localRotation = Quaternion.identity;
                 edge.EdgeObject = edgeObject;
             }
             else
