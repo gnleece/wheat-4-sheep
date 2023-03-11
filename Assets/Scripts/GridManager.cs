@@ -2,17 +2,31 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UIElements;
 using static UnityEditor.Progress;
 
 public class GridManager : MonoBehaviour
 {
+    #region Enums
+
     private enum VertexOrientation
     {
         North,
         South
     }
 
-    private struct AxialCoord
+    private enum EdgeOrientation
+    {
+        West,
+        NorthWest,
+        NorthEast
+    }
+
+    #endregion
+
+    #region Classes and structs
+
+    private struct HexCoord
     {
         public int q;
         public int r;
@@ -21,7 +35,7 @@ public class GridManager : MonoBehaviour
 
         public int Ring => Mathf.Max(Mathf.Abs(q), Mathf.Abs(r), Mathf.Abs(s));
 
-        public AxialCoord(int q, int r)
+        public HexCoord(int q, int r)
         {
             this.q = q;
             this.r = r;
@@ -34,30 +48,46 @@ public class GridManager : MonoBehaviour
 
     private struct VertexCoord
     {
-        public AxialCoord AxialCoord;
+        public HexCoord HexCoord;
         public VertexOrientation Orientation;
 
-        public VertexCoord(AxialCoord axialCoord, VertexOrientation orientation)
+        public VertexCoord(HexCoord hexCoord, VertexOrientation orientation)
         {
-            AxialCoord = axialCoord;
+            HexCoord = hexCoord;
             Orientation = orientation;
         }
 
-        public override string ToString() => $"({AxialCoord.q},{AxialCoord.r},{Orientation})";
+        public override string ToString() => $"({HexCoord.q},{HexCoord.r},{Orientation})";
 
-        public override int GetHashCode() => (AxialCoord.q, AxialCoord.r, Orientation).GetHashCode();
+        public override int GetHashCode() => (HexCoord.q, HexCoord.r, Orientation).GetHashCode();
+    }
+
+    private struct EdgeCoord
+    {
+        public HexCoord HexCoord;
+        public EdgeOrientation Orientation;
+
+        public EdgeCoord(HexCoord hexCoord, EdgeOrientation edgeOrientation)
+        {
+            HexCoord = hexCoord;
+            Orientation = edgeOrientation;
+        }
+
+        public override string ToString() => $"({HexCoord.q},{HexCoord.r},{Orientation})";
+
+        public override int GetHashCode() => (HexCoord.q, HexCoord.r, Orientation).GetHashCode();
     }
 
     private class HexTile
     {
-        public AxialCoord AxialCoordinates { get; private set; }
-        public int Ring => AxialCoordinates.Ring;
+        public HexCoord HexCoordinates { get; private set; }
+        public int Ring => HexCoordinates.Ring;
 
         public HexTileObject TileObject { get; set; }
 
-        public HexTile(AxialCoord coord)
+        public HexTile(HexCoord coord)
         {
-            AxialCoordinates = coord;
+            HexCoordinates = coord;
         }
     }
 
@@ -69,12 +99,32 @@ public class GridManager : MonoBehaviour
 
         public HexVertex(VertexCoord coord)
         {
-            this.VertexCoord = coord;
+            VertexCoord = coord;
         }
     }
 
+    private class HexEdge
+    {
+        public EdgeCoord EdgeCoord { get; private set; }
+
+        public GameObject EdgeObject { get; set; }
+
+        public HexEdge(EdgeCoord edgeCoord)
+        {
+            EdgeCoord = edgeCoord;
+        }
+    }
+
+    #endregion
+
+    #region Consts
+
     private const int INNER_SHUFFLEABLE_GRID_SIZE = 2;
     private const int FULL_GRID_SIZE = 3;
+
+    #endregion
+
+    #region Serialized fields
 
     [SerializeField]
     private GameConfig gameConfig;
@@ -102,9 +152,14 @@ public class GridManager : MonoBehaviour
 
     [SerializeField]
     private GameObject HexVertexPrefab;
+    [SerializeField]
+    private GameObject HexEdgePrefab;
 
-    private Dictionary<AxialCoord, HexTile> hexMap = new Dictionary<AxialCoord, HexTile>();
+    #endregion
+
+    private Dictionary<HexCoord, HexTile> hexMap = new Dictionary<HexCoord, HexTile>();
     private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
+    private Dictionary<EdgeCoord, HexEdge> edgeMap = new Dictionary<EdgeCoord, HexEdge>();
 
     private void Start()
     {
@@ -133,10 +188,12 @@ public class GridManager : MonoBehaviour
             {
                 if (q+r >= -fullGridSize && q+r <= fullGridSize)
                 {
-                    var coord = new AxialCoord(q, r);
+                    // Hex
+                    var coord = new HexCoord(q, r);
                     var hexTile = new HexTile(coord);
                     hexMap.Add(coord, hexTile);
 
+                    // Verts
                     var northVertexCoord = new VertexCoord(coord, VertexOrientation.North);
                     var northVertex = new HexVertex(northVertexCoord);
                     vertexMap.Add(northVertexCoord, northVertex);
@@ -144,6 +201,19 @@ public class GridManager : MonoBehaviour
                     var southVertexCoord = new VertexCoord(coord, VertexOrientation.South);
                     var southVertex = new HexVertex(southVertexCoord);
                     vertexMap.Add(southVertexCoord, southVertex);
+
+                    // Edges
+                    var westEdgeCoord = new EdgeCoord(coord, EdgeOrientation.West);
+                    var westEdge = new HexEdge(westEdgeCoord);
+                    edgeMap.Add(westEdgeCoord, westEdge);
+
+                    var northWestEdgeCoord = new EdgeCoord(coord, EdgeOrientation.NorthWest);
+                    var northWestEdge = new HexEdge(northWestEdgeCoord);
+                    edgeMap.Add(northWestEdgeCoord, northWestEdge);
+
+                    var northEastEdgeCoord = new EdgeCoord(coord, EdgeOrientation.NorthEast);
+                    var northEastEdge = new HexEdge(northEastEdgeCoord);
+                    edgeMap.Add(northEastEdgeCoord, northEastEdge);
                 }
             }
         }
@@ -155,7 +225,7 @@ public class GridManager : MonoBehaviour
         var shuffledTileCount = 0;
         foreach (var hex in hexMap.Values)
         {
-            var offsetCoord = AxialToOffsetCoord(hex.AxialCoordinates);
+            var offsetCoord = AxialHexToOffsetCoord(hex.HexCoordinates);
             
             var tilePosition = new Vector3(offsetCoord.x * horizontalSpacing, 0, offsetCoord.y * verticalSpacing);
             if (offsetCoord.y % 2 == 0)
@@ -178,16 +248,21 @@ public class GridManager : MonoBehaviour
         // Spawn vertex objects
         foreach (var vertex in vertexMap.Values)
         {
-            if (hexMap.TryGetValue(vertex.VertexCoord.AxialCoord, out var hex))
+            if (hexMap.TryGetValue(vertex.VertexCoord.HexCoord, out var hex))
             {
                 var vertexObject = Instantiate(HexVertexPrefab, Vector3.zero, Quaternion.identity);
-                if (vertex.VertexCoord.Orientation == VertexOrientation.North)
+
+                switch (vertex.VertexCoord.Orientation)
                 {
-                    vertexObject.transform.parent = hex.TileObject.NorthVertexTransform;
-                }
-                else
-                {
-                    vertexObject.transform.parent = hex.TileObject.SouthVertexTransform;
+                    case VertexOrientation.North:
+                        vertexObject.transform.parent = hex.TileObject.NorthVertexTransform;
+                        break;
+                    case VertexOrientation.South:
+                        vertexObject.transform.parent = hex.TileObject.SouthVertexTransform;
+                        break;
+                    default:
+                        Debug.LogError($"Unknown vertex orientation for vertex {vertex}");
+                        break;
                 }
                 
                 vertexObject.transform.localPosition = Vector3.zero;
@@ -196,6 +271,37 @@ public class GridManager : MonoBehaviour
             else
             {
                 Debug.LogError($"Could not find parent hex for vertex {vertex}");
+            }
+        }
+
+        // Spawn edge objects
+        foreach (var edge in edgeMap.Values)
+        {
+            if (hexMap.TryGetValue(edge.EdgeCoord.HexCoord, out var hex))
+            {
+                var edgeObject = Instantiate(HexEdgePrefab, Vector3.zero, Quaternion.identity);
+                switch(edge.EdgeCoord.Orientation)
+                {
+                    case EdgeOrientation.West:
+                        edgeObject.transform.parent = hex.TileObject.WestEdgeTransform;
+                        break;
+                    case EdgeOrientation.NorthWest:
+                        edgeObject.transform.parent = hex.TileObject.NorthWestEdgeTransform;
+                        break;
+                    case EdgeOrientation.NorthEast:
+                        edgeObject.transform.parent = hex.TileObject.NorthEastEdgeTransform;
+                        break;
+                    default:
+                        Debug.LogError($"Unknown edge orientation for edge {edge}");
+                        break;
+                }
+
+                edgeObject.transform.localPosition = Vector3.zero;
+                edge.EdgeObject = edgeObject;
+            }
+            else
+            {
+                Debug.LogError($"Could not find parent hex for edge {edge}");
             }
         }
     }
@@ -213,6 +319,12 @@ public class GridManager : MonoBehaviour
             Destroy(vertex.VertexObject);
         }
         vertexMap.Clear();
+
+        foreach (var edge in edgeMap.Values)
+        {
+            Destroy(edge.EdgeObject);
+        }
+        edgeMap.Clear();
     }
 
     private List<TileType> GetShuffledTileTypes()
@@ -245,7 +357,7 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private Vector2 AxialToOffsetCoord(AxialCoord axialCoord)
+    private Vector2 AxialHexToOffsetCoord(HexCoord axialCoord)
     {
         var col = axialCoord.q + (axialCoord.r - (axialCoord.r & 1)) / 2;
         var row = axialCoord.r;

@@ -9,6 +9,18 @@ public class HexTileObject : MonoBehaviour
     [SerializeField]
     private Transform southVertexTransform;
 
+    [SerializeField]
+    private Transform westEdgeTransform;
+    [SerializeField]
+    private Transform northWestEdgeTransform;
+    [SerializeField]
+    private Transform northEastEdgeTransform;
+
     public Transform NorthVertexTransform { get { return northVertexTransform; } }
     public Transform SouthVertexTransform { get { return southVertexTransform; } }
+
+
+    public Transform WestEdgeTransform { get { return westEdgeTransform; } }
+    public Transform NorthWestEdgeTransform { get { return northWestEdgeTransform; } }
+    public Transform NorthEastEdgeTransform { get { return northEastEdgeTransform; } }
 }
