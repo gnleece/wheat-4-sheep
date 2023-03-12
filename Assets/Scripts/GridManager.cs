@@ -184,6 +184,8 @@ public class GridManager : MonoBehaviour
 
         public GameObject EdgeObject { get; set; }
 
+        public List<HexTile> NeighborTiles { get; private set; }
+
         public HexEdge(EdgeCoord edgeCoord)
         {
             EdgeCoord = edgeCoord;
@@ -192,6 +194,68 @@ public class GridManager : MonoBehaviour
         public override string ToString()
         {
             return $"Edge {EdgeCoord}";
+        }
+
+        public bool GetIsValidForBuilding()
+        {
+            if (NeighborTiles == null || NeighborTiles.Count == 0)
+            {
+                Debug.LogWarning($"No neighbor tiles initialized for {this}");
+                return false;
+            }
+
+            foreach (var hex in NeighborTiles)
+            {
+                if (hex.IsValidForBuilding)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void InitializeNeighborTiles(Dictionary<HexCoord, HexTile> hexMap)
+        {
+            NeighborTiles = new List<HexTile>();
+
+            var q = EdgeCoord.HexCoord.q;
+            var r = EdgeCoord.HexCoord.r;
+
+            switch (EdgeCoord.Orientation)
+            {
+                case EdgeOrientation.West:
+                {
+                    TryAddNeighborHex(q, r, hexMap);
+                    TryAddNeighborHex(q - 1, r, hexMap);
+                    break;
+                }
+                case EdgeOrientation.NorthWest:
+                {
+                    TryAddNeighborHex(q, r, hexMap);
+                    TryAddNeighborHex(q - 1, r + 1, hexMap);
+                    break;
+                }
+                case EdgeOrientation.NorthEast:
+                {
+                    TryAddNeighborHex(q, r, hexMap);
+                    TryAddNeighborHex(q, r + 1, hexMap);
+                    break;
+                }
+                default:
+                {
+                    Debug.LogError($"Unknown edge orientation in InitializeNeighborTiles for {this}");
+                    break;
+                }
+            }
+        }
+
+        private void TryAddNeighborHex(int q, int r, Dictionary<HexCoord, HexTile> hexMap)
+        {
+            if (hexMap.TryGetValue(new HexCoord(q, r), out var hex))
+            {
+                NeighborTiles.Add(hex);
+            }
         }
     }
 
@@ -325,7 +389,7 @@ public class GridManager : MonoBehaviour
             var tileObjectComponent = tileObject.GetComponent<HexTileObject>();
             hex.TileObject = tileObjectComponent;
 
-            tileObjectComponent.SetDebugText($"{hex.HexCoordinates.ToString()}\n{hex.IsValidForBuilding}");
+            tileObjectComponent.SetDebugText($"{hex.HexCoordinates}\n{hex.IsValidForBuilding}");
         }
 
         // Spawn vertex objects
@@ -363,12 +427,17 @@ public class GridManager : MonoBehaviour
             }
         }
 
-        /*
         // Spawn edge objects
         foreach (var edge in edgeMap.Values)
         {
             if (hexMap.TryGetValue(edge.EdgeCoord.HexCoord, out var hex))
             {
+                edge.InitializeNeighborTiles(hexMap);
+                if (!edge.GetIsValidForBuilding())
+                {
+                    continue;
+                }
+
                 var edgeObject = Instantiate(HexEdgePrefab, Vector3.zero, Quaternion.identity);
                 switch(edge.EdgeCoord.Orientation)
                 {
@@ -395,7 +464,6 @@ public class GridManager : MonoBehaviour
                 Debug.LogError($"Could not find parent hex for {edge}");
             }
         }
-        */
     }
 
     private void ClearGrid()
