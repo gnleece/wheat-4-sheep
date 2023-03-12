@@ -274,6 +274,9 @@ public class GridManager : MonoBehaviour
     private GameConfig gameConfig;
 
     [SerializeField]
+    private Camera mainCamera;
+
+    [SerializeField]
     private float horizontalSpacing = 1.5f;
 
     [SerializeField]
@@ -312,6 +315,18 @@ public class GridManager : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetMouseButtonDown(0))
+        {
+            RaycastHit hit;
+            Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+            if (Physics.Raycast(ray, out hit))
+            {
+                var objectHit = hit.transform.gameObject;
+                Debug.Log($"Hit: {objectHit.name}");
+            }
+        }
+
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             ClearGrid();

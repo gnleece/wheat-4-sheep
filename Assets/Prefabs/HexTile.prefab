@@ -272,6 +272,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb0796379d63faf4195df15a28f0a572, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tileType: 0
   northVertexTransform: {fileID: 3338283018624527182}
   southVertexTransform: {fileID: 997007943336973469}
   westEdgeTransform: {fileID: 2687599100151022587}
@@ -384,3 +385,23 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 8192317621845677718}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &9039178176995388359 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: c145a1d8f4871ac41831d93d76dd2d61,
+    type: 3}
+  m_PrefabInstance: {fileID: 8192317621845677718}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &1239154319884750953
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9039178176995388359}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 4
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -2124705421725058983, guid: c145a1d8f4871ac41831d93d76dd2d61, type: 3}
