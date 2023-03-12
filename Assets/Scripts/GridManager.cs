@@ -304,14 +304,23 @@ public class GridManager : MonoBehaviour
 
     #endregion
 
+    #region Private members
+
     private Dictionary<HexCoord, HexTile> hexMap = new Dictionary<HexCoord, HexTile>();
     private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
     private Dictionary<EdgeCoord, HexEdge> edgeMap = new Dictionary<EdgeCoord, HexEdge>();
 
-    private void Start()
+    #endregion
+
+    #region Public methods
+
+    public void StartNewGame()
     {
+        ClearGrid();
         InitializeGrid(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
     }
+
+    #endregion
 
     private void Update()
     {
@@ -325,16 +334,6 @@ public class GridManager : MonoBehaviour
                 var objectHit = hit.transform.gameObject;
                 Debug.Log($"Hit: {objectHit.name}");
             }
-        }
-
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            ClearGrid();
-            InitializeGrid(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
-        }
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            ClearGrid();
         }
     }
     
