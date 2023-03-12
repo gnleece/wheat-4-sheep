@@ -368,6 +368,8 @@ public class GridManager : MonoBehaviour
         // Tiles outside the shuffleable area witll get water tiles.
         var tileTypesList = GetShuffledTileTypes();
         var shuffledTileCount = 0;
+        var shuffledDiceNumbers = GetShuffledTileDiceNumbers();
+        var shuffledDiceNumbersCount = 0;
         foreach (var hex in hexMap.Values)
         {
             var offsetCoord = AxialHexToOffsetCoord(hex.HexCoordinates);
@@ -379,17 +381,26 @@ public class GridManager : MonoBehaviour
             }
 
             var tilePrefab = WaterTilePrefab;
+            int? diceNumber = null;
             if (hex.Ring <= shuffleableGridSize)
             {
-                tilePrefab = GetTilePrefab(tileTypesList[shuffledTileCount]);
+                var tileType = tileTypesList[shuffledTileCount];
+                tilePrefab = GetTilePrefab(tileType);
                 shuffledTileCount++;
+
+                if (tileType != TileType.Desert && tileType != TileType.Water)
+                {
+                    diceNumber = shuffledDiceNumbers[shuffledDiceNumbersCount];
+                    shuffledDiceNumbersCount++;
+                }
             }
 
             var tileObject = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
             var tileObjectComponent = tileObject.GetComponent<HexTileObject>();
             hex.TileObject = tileObjectComponent;
 
-            tileObjectComponent.SetDebugText($"{hex.HexCoordinates}\n{hex.IsValidForBuilding}");
+            tileObjectComponent.DiceNumber = diceNumber;
+            tileObjectComponent.SetDebugText($"{hex.HexCoordinates}\n{diceNumber}");
         }
 
         // Spawn vertex objects
@@ -515,6 +526,13 @@ public class GridManager : MonoBehaviour
             case TileType.Water:    return WaterTilePrefab;
             default:                return null;
         }
+    }
+
+    private List<int> GetShuffledTileDiceNumbers()
+    {
+        var diceNumbers = gameConfig.TileDiceNumbers.ToList();
+        Util.Shuffle(diceNumbers);
+        return diceNumbers;
     }
 
     private Vector2 AxialHexToOffsetCoord(HexCoord axialCoord)

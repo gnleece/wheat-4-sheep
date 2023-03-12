@@ -4,6 +4,11 @@ using UnityEngine;
 
 public class HexTileObject : MonoBehaviour
 {
+    #region Serialized fields
+
+    [SerializeField]
+    private TileType tileType;
+
     [SerializeField]
     private Transform northVertexTransform;
     [SerializeField]
@@ -19,13 +24,22 @@ public class HexTileObject : MonoBehaviour
     [SerializeField]
     private TextMesh debugText;
 
-    public Transform NorthVertexTransform { get { return northVertexTransform; } }
-    public Transform SouthVertexTransform { get { return southVertexTransform; } }
+    #endregion
 
+    #region Properties
 
-    public Transform WestEdgeTransform { get { return westEdgeTransform; } }
-    public Transform NorthWestEdgeTransform { get { return northWestEdgeTransform; } }
-    public Transform NorthEastEdgeTransform { get { return northEastEdgeTransform; } }
+    public TileType TileType => tileType;
+
+    public int? DiceNumber { get; set; } = null;
+
+    public Transform NorthVertexTransform => northVertexTransform;
+    public Transform SouthVertexTransform => southVertexTransform;
+
+    public Transform WestEdgeTransform => westEdgeTransform;
+    public Transform NorthWestEdgeTransform => northWestEdgeTransform;
+    public Transform NorthEastEdgeTransform => northEastEdgeTransform;
+
+    #endregion
 
     public void SetDebugText(string text)
     {

@@ -13,6 +13,8 @@ public class GameConfig : ScriptableObject
     public int DesertTileCount;
     public int WaterTileCount;
 
+    public int[] TileDiceNumbers;
+
     public int GetTileCount(TileType tileType)
     {
         switch (tileType)
