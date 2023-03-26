@@ -1,7 +1,9 @@
 using Grid;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class BoardManager : MonoBehaviour, IBoard
@@ -13,13 +15,40 @@ public class BoardManager : MonoBehaviour, IBoard
 
     #endregion
 
+    #region Classes and structs
+
+    private class PlayerActionRequest
+    {
+        public enum RequestState
+        {
+            NotStarted,
+            InProgress,
+            Complete,
+            ReadyForCleanup,
+            CleanupFinished
+        }
+
+        public IPlayer Player;
+        public BoardMode Mode;
+
+        public RequestState State = RequestState.NotStarted;
+        public bool Success = false;
+
+        public PlayerActionRequest(IPlayer player, BoardMode mode)
+        {
+            Player = player;
+            Mode = mode;
+        }
+
+        public override string ToString() => $"Player {Player.PlayerId}, Mode {Mode}, State {State}";
+    }
+
+    #endregion
+
     #region Serialized fields
 
     [SerializeField]
     private GameConfig gameConfig;
-
-    [SerializeField]
-    private Camera mainCamera;
 
     [SerializeField]
     private float horizontalSpacing = 1.5f;
@@ -55,6 +84,10 @@ public class BoardManager : MonoBehaviour, IBoard
     private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
     private Dictionary<EdgeCoord, HexEdge> edgeMap = new Dictionary<EdgeCoord, HexEdge>();
 
+    private StateMachine<BoardMode> boardStateMachine;
+
+    private PlayerActionRequest currentPlayerActionRequest = null;
+
     #endregion
 
     #region Public methods
@@ -63,25 +96,137 @@ public class BoardManager : MonoBehaviour, IBoard
     {
         ClearBoard();
         InitializeBoard(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
+
+        boardStateMachine = new StateMachine<BoardMode>("BoardMode");
+
+        boardStateMachine.AddState(BoardMode.Idle, null, null, null);
+        boardStateMachine.AddState(BoardMode.BuildSettlement, OnEnterSettlementPlacementMode, OnUpdateSettlementPlacementMode, OnExitSettlementPlacementMode);
+
+        boardStateMachine.GoToState(BoardMode.Idle);
+    }
+
+    public async Task<bool> ClaimBoardForPlayerActionAsync(IPlayer player, BoardMode mode)
+    {
+        var actionRequest = new PlayerActionRequest(player, mode);
+
+        if (currentPlayerActionRequest != null)
+        {
+            Debug.LogError($"Board manager ClaimBoardForPlayerActionAsync failed for request: {actionRequest}. Current request: {currentPlayerActionRequest}");
+            return false;
+        }
+
+        if (boardStateMachine.CurrentState != BoardMode.Idle)
+        {
+            Debug.LogError($"Board manager has no active request but board is not in idle mode");
+            return false;
+        }
+
+        // Don't transition modes right away. Instead wait to process the request on the
+        // next Update, so that operations are guaranteed to happen on the main thread.
+        currentPlayerActionRequest = actionRequest;
+
+        // Wait for the request to complete
+        while (currentPlayerActionRequest.State != PlayerActionRequest.RequestState.Complete)
+        {
+            await Task.Yield();
+        }
+
+        // Mark the request for cleanup & wait for cleanup to finish before returning
+        currentPlayerActionRequest.State = PlayerActionRequest.RequestState.ReadyForCleanup;
+        while (currentPlayerActionRequest.State != PlayerActionRequest.RequestState.CleanupFinished)
+        {
+            await Task.Yield();
+        }
+
+        var success = currentPlayerActionRequest.Success;
+        currentPlayerActionRequest = null;
+
+        return success;
+    }
+
+    public bool SettlementLocationSelected(HexVertex hexVertex)
+    {
+        if (currentPlayerActionRequest == null)
+        {
+            Debug.LogError("Board manager: settlement location selected but there is no active player action request");
+            return false;
+        }
+        if (boardStateMachine.CurrentState != BoardMode.BuildSettlement)
+        {
+            Debug.LogError($"Board manager: settlement location selected but board is in {boardStateMachine.CurrentState} mode");
+            return false;
+        }
+
+        // TODO check that this location is actually valid
+        var success = true;
+
+        currentPlayerActionRequest.Success = success;
+        currentPlayerActionRequest.State = PlayerActionRequest.RequestState.Complete;
+
+        return success;
     }
 
     #endregion
 
+    #region Unity lifecycle
+
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (boardStateMachine == null)
         {
-            RaycastHit hit;
-            Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+            return;
+        }
 
-            if (Physics.Raycast(ray, out hit))
+        if (currentPlayerActionRequest != null &&
+            currentPlayerActionRequest.State == PlayerActionRequest.RequestState.NotStarted)
+        {
+            currentPlayerActionRequest.State = PlayerActionRequest.RequestState.InProgress;
+            boardStateMachine.GoToState(currentPlayerActionRequest.Mode);
+        }
+
+        if (currentPlayerActionRequest != null &&
+            currentPlayerActionRequest.State == PlayerActionRequest.RequestState.ReadyForCleanup)
+        {
+            boardStateMachine.GoToState(BoardMode.Idle);
+            currentPlayerActionRequest.State = PlayerActionRequest.RequestState.CleanupFinished;
+        }
+
+        boardStateMachine.Update();
+    }
+
+    #endregion
+
+    #region State machine
+
+    private void OnEnterSettlementPlacementMode()
+    {
+        foreach (var hexVertex in vertexMap.Values)
+        {
+            if (hexVertex.VertexObject != null)
             {
-                var objectHit = hit.transform.gameObject;
-                Debug.Log($"Hit: {objectHit.name}");
+                hexVertex.VertexObject.SetActive(true);
             }
         }
     }
-    
+
+    private void OnUpdateSettlementPlacementMode()
+    {
+
+    }
+
+    private void OnExitSettlementPlacementMode()
+    {
+        foreach (var hexVertex in vertexMap.Values)
+        {
+            if (hexVertex.VertexObject != null)
+            {
+                hexVertex.VertexObject.SetActive(false);
+            }
+        }
+    }
+
+    #endregion
+
     private void InitializeBoard(int shuffleableGridSize, int fullGridSize)
     {
         // Initialize data structure for full grid
@@ -190,6 +335,11 @@ public class BoardManager : MonoBehaviour, IBoard
                 
                 vertexObject.transform.localPosition = Vector3.zero;
                 vertex.VertexObject  = vertexObject;
+
+                var settlementLocation = vertexObject.GetComponentInChildren<SettlementLocation>();
+                settlementLocation.Initialize(this, vertex);
+
+                vertexObject.SetActive(false);
             }
             else
             {
@@ -228,6 +378,8 @@ public class BoardManager : MonoBehaviour, IBoard
                 edgeObject.transform.localPosition = Vector3.zero;
                 edgeObject.transform.localRotation = Quaternion.identity;
                 edge.EdgeObject = edgeObject;
+
+                edgeObject.SetActive(false);
             }
             else
             {
@@ -238,6 +390,8 @@ public class BoardManager : MonoBehaviour, IBoard
 
     private void ClearBoard()
     {
+        currentPlayerActionRequest = null;
+
         foreach (var tile in hexMap.Values)
         {
             Destroy(tile.TileObject.gameObject);
@@ -293,6 +447,4 @@ public class BoardManager : MonoBehaviour, IBoard
         Util.Shuffle(diceNumbers);
         return diceNumbers;
     }
-
-
 }

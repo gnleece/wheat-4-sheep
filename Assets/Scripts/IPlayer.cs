@@ -10,5 +10,7 @@ public interface IPlayer
 
     public void Initialize(int playerId, IBoard board);
 
-    public Task<(VertexCoord,EdgeCoord)> SelectFirstSettlementAndRoadPositions();
+    public Task PlaceFirstSettlementAndRoadAsync();
+
+    public Task PlaceSecondSettlementAndRoadAsync();
 }

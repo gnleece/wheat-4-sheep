@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class StateMachine<T> where T : IConvertible
+public class StateMachine<T> where T : struct
 {
     private class State
     {
@@ -20,6 +20,10 @@ public class StateMachine<T> where T : IConvertible
             OnStateExit = onStateExit;
         }
     }
+
+    public Action<T?, T?> OnStateChange;
+
+    public T CurrentState => currentState != null ? currentState.Id : default;
 
     public bool EnableDebugLogging = true;
 
@@ -47,6 +51,8 @@ public class StateMachine<T> where T : IConvertible
 
             currentState?.OnStateExit?.Invoke();
             newState.OnStateEnter?.Invoke();
+
+            OnStateChange?.Invoke(currentState?.Id, newState?.Id);
 
             currentState = newState;
             return true;

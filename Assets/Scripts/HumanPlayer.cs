@@ -6,10 +6,10 @@ using UnityEngine;
 
 public class HumanPlayer : IPlayer
 {
+    public int PlayerId => playerId;
+
     private int playerId;
     private IBoard board;
-    
-    public int PlayerId => playerId;
 
     public void Initialize(int playerId, IBoard board)
     {
@@ -17,13 +17,17 @@ public class HumanPlayer : IPlayer
         this.board = board;
     }
 
-    public async Task<(VertexCoord, EdgeCoord)> SelectFirstSettlementAndRoadPositions()
+    public async Task PlaceFirstSettlementAndRoadAsync()
     {
-        await Task.Delay(1000);
+        await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildSettlement);
 
-        var vertexCoord = new VertexCoord();
-        var edgeCoord = new EdgeCoord();
+        //await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
+    }
 
-        return (vertexCoord, edgeCoord);
+    public async Task PlaceSecondSettlementAndRoadAsync()
+    {
+        await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildSettlement);
+
+        //await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
     }
 }

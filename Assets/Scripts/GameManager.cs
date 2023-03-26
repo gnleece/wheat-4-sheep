@@ -50,7 +50,7 @@ public class GameManager : MonoBehaviour
     {
         if (boardManager == null)
         {
-            SetHudText("Grid manager cannot be null");
+            SetHudText("Board manager cannot be null");
             return;
         }
         
@@ -155,11 +155,18 @@ public class GameManager : MonoBehaviour
     {
         foreach (var player in playerList)
         {
-            SetHudText($"Player {player.PlayerId} placing first road and settlement");
+            SetHudText($"Player {player.PlayerId} placing first settlement and road");
 
-            var positions = await player.SelectFirstSettlementAndRoadPositions();
+            await player.PlaceFirstSettlementAndRoadAsync();
+        }
 
-            Debug.Log($"Player {player.PlayerId} selected: {positions.Item1}, {positions.Item2}");
+        for (int i = playerCount - 1; i >= 0; i--)
+        {
+            var player = playerList[i];
+
+            SetHudText($"Player {player.PlayerId} placing second settlement and road");
+
+            await player.PlaceSecondSettlementAndRoadAsync();
         }
     }
 
@@ -173,6 +180,7 @@ public class GameManager : MonoBehaviour
         {
             hudDebugText.text = text;
         }
+        Debug.Log(text);
     }
 
     private void ClearHudText()
