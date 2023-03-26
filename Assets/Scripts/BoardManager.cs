@@ -1,266 +1,11 @@
+using Grid;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEditor.Progress;
 
-public class GridManager : MonoBehaviour
+public class BoardManager : MonoBehaviour, IBoard
 {
-    #region Enums
-
-    private enum VertexOrientation
-    {
-        North,
-        South
-    }
-
-    private enum EdgeOrientation
-    {
-        West,
-        NorthWest,
-        NorthEast
-    }
-
-    #endregion
-
-    #region Classes and structs
-
-    private struct HexCoord
-    {
-        public int q;
-        public int r;
-
-        public int s => -q - r;
-
-        public int Ring => Mathf.Max(Mathf.Abs(q), Mathf.Abs(r), Mathf.Abs(s));
-
-        public HexCoord(int q, int r)
-        {
-            this.q = q;
-            this.r = r;
-        }
-
-        public override string ToString() => $"({q},{r})";
-
-        public override int GetHashCode() => (q, r).GetHashCode();
-    }
-
-    private struct VertexCoord
-    {
-        public HexCoord HexCoord;
-        public VertexOrientation Orientation;
-
-        public VertexCoord(HexCoord hexCoord, VertexOrientation orientation)
-        {
-            HexCoord = hexCoord;
-            Orientation = orientation;
-        }
-
-        public override string ToString() => $"({HexCoord.q},{HexCoord.r},{Orientation})";
-
-        public override int GetHashCode() => (HexCoord.q, HexCoord.r, Orientation).GetHashCode();
-    }
-
-    private struct EdgeCoord
-    {
-        public HexCoord HexCoord;
-        public EdgeOrientation Orientation;
-
-        public EdgeCoord(HexCoord hexCoord, EdgeOrientation edgeOrientation)
-        {
-            HexCoord = hexCoord;
-            Orientation = edgeOrientation;
-        }
-
-        public override string ToString() => $"({HexCoord.q},{HexCoord.r},{Orientation})";
-
-        public override int GetHashCode() => (HexCoord.q, HexCoord.r, Orientation).GetHashCode();
-    }
-
-    private class HexTile
-    {
-        public HexCoord HexCoordinates { get; private set; }
-        public bool IsValidForBuilding { get; private set; }
-        public int Ring => HexCoordinates.Ring;
-
-        public HexTileObject TileObject { get; set; }
-
-        public HexTile(HexCoord coord, bool isValidForBuilding)
-        {
-            HexCoordinates = coord;
-            IsValidForBuilding = isValidForBuilding;
-        }
-
-        public void SetDebugText(string text)
-        {
-            if (TileObject != null)
-            {
-                TileObject.SetDebugText(text);
-            }
-        }
-    }
-
-    private class HexVertex
-    {
-        public VertexCoord VertexCoord { get; private set; }
-
-        public GameObject VertexObject { get; set; }
-
-        public List<HexTile> NeighborTiles { get; private set; }
-
-        public HexVertex(VertexCoord coord)
-        {
-            VertexCoord = coord;
-        }
-
-        public override string ToString()
-        {
-            return $"Vertex {VertexCoord}";
-        }
-
-        public bool GetIsValidForBuilding()
-        {
-            if (NeighborTiles == null || NeighborTiles.Count == 0)
-            {
-                Debug.LogWarning($"No neighbor tiles initialized for {this}");
-                return false;
-            }
-
-            foreach (var hex in NeighborTiles)
-            {
-                if (hex.IsValidForBuilding)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public void InitializeNeighborTiles(Dictionary<HexCoord,HexTile> hexMap)
-        {
-            NeighborTiles = new List<HexTile>();
-
-            var q = VertexCoord.HexCoord.q;
-            var r = VertexCoord.HexCoord.r;
-
-            switch (VertexCoord.Orientation)
-            {
-                case VertexOrientation.North:
-                {
-                    TryAddNeighborHex(q, r, hexMap);
-                    TryAddNeighborHex(q, r + 1, hexMap);
-                    TryAddNeighborHex(q - 1, r + 1, hexMap);
-                    break;
-                }
-                case VertexOrientation.South:
-                {
-                    TryAddNeighborHex(q, r, hexMap);
-                    TryAddNeighborHex(q, r - 1, hexMap);
-                    TryAddNeighborHex(q + 1, r - 1, hexMap);
-                    break;
-                }
-                default:
-                {
-                    Debug.LogError($"Unknown vertex orientation in InitializeNeighborTiles for {this}");
-                    break;
-                }
-            }
-        }
-
-        private void TryAddNeighborHex(int q, int r, Dictionary<HexCoord, HexTile> hexMap)
-        {
-            if (hexMap.TryGetValue(new HexCoord(q, r), out var hex))
-            {
-                NeighborTiles.Add(hex);
-            }
-        }
-    }
-
-    private class HexEdge
-    {
-        public EdgeCoord EdgeCoord { get; private set; }
-
-        public GameObject EdgeObject { get; set; }
-
-        public List<HexTile> NeighborTiles { get; private set; }
-
-        public HexEdge(EdgeCoord edgeCoord)
-        {
-            EdgeCoord = edgeCoord;
-        }
-
-        public override string ToString()
-        {
-            return $"Edge {EdgeCoord}";
-        }
-
-        public bool GetIsValidForBuilding()
-        {
-            if (NeighborTiles == null || NeighborTiles.Count == 0)
-            {
-                Debug.LogWarning($"No neighbor tiles initialized for {this}");
-                return false;
-            }
-
-            foreach (var hex in NeighborTiles)
-            {
-                if (hex.IsValidForBuilding)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public void InitializeNeighborTiles(Dictionary<HexCoord, HexTile> hexMap)
-        {
-            NeighborTiles = new List<HexTile>();
-
-            var q = EdgeCoord.HexCoord.q;
-            var r = EdgeCoord.HexCoord.r;
-
-            switch (EdgeCoord.Orientation)
-            {
-                case EdgeOrientation.West:
-                {
-                    TryAddNeighborHex(q, r, hexMap);
-                    TryAddNeighborHex(q - 1, r, hexMap);
-                    break;
-                }
-                case EdgeOrientation.NorthWest:
-                {
-                    TryAddNeighborHex(q, r, hexMap);
-                    TryAddNeighborHex(q - 1, r + 1, hexMap);
-                    break;
-                }
-                case EdgeOrientation.NorthEast:
-                {
-                    TryAddNeighborHex(q, r, hexMap);
-                    TryAddNeighborHex(q, r + 1, hexMap);
-                    break;
-                }
-                default:
-                {
-                    Debug.LogError($"Unknown edge orientation in InitializeNeighborTiles for {this}");
-                    break;
-                }
-            }
-        }
-
-        private void TryAddNeighborHex(int q, int r, Dictionary<HexCoord, HexTile> hexMap)
-        {
-            if (hexMap.TryGetValue(new HexCoord(q, r), out var hex))
-            {
-                NeighborTiles.Add(hex);
-            }
-        }
-    }
-
-    #endregion
-
     #region Consts
 
     private const int INNER_SHUFFLEABLE_GRID_SIZE = 2;
@@ -316,8 +61,8 @@ public class GridManager : MonoBehaviour
 
     public void StartNewGame()
     {
-        ClearGrid();
-        InitializeGrid(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
+        ClearBoard();
+        InitializeBoard(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
     }
 
     #endregion
@@ -337,7 +82,7 @@ public class GridManager : MonoBehaviour
         }
     }
     
-    private void InitializeGrid(int shuffleableGridSize, int fullGridSize)
+    private void InitializeBoard(int shuffleableGridSize, int fullGridSize)
     {
         // Initialize data structure for full grid
         for (int q = -fullGridSize; q <= fullGridSize; q++)
@@ -386,7 +131,7 @@ public class GridManager : MonoBehaviour
         var shuffledDiceNumbersCount = 0;
         foreach (var hex in hexMap.Values)
         {
-            var offsetCoord = AxialHexToOffsetCoord(hex.HexCoordinates);
+            var offsetCoord = GridHelpers.AxialHexToOffsetCoord(hex.HexCoordinates);
             
             var tilePosition = new Vector3(offsetCoord.x * horizontalSpacing, 0, offsetCoord.y * verticalSpacing);
             if (offsetCoord.y % 2 == 0)
@@ -422,7 +167,7 @@ public class GridManager : MonoBehaviour
         {
             if (hexMap.TryGetValue(vertex.VertexCoord.HexCoord, out var hex))
             {
-                vertex.InitializeNeighborTiles(hexMap);
+                vertex.InitializeNeighborHexTiles(hexMap);
                 if (!vertex.GetIsValidForBuilding())
                 {
                     continue;
@@ -457,7 +202,7 @@ public class GridManager : MonoBehaviour
         {
             if (hexMap.TryGetValue(edge.EdgeCoord.HexCoord, out var hex))
             {
-                edge.InitializeNeighborTiles(hexMap);
+                edge.InitializeNeighborHexTiles(hexMap);
                 if (!edge.GetIsValidForBuilding())
                 {
                     continue;
@@ -491,7 +236,7 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private void ClearGrid()
+    private void ClearBoard()
     {
         foreach (var tile in hexMap.Values)
         {
@@ -549,10 +294,5 @@ public class GridManager : MonoBehaviour
         return diceNumbers;
     }
 
-    private Vector2 AxialHexToOffsetCoord(HexCoord axialCoord)
-    {
-        var col = axialCoord.q + (axialCoord.r - (axialCoord.r & 1)) / 2;
-        var row = axialCoord.r;
-        return new Vector2(col, row);
-    }
+
 }

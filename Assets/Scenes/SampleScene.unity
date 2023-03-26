@@ -152,7 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e65b957aa8fa35e41904265b461e4244, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gridManager: {fileID: 2069979699}
+  boardManager: {fileID: 2069979699}
   hudDebugText: {fileID: 1149507159}
 --- !u!4 &609555072
 Transform:
@@ -488,7 +488,7 @@ GameObject:
   - component: {fileID: 2069979700}
   - component: {fileID: 2069979699}
   m_Layer: 0
-  m_Name: GridManager
+  m_Name: BoardManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
