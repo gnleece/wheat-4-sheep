@@ -116,11 +116,12 @@ namespace Grid
 
         public GameObject VertexObject { get; set; }
 
-       
-
         public Building Building { get; private set; }
 
         public bool IsOccupied => Building != null;
+
+        public IPlayer Owner => Building?.Owner;
+
 
         private List<HexTile> neighborHexes = null;
         private List<HexVertex> neighborVertices = null;
@@ -254,7 +255,13 @@ namespace Grid
 
         public GameObject EdgeObject { get; set; }
 
-        public List<HexTile> NeighborHexTiles { get; private set; }
+        public Road Road { get; private set; }
+
+        public bool IsOccupied => Road != null;
+
+        private List<HexTile> neighborHexes = null;
+        private List<HexVertex> neighborVertices = null;
+        private List<HexEdge> neighborEdges = null;
 
         public HexEdge(EdgeCoord edgeCoord)
         {
@@ -266,15 +273,42 @@ namespace Grid
             return $"Edge {EdgeCoord}";
         }
 
+        public bool PlaceRoad(IPlayer owner)
+        {
+            if (IsOccupied || owner == null)
+            {
+                return false;
+            }
+
+            // Roads must be connected to an existing road or building with the same owner
+            var success = false;
+            foreach (var neighbor in neighborVertices)
+            {
+                if (neighbor.IsOccupied && neighbor.Owner == owner)
+                {
+                    success = true;
+                    break;
+                }
+            }
+
+            // TODO check for neighboring roads
+
+            if (success)
+            {
+                Road = new Road(this, owner);
+            }
+            return success;
+        }
+
         public bool CanHaveRoads()
         {
-            if (NeighborHexTiles == null || NeighborHexTiles.Count == 0)
+            if (neighborHexes == null || neighborHexes.Count == 0)
             {
                 Debug.LogWarning($"No neighbor hex tiles initialized for {this}");
                 return false;
             }
 
-            foreach (var hex in NeighborHexTiles)
+            foreach (var hex in neighborHexes)
             {
                 if (hex.CanHaveBuildingsAndRoads)
                 {
@@ -285,9 +319,11 @@ namespace Grid
             return false;
         }
 
-        public void InitializeNeighborHexTiles(Dictionary<HexCoord, HexTile> hexMap)
+        public void InitializeNeighbors(IGrid grid)
         {
-            NeighborHexTiles = new List<HexTile>();
+            neighborHexes = new List<HexTile>();
+            neighborVertices = new List<HexVertex>();
+            neighborEdges = new List<HexEdge>();
 
             var q = EdgeCoord.HexCoord.q;
             var r = EdgeCoord.HexCoord.r;
@@ -296,20 +332,29 @@ namespace Grid
             {
                 case EdgeOrientation.West:
                     {
-                        TryAddNeighborHexTile(q, r, hexMap);
-                        TryAddNeighborHexTile(q - 1, r, hexMap);
+                        TryAddNeighborHex(new HexCoord(q, r), grid);
+                        TryAddNeighborHex(new HexCoord(q - 1, r), grid);
+
+                        TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.South), grid);
+                        TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.North), grid);
                         break;
                     }
                 case EdgeOrientation.NorthWest:
                     {
-                        TryAddNeighborHexTile(q, r, hexMap);
-                        TryAddNeighborHexTile(q - 1, r + 1, hexMap);
+                        TryAddNeighborHex(new HexCoord(q, r), grid);
+                        TryAddNeighborHex(new HexCoord(q - 1, r + 1), grid);
+
+                        TryAddNeighborVertex(new VertexCoord(q, r, VertexOrientation.North), grid);
+                        TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.South), grid);
                         break;
                     }
                 case EdgeOrientation.NorthEast:
                     {
-                        TryAddNeighborHexTile(q, r, hexMap);
-                        TryAddNeighborHexTile(q, r + 1, hexMap);
+                        TryAddNeighborHex(new HexCoord(q, r), grid);
+                        TryAddNeighborHex(new HexCoord(q, r + 1), grid);
+
+                        TryAddNeighborVertex(new VertexCoord(q + 1, r - 1, VertexOrientation.South), grid);
+                        TryAddNeighborVertex(new VertexCoord(q, r, VertexOrientation.North), grid);
                         break;
                     }
                 default:
@@ -320,11 +365,27 @@ namespace Grid
             }
         }
 
-        private void TryAddNeighborHexTile(int q, int r, Dictionary<HexCoord, HexTile> hexMap)
+        private void TryAddNeighborHex(HexCoord hexCoord, IGrid grid)
         {
-            if (hexMap.TryGetValue(new HexCoord(q, r), out var hex))
+            if (grid.HexMap.TryGetValue(hexCoord, out var hex))
             {
-                NeighborHexTiles.Add(hex);
+                neighborHexes.Add(hex);
+            }
+        }
+
+        private void TryAddNeighborVertex(VertexCoord vertexCoord, IGrid grid)
+        {
+            if (grid.VertexMap.TryGetValue(vertexCoord, out var vertex))
+            {
+                neighborVertices.Add(vertex);
+            }
+        }
+
+        private void TryAddNeighborEdge(EdgeCoord edgeCoord, IGrid grid)
+        {
+            if (grid.EdgeMap.TryGetValue(edgeCoord, out var edge))
+            {
+                neighborEdges.Add(edge);
             }
         }
     }

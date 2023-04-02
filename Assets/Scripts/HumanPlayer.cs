@@ -21,13 +21,13 @@ public class HumanPlayer : IPlayer
     {
         await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildSettlement);
 
-        //await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
+        await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
     }
 
     public async Task PlaceSecondSettlementAndRoadAsync()
     {
         await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildSettlement);
 
-        //await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
+        await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
     }
 }

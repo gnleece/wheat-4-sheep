@@ -108,7 +108,8 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         boardStateMachine = new StateMachine<BoardMode>("BoardMode");
 
         boardStateMachine.AddState(BoardMode.Idle, null, null, null);
-        boardStateMachine.AddState(BoardMode.BuildSettlement, OnEnterSettlementPlacementMode, OnUpdateSettlementPlacementMode, OnExitSettlementPlacementMode);
+        boardStateMachine.AddState(BoardMode.BuildSettlement, OnEnterSettlementPlacementMode, null, OnExitSettlementPlacementMode);
+        boardStateMachine.AddState(BoardMode.BuildRoad, OnEnterRoadPlacementMode, null, OnExitRoadPlacementMode);
 
         boardStateMachine.GoToState(BoardMode.Idle);
     }
@@ -185,6 +186,39 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         return success;
     }
 
+    public bool RoadLocationSelected(HexEdge hexEdge)
+    {
+        if (currentPlayerActionRequest == null)
+        {
+            Debug.LogError("Board manager: road location selected but there is no active player action request");
+            return false;
+        }
+        if (boardStateMachine.CurrentState != BoardMode.BuildRoad)
+        {
+            Debug.LogError($"Board manager: road location selected but board is in {boardStateMachine.CurrentState} mode");
+            return false;
+        }
+
+        if (hexEdge == null)
+        {
+            Debug.LogError("Board manager: road location selected but hex edge is null");
+            return false;
+        }
+
+        var success = hexEdge.PlaceRoad(currentPlayerActionRequest.Player);
+        if (success)
+        {
+            currentPlayerActionRequest.Success = success;
+            currentPlayerActionRequest.State = PlayerActionRequest.RequestState.Complete;
+        }
+        else
+        {
+            Debug.Log("Invalid settlement position. Try again.");
+        }
+
+        return success;
+    }
+
     #endregion
 
     #region Unity lifecycle
@@ -228,18 +262,35 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         }
     }
 
-    private void OnUpdateSettlementPlacementMode()
-    {
-
-    }
-
     private void OnExitSettlementPlacementMode()
     {
         foreach (var hexVertex in vertexMap.Values)
         {
             if (hexVertex.VertexObject != null)
             {
-                hexVertex.VertexObject.SetActive(false);
+                //hexVertex.VertexObject.SetActive(false);
+            }
+        }
+    }
+
+    private void OnEnterRoadPlacementMode()
+    {
+        foreach (var hexEdge in edgeMap.Values)
+        {
+            if (hexEdge.EdgeObject != null)
+            {
+                hexEdge.EdgeObject.SetActive(true);
+            }
+        }
+    }
+
+    private void OnExitRoadPlacementMode()
+    {
+        foreach (var hexEdge in edgeMap.Values)
+        {
+            if (hexEdge.EdgeObject != null)
+            {
+                hexEdge.EdgeObject.SetActive(false);
             }
         }
     }
@@ -332,6 +383,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
             if (hexMap.TryGetValue(vertex.VertexCoord.HexCoord, out var hex))
             {
                 vertex.InitializeNeighbors(this);
+
                 if (!vertex.CanHaveBuildings())
                 {
                     continue;
@@ -371,7 +423,8 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         {
             if (hexMap.TryGetValue(edge.EdgeCoord.HexCoord, out var hex))
             {
-                edge.InitializeNeighborHexTiles(hexMap);
+                edge.InitializeNeighbors(this);
+
                 if (!edge.CanHaveRoads())
                 {
                     continue;
@@ -397,6 +450,9 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
                 edgeObject.transform.localPosition = Vector3.zero;
                 edgeObject.transform.localRotation = Quaternion.identity;
                 edge.EdgeObject = edgeObject;
+
+                var roadLocation = edgeObject.GetComponentInChildren<RoadLocation>();
+                roadLocation.Initialize(this, edge);
 
                 edgeObject.SetActive(false);
             }
