@@ -175,6 +175,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         var success = hexVertex.PlaceBuilding(Building.BuildingType.Settlement, currentPlayerActionRequest.Player);
         if (success)
         {
+            Debug.Log($"PLACED SETTLEMENT: {hexVertex}");
             currentPlayerActionRequest.Success = success;
             currentPlayerActionRequest.State = PlayerActionRequest.RequestState.Complete;
         }
@@ -205,6 +206,8 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
             return false;
         }
 
+        Debug.Log($"Trying to place road at {hexEdge}");
+
         var success = hexEdge.PlaceRoad(currentPlayerActionRequest.Player);
         if (success)
         {
@@ -213,7 +216,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         }
         else
         {
-            Debug.Log("Invalid settlement position. Try again.");
+            Debug.Log("Invalid road position. Try again.");
         }
 
         return success;

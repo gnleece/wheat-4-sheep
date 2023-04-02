@@ -284,6 +284,7 @@ namespace Grid
             var success = false;
             foreach (var neighbor in neighborVertices)
             {
+                Debug.Log($"....neighbor vertex: {neighbor}, occupied = {neighbor.IsOccupied}, owner = {neighbor.Owner}");
                 if (neighbor.IsOccupied && neighbor.Owner == owner)
                 {
                     success = true;
@@ -335,8 +336,8 @@ namespace Grid
                         TryAddNeighborHex(new HexCoord(q, r), grid);
                         TryAddNeighborHex(new HexCoord(q - 1, r), grid);
 
-                        TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.South), grid);
-                        TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.North), grid);
+                        TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.North), grid);
+                        TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.South), grid);
                         break;
                     }
                 case EdgeOrientation.NorthWest:
@@ -345,7 +346,7 @@ namespace Grid
                         TryAddNeighborHex(new HexCoord(q - 1, r + 1), grid);
 
                         TryAddNeighborVertex(new VertexCoord(q, r, VertexOrientation.North), grid);
-                        TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.South), grid);
+                        TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.South), grid);
                         break;
                     }
                 case EdgeOrientation.NorthEast:
@@ -353,8 +354,8 @@ namespace Grid
                         TryAddNeighborHex(new HexCoord(q, r), grid);
                         TryAddNeighborHex(new HexCoord(q, r + 1), grid);
 
-                        TryAddNeighborVertex(new VertexCoord(q + 1, r - 1, VertexOrientation.South), grid);
                         TryAddNeighborVertex(new VertexCoord(q, r, VertexOrientation.North), grid);
+                        TryAddNeighborVertex(new VertexCoord(q, r + 1, VertexOrientation.South), grid);
                         break;
                     }
                 default:
