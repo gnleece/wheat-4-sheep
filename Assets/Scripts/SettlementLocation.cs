@@ -31,6 +31,11 @@ public class SettlementLocation : MonoBehaviour, IInteractable
 
     public void HoverOn()
     {
+        if (hexVertex.IsOccupied)
+        {
+            return;
+        }
+
         if (renderer != null)
         {
             renderer.material.color = Color.red;
@@ -39,6 +44,11 @@ public class SettlementLocation : MonoBehaviour, IInteractable
 
     public void HoverOff()
     {
+        if (hexVertex.IsOccupied)
+        {
+            return;
+        }
+
         if (renderer != null)
         {
             renderer.material.color = Color.white;

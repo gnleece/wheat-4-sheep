@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class BoardManager : MonoBehaviour, IBoard
+public class BoardManager : MonoBehaviour, IBoard, IGrid
 {
     #region Consts
 
@@ -75,6 +75,14 @@ public class BoardManager : MonoBehaviour, IBoard
     private GameObject HexVertexPrefab;
     [SerializeField]
     private GameObject HexEdgePrefab;
+
+    #endregion
+
+    #region Properties
+
+    public IReadOnlyDictionary<HexCoord, HexTile> HexMap => hexMap;
+    public IReadOnlyDictionary<VertexCoord, HexVertex> VertexMap => vertexMap;
+    public IReadOnlyDictionary<EdgeCoord, HexEdge> EdgeMap => edgeMap;
 
     #endregion
 
@@ -157,11 +165,22 @@ public class BoardManager : MonoBehaviour, IBoard
             return false;
         }
 
-        // TODO check that this location is actually valid
-        var success = true;
+        if (hexVertex == null)
+        {
+            Debug.LogError("Board manager: settlement location selected but hex vertex is null");
+            return false;
+        }
 
-        currentPlayerActionRequest.Success = success;
-        currentPlayerActionRequest.State = PlayerActionRequest.RequestState.Complete;
+        var success = hexVertex.PlaceBuilding(Building.BuildingType.Settlement, currentPlayerActionRequest.Player);
+        if (success)
+        {
+            currentPlayerActionRequest.Success = success;
+            currentPlayerActionRequest.State = PlayerActionRequest.RequestState.Complete;
+        }
+        else
+        {
+            Debug.Log("Invalid settlement position. Try again.");
+        }
 
         return success;
     }
@@ -307,13 +326,13 @@ public class BoardManager : MonoBehaviour, IBoard
             tileObjectComponent.SetDebugText($"{hex.HexCoordinates}\n{diceNumber}");
         }
 
-        // Spawn vertex objects
+        // Spawn vertex objects and initialize neighbors
         foreach (var vertex in vertexMap.Values)
         {
             if (hexMap.TryGetValue(vertex.VertexCoord.HexCoord, out var hex))
             {
-                vertex.InitializeNeighborHexTiles(hexMap);
-                if (!vertex.GetIsValidForBuilding())
+                vertex.InitializeNeighbors(this);
+                if (!vertex.CanHaveBuildings())
                 {
                     continue;
                 }
@@ -353,7 +372,7 @@ public class BoardManager : MonoBehaviour, IBoard
             if (hexMap.TryGetValue(edge.EdgeCoord.HexCoord, out var hex))
             {
                 edge.InitializeNeighborHexTiles(hexMap);
-                if (!edge.GetIsValidForBuilding())
+                if (!edge.CanHaveRoads())
                 {
                     continue;
                 }
