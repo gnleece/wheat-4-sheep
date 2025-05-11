@@ -24,7 +24,7 @@ public class SettlementLocation : MonoBehaviour, IInteractable
         {
             if (renderer != null)
             {
-                renderer.material.color = Color.green;
+                PlayerColorManager.ApplyColorToRenderer(renderer, hexVertex.Owner.PlayerId);
             }
         }
     }
@@ -38,7 +38,15 @@ public class SettlementLocation : MonoBehaviour, IInteractable
 
         if (renderer != null)
         {
-            renderer.material.color = Color.red;
+            var currentPlayerId = board.GetCurrentPlayerId();
+            if (currentPlayerId.HasValue)
+            {
+                PlayerColorManager.ApplyColorToRenderer(renderer, currentPlayerId.Value);
+            }
+            else
+            {
+                renderer.material.color = Color.red;
+            }
         }
     }
 

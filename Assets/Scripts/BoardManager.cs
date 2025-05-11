@@ -222,6 +222,16 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         return success;
     }
 
+    public int? GetCurrentPlayerId()
+    {
+        if (currentPlayerActionRequest == null || 
+            currentPlayerActionRequest.State != PlayerActionRequest.RequestState.InProgress)
+        {
+            return null;
+        }
+        return currentPlayerActionRequest.Player.PlayerId;
+    }
+
     #endregion
 
     #region Unity lifecycle

@@ -20,4 +20,6 @@ public interface IBoard
     public bool SettlementLocationSelected(HexVertex hexVertex);
 
     public bool RoadLocationSelected(HexEdge hexEdge);
+
+    public int? GetCurrentPlayerId();
 }
