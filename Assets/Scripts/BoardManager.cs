@@ -6,6 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
+/// <summary>
+/// Manages the state of the board.
+/// 
+/// </summary>
+
 public class BoardManager : MonoBehaviour, IBoard, IGrid
 {
     #region Consts
@@ -153,7 +158,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         return success;
     }
 
-    public bool SettlementLocationSelected(HexVertex hexVertex)
+    public bool TrySelectSettlementLocation(HexVertex hexVertex)
     {
         if (currentPlayerActionRequest == null)
         {
@@ -172,7 +177,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
             return false;
         }
 
-        var success = hexVertex.PlaceBuilding(Building.BuildingType.Settlement, currentPlayerActionRequest.Player);
+        var success = hexVertex.TryPlaceBuilding(Building.BuildingType.Settlement, currentPlayerActionRequest.Player);
         if (success)
         {
             Debug.Log($"PLACED SETTLEMENT: {hexVertex}");
@@ -187,7 +192,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         return success;
     }
 
-    public bool RoadLocationSelected(HexEdge hexEdge)
+    public bool TrySelectRoadLocation(HexEdge hexEdge)
     {
         if (currentPlayerActionRequest == null)
         {
@@ -268,9 +273,9 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexVertex in vertexMap.Values)
         {
-            if (hexVertex.VertexObject != null)
+            if (hexVertex.SelectionObject != null)
             {
-                hexVertex.VertexObject.SetActive(true);
+                hexVertex.SelectionObject.SetActive(true);
             }
         }
     }
@@ -279,7 +284,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexVertex in vertexMap.Values)
         {
-            if (hexVertex.VertexObject != null)
+            if (hexVertex.SelectionObject != null)
             {
                 //hexVertex.VertexObject.SetActive(false);
             }
@@ -290,9 +295,9 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexEdge in edgeMap.Values)
         {
-            if (hexEdge.EdgeObject != null)
+            if (hexEdge.SelectionObject != null)
             {
-                hexEdge.EdgeObject.SetActive(true);
+                hexEdge.SelectionObject.SetActive(true);
             }
         }
     }
@@ -301,9 +306,9 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexEdge in edgeMap.Values)
         {
-            if (hexEdge.EdgeObject != null)
+            if (hexEdge.SelectionObject != null)
             {
-                hexEdge.EdgeObject.SetActive(false);
+                hexEdge.SelectionObject.SetActive(false);
             }
         }
     }
@@ -418,9 +423,9 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
                 }
                 
                 vertexObject.transform.localPosition = Vector3.zero;
-                vertex.VertexObject  = vertexObject;
+                vertex.SelectionObject  = vertexObject;
 
-                var settlementLocation = vertexObject.GetComponentInChildren<SettlementLocation>();
+                var settlementLocation = vertexObject.GetComponentInChildren<SettlementLocationSelectionObject>();
                 settlementLocation.Initialize(this, vertex);
 
                 vertexObject.SetActive(false);
@@ -462,9 +467,9 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
 
                 edgeObject.transform.localPosition = Vector3.zero;
                 edgeObject.transform.localRotation = Quaternion.identity;
-                edge.EdgeObject = edgeObject;
+                edge.SelectionObject = edgeObject;
 
-                var roadLocation = edgeObject.GetComponentInChildren<RoadLocation>();
+                var roadLocation = edgeObject.GetComponentInChildren<RoadLocationSelectionObject>();
                 roadLocation.Initialize(this, edge);
 
                 edgeObject.SetActive(false);
@@ -488,13 +493,13 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
 
         foreach (var vertex in vertexMap.Values)
         {
-            Destroy(vertex.VertexObject);
+            Destroy(vertex.SelectionObject);
         }
         vertexMap.Clear();
 
         foreach (var edge in edgeMap.Values)
         {
-            Destroy(edge.EdgeObject);
+            Destroy(edge.SelectionObject);
         }
         edgeMap.Clear();
     }

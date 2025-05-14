@@ -17,9 +17,9 @@ public interface IBoard
 {
     public Task<bool> ClaimBoardForPlayerActionAsync(IPlayer player, BoardMode mode);
 
-    public bool SettlementLocationSelected(HexVertex hexVertex);
+    public bool TrySelectSettlementLocation(HexVertex hexVertex);
 
-    public bool RoadLocationSelected(HexEdge hexEdge);
+    public bool TrySelectRoadLocation(HexEdge hexEdge);
 
     public int? GetCurrentPlayerId();
 }

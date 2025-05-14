@@ -114,7 +114,7 @@ namespace Grid
     {
         public VertexCoord VertexCoord { get; private set; }
 
-        public GameObject VertexObject { get; set; }
+        public GameObject SelectionObject { get; set; }
 
         public Building Building { get; private set; }
 
@@ -137,7 +137,7 @@ namespace Grid
             return $"Vertex {VertexCoord}";
         }
 
-        public bool PlaceBuilding(Building.BuildingType type, IPlayer owner)
+        public bool TryPlaceBuilding(Building.BuildingType type, IPlayer owner)
         {
             if (IsOccupied || owner == null)
             {
@@ -253,7 +253,7 @@ namespace Grid
     {
         public EdgeCoord EdgeCoord { get; private set; }
 
-        public GameObject EdgeObject { get; set; }
+        public GameObject SelectionObject { get; set; }
 
         public Road Road { get; private set; }
 

@@ -3,35 +3,35 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RoadLocation : MonoBehaviour, IInteractable
+public class SettlementLocationSelectionObject : MonoBehaviour, IInteractable
 {
     private new Renderer renderer;
 
     private IBoard board;
-    private HexEdge hexEdge;
+    private HexVertex hexVertex;
 
-    public void Initialize(IBoard board, HexEdge hexEdge)
+    public void Initialize(IBoard board, HexVertex hexVertex)
     {
         this.board = board;
-        this.hexEdge = hexEdge;
+        this.hexVertex = hexVertex;
 
         renderer = gameObject.GetComponent<Renderer>();
     }
 
     public void Select()
     {
-        if (board.RoadLocationSelected(hexEdge))
+        if (board.TrySelectSettlementLocation(hexVertex))
         {
             if (renderer != null)
             {
-                PlayerColorManager.ApplyColorToRenderer(renderer, hexEdge.Road.Owner.PlayerId);
+                PlayerColorManager.ApplyColorToRenderer(renderer, hexVertex.Owner.PlayerId);
             }
         }
     }
 
     public void HoverOn()
     {
-        if (hexEdge.IsOccupied)
+        if (hexVertex.IsOccupied)
         {
             return;
         }
@@ -52,7 +52,7 @@ public class RoadLocation : MonoBehaviour, IInteractable
 
     public void HoverOff()
     {
-        if (hexEdge.IsOccupied)
+        if (hexVertex.IsOccupied)
         {
             return;
         }
