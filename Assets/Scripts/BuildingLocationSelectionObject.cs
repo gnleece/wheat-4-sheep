@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SettlementLocationSelectionObject : MonoBehaviour, IInteractable
+public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 {
     private new Renderer renderer;
 

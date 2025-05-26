@@ -114,7 +114,7 @@ namespace Grid
     {
         public VertexCoord VertexCoord { get; private set; }
 
-        public GameObject SelectionObject { get; set; }
+        public HexVertexObject VertexObject { get; set; }
 
         public Building Building { get; private set; }
 
@@ -135,6 +135,14 @@ namespace Grid
         public override string ToString()
         {
             return $"Vertex {VertexCoord}";
+        }
+
+        public void EnableSelection(bool enable)
+        {
+            if (VertexObject != null)
+            {
+                VertexObject.EnableSelection(enable);
+            }
         }
 
         public bool TryPlaceBuilding(Building.BuildingType type, IPlayer owner)
@@ -271,6 +279,14 @@ namespace Grid
         public override string ToString()
         {
             return $"Edge {EdgeCoord}";
+        }
+
+        public void EnableSelection(bool enable)
+        {
+            if (SelectionObject != null)
+            {
+                SelectionObject.SetActive(enable);
+            }
         }
 
         public bool PlaceRoad(IPlayer owner)

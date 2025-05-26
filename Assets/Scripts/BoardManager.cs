@@ -273,10 +273,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexVertex in vertexMap.Values)
         {
-            if (hexVertex.SelectionObject != null)
-            {
-                hexVertex.SelectionObject.SetActive(true);
-            }
+            hexVertex.EnableSelection(true);
         }
     }
 
@@ -284,10 +281,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexVertex in vertexMap.Values)
         {
-            if (hexVertex.SelectionObject != null)
-            {
-                //hexVertex.VertexObject.SetActive(false);
-            }
+            hexVertex.EnableSelection(false);
         }
     }
 
@@ -295,10 +289,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexEdge in edgeMap.Values)
         {
-            if (hexEdge.SelectionObject != null)
-            {
-                hexEdge.SelectionObject.SetActive(true);
-            }
+            hexEdge.EnableSelection(true);
         }
     }
 
@@ -306,10 +297,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexEdge in edgeMap.Values)
         {
-            if (hexEdge.SelectionObject != null)
-            {
-                hexEdge.SelectionObject.SetActive(false);
-            }
+            hexEdge.EnableSelection(false);
         }
     }
 
@@ -409,6 +397,9 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
 
                 var vertexObject = Instantiate(HexVertexPrefab, Vector3.zero, Quaternion.identity);
 
+                vertex.VertexObject = vertexObject.GetComponent<HexVertexObject>();
+                vertex.VertexObject.Initialize(this, vertex);
+
                 switch (vertex.VertexCoord.Orientation)
                 {
                     case VertexOrientation.North:
@@ -421,14 +412,8 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
                         Debug.LogError($"Unknown vertex orientation for {vertex}");
                         break;
                 }
-                
+
                 vertexObject.transform.localPosition = Vector3.zero;
-                vertex.SelectionObject  = vertexObject;
-
-                var settlementLocation = vertexObject.GetComponentInChildren<SettlementLocationSelectionObject>();
-                settlementLocation.Initialize(this, vertex);
-
-                vertexObject.SetActive(false);
             }
             else
             {
@@ -493,7 +478,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
 
         foreach (var vertex in vertexMap.Values)
         {
-            Destroy(vertex.SelectionObject);
+            Destroy(vertex.VertexObject.gameObject);
         }
         vertexMap.Clear();
 
