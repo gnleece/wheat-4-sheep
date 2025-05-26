@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SettlementLocation : MonoBehaviour, IInteractable
+public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 {
     private new Renderer renderer;
 
@@ -20,11 +20,11 @@ public class SettlementLocation : MonoBehaviour, IInteractable
 
     public void Select()
     {
-        if (board.SettlementLocationSelected(hexVertex))
+        if (board.TrySelectSettlementLocation(hexVertex))
         {
             if (renderer != null)
             {
-                renderer.material.color = Color.green;
+                PlayerColorManager.ApplyColorToRenderer(renderer, hexVertex.Owner.PlayerId);
             }
         }
     }
@@ -38,7 +38,15 @@ public class SettlementLocation : MonoBehaviour, IInteractable
 
         if (renderer != null)
         {
-            renderer.material.color = Color.red;
+            var currentPlayerId = board.GetCurrentPlayerId();
+            if (currentPlayerId.HasValue)
+            {
+                PlayerColorManager.ApplyColorToRenderer(renderer, currentPlayerId.Value);
+            }
+            else
+            {
+                renderer.material.color = Color.red;
+            }
         }
     }
 

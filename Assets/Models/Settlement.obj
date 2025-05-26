@@ -1,0 +1,52 @@
+# Catan Settlement - Corrected Normals & Face Winding
+o Settlement
+
+# Vertices
+v -0.5 0.0 -0.5
+v 0.5 0.0 -0.5
+v 0.5 0.0 0.5
+v -0.5 0.0 0.5
+
+v -0.5 0.5 -0.5
+v 0.5 0.5 -0.5
+v 0.5 0.5 0.5
+v -0.5 0.5 0.5
+
+v 0.0 0.9 -0.5
+v 0.0 0.9 0.5
+
+# Normals
+vn 0.0 -1.0 0.0       # Bottom
+vn 0.0 0.0 -1.0       # Back
+vn 1.0 0.0 0.0        # Right
+vn 0.0 0.0 1.0        # Front
+vn -1.0 0.0 0.0       # Left
+vn 0.0 1.0 0.0        # Top flat
+vn 0.0 0.707 -0.707   # Roof back slope
+vn 0.707 0.707 0.0    # Roof right slope
+vn 0.0 0.707 0.707    # Roof front slope
+vn -0.707 0.707 0.0   # Roof left slope
+vn 0.0 1.0 0.0        # Roof top
+
+# Faces
+# Base
+f 1//1 2//1 3//1 4//1
+
+# Walls
+f 1//2 5//2 6//2 2//2
+f 2//3 6//3 7//3 3//3
+f 3//4 7//4 8//4 4//4
+f 4//5 8//5 5//5 1//5
+
+# Ceiling (top rectangle)
+f 5//6 8//6 7//6 6//6
+
+# Roof slopes (corrected winding)
+f 5//7 9//7 6//7
+f 6//8 9//8 7//8
+f 7//9 10//9 8//9
+f 8//10 10//10 5//10
+
+# Roof ridge (corrected winding)
+f 7//11 10//11 9//11
+f 10//11 5//11 9//11

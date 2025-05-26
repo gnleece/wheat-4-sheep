@@ -6,6 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
+/// <summary>
+/// Manages the state of the board.
+/// 
+/// </summary>
+
 public class BoardManager : MonoBehaviour, IBoard, IGrid
 {
     #region Consts
@@ -153,7 +158,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         return success;
     }
 
-    public bool SettlementLocationSelected(HexVertex hexVertex)
+    public bool TrySelectSettlementLocation(HexVertex hexVertex)
     {
         if (currentPlayerActionRequest == null)
         {
@@ -172,7 +177,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
             return false;
         }
 
-        var success = hexVertex.PlaceBuilding(Building.BuildingType.Settlement, currentPlayerActionRequest.Player);
+        var success = hexVertex.TryPlaceBuilding(Building.BuildingType.Settlement, currentPlayerActionRequest.Player);
         if (success)
         {
             Debug.Log($"PLACED SETTLEMENT: {hexVertex}");
@@ -187,7 +192,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         return success;
     }
 
-    public bool RoadLocationSelected(HexEdge hexEdge)
+    public bool TrySelectRoadLocation(HexEdge hexEdge)
     {
         if (currentPlayerActionRequest == null)
         {
@@ -220,6 +225,16 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
         }
 
         return success;
+    }
+
+    public int? GetCurrentPlayerId()
+    {
+        if (currentPlayerActionRequest == null || 
+            currentPlayerActionRequest.State != PlayerActionRequest.RequestState.InProgress)
+        {
+            return null;
+        }
+        return currentPlayerActionRequest.Player.PlayerId;
     }
 
     #endregion
@@ -258,10 +273,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexVertex in vertexMap.Values)
         {
-            if (hexVertex.VertexObject != null)
-            {
-                hexVertex.VertexObject.SetActive(true);
-            }
+            hexVertex.EnableSelection(true);
         }
     }
 
@@ -269,10 +281,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexVertex in vertexMap.Values)
         {
-            if (hexVertex.VertexObject != null)
-            {
-                //hexVertex.VertexObject.SetActive(false);
-            }
+            hexVertex.EnableSelection(false);
         }
     }
 
@@ -280,10 +289,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexEdge in edgeMap.Values)
         {
-            if (hexEdge.EdgeObject != null)
-            {
-                hexEdge.EdgeObject.SetActive(true);
-            }
+            hexEdge.EnableSelection(true);
         }
     }
 
@@ -291,10 +297,7 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
     {
         foreach (var hexEdge in edgeMap.Values)
         {
-            if (hexEdge.EdgeObject != null)
-            {
-                hexEdge.EdgeObject.SetActive(false);
-            }
+            hexEdge.EnableSelection(false);
         }
     }
 
@@ -394,6 +397,9 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
 
                 var vertexObject = Instantiate(HexVertexPrefab, Vector3.zero, Quaternion.identity);
 
+                vertex.VertexObject = vertexObject.GetComponent<HexVertexObject>();
+                vertex.VertexObject.Initialize(this, vertex);
+
                 switch (vertex.VertexCoord.Orientation)
                 {
                     case VertexOrientation.North:
@@ -406,14 +412,8 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
                         Debug.LogError($"Unknown vertex orientation for {vertex}");
                         break;
                 }
-                
+
                 vertexObject.transform.localPosition = Vector3.zero;
-                vertex.VertexObject  = vertexObject;
-
-                var settlementLocation = vertexObject.GetComponentInChildren<SettlementLocation>();
-                settlementLocation.Initialize(this, vertex);
-
-                vertexObject.SetActive(false);
             }
             else
             {
@@ -452,9 +452,9 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
 
                 edgeObject.transform.localPosition = Vector3.zero;
                 edgeObject.transform.localRotation = Quaternion.identity;
-                edge.EdgeObject = edgeObject;
+                edge.SelectionObject = edgeObject;
 
-                var roadLocation = edgeObject.GetComponentInChildren<RoadLocation>();
+                var roadLocation = edgeObject.GetComponentInChildren<RoadLocationSelectionObject>();
                 roadLocation.Initialize(this, edge);
 
                 edgeObject.SetActive(false);
@@ -478,13 +478,13 @@ public class BoardManager : MonoBehaviour, IBoard, IGrid
 
         foreach (var vertex in vertexMap.Values)
         {
-            Destroy(vertex.VertexObject);
+            Destroy(vertex.VertexObject.gameObject);
         }
         vertexMap.Clear();
 
         foreach (var edge in edgeMap.Values)
         {
-            Destroy(edge.EdgeObject);
+            Destroy(edge.SelectionObject);
         }
         edgeMap.Clear();
     }

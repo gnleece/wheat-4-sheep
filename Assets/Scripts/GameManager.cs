@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
+/// <summary>
+/// Main controller that manages game state and player setup.
+/// </summary>
 public class GameManager : MonoBehaviour
 {
     #region Enums
