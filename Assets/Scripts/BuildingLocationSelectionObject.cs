@@ -7,12 +7,12 @@ public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 {
     private new Renderer renderer;
 
-    private IBoard board;
+    private IBoardManager boardManager;
     private HexVertex hexVertex;
 
-    public void Initialize(IBoard board, HexVertex hexVertex)
+    public void Initialize(IBoardManager boardManager, HexVertex hexVertex)
     {
-        this.board = board;
+        this.boardManager = boardManager;
         this.hexVertex = hexVertex;
 
         renderer = gameObject.GetComponent<Renderer>();
@@ -20,7 +20,7 @@ public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 
     public void Select()
     {
-        if (board.TrySelectSettlementLocation(hexVertex))
+        if (boardManager.TrySelectSettlementLocation(hexVertex))
         {
             if (renderer != null)
             {
@@ -38,7 +38,7 @@ public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 
         if (renderer != null)
         {
-            var currentPlayerId = board.GetCurrentPlayerId();
+            var currentPlayerId = boardManager.GetCurrentPlayerId();
             if (currentPlayerId.HasValue)
             {
                 PlayerColorManager.ApplyColorToRenderer(renderer, currentPlayerId.Value);

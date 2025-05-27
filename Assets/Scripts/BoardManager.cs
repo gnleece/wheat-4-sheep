@@ -11,7 +11,7 @@ using UnityEngine;
 /// 
 /// </summary>
 
-public class BoardManager : MonoBehaviour, IBoard, IGrid
+public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 {
     #region Consts
 

@@ -7,12 +7,12 @@ public class RoadLocationSelectionObject : MonoBehaviour, IInteractable
 {
     private new Renderer renderer;
 
-    private IBoard board;
+    private IBoardManager boardManager;
     private HexEdge hexEdge;
 
-    public void Initialize(IBoard board, HexEdge hexEdge)
+    public void Initialize(IBoardManager boardManager, HexEdge hexEdge)
     {
-        this.board = board;
+        this.boardManager = boardManager;
         this.hexEdge = hexEdge;
 
         renderer = gameObject.GetComponent<Renderer>();
@@ -20,7 +20,7 @@ public class RoadLocationSelectionObject : MonoBehaviour, IInteractable
 
     public void Select()
     {
-        if (board.TrySelectRoadLocation(hexEdge))
+        if (boardManager.TrySelectRoadLocation(hexEdge))
         {
             if (renderer != null)
             {
@@ -38,7 +38,7 @@ public class RoadLocationSelectionObject : MonoBehaviour, IInteractable
 
         if (renderer != null)
         {
-            var currentPlayerId = board.GetCurrentPlayerId();
+            var currentPlayerId = boardManager.GetCurrentPlayerId();
             if (currentPlayerId.HasValue)
             {
                 PlayerColorManager.ApplyColorToRenderer(renderer, currentPlayerId.Value);

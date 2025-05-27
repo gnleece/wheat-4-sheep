@@ -13,7 +13,7 @@ public enum BoardMode
     PlaceRobber,
 }
 
-public interface IBoard
+public interface IBoardManager
 {
     public Task<bool> ClaimBoardForPlayerActionAsync(IPlayer player, BoardMode mode);
 

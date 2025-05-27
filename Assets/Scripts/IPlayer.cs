@@ -8,7 +8,7 @@ public interface IPlayer
 {
     public int PlayerId { get; }
 
-    public void Initialize(int playerId, IBoard board);
+    public void Initialize(int playerId, IBoardManager boardManager);
 
     public Task PlaceFirstSettlementAndRoadAsync();
 

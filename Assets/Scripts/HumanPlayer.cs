@@ -9,25 +9,25 @@ public class HumanPlayer : IPlayer
     public int PlayerId => playerId;
 
     private int playerId;
-    private IBoard board;
+    private IBoardManager boardManager;
 
-    public void Initialize(int playerId, IBoard board)
+    public void Initialize(int playerId, IBoardManager boardManager)
     {
         this.playerId = playerId;
-        this.board = board;
+        this.boardManager = boardManager;
     }
 
     public async Task PlaceFirstSettlementAndRoadAsync()
     {
-        await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildSettlement);
+        await boardManager.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildSettlement);
 
-        await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
+        await boardManager.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
     }
 
     public async Task PlaceSecondSettlementAndRoadAsync()
     {
-        await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildSettlement);
+        await boardManager.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildSettlement);
 
-        await board.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
+        await boardManager.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
     }
 }

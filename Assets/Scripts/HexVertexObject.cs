@@ -12,7 +12,7 @@ public class HexVertexObject : MonoBehaviour
 
     #region Public methods
 
-    public void Initialize(IBoard boardManager, HexVertex hexVertex)
+    public void Initialize(IBoardManager boardManager, HexVertex hexVertex)
     {
         if (selectionObject != null)
         {
