@@ -273,7 +273,8 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
     {
         foreach (var hexVertex in vertexMap.Values)
         {
-            hexVertex.EnableSelection(true);
+            var selectionEnabled = hexVertex.CanHaveBuildings() && !hexVertex.IsOccupied;
+            hexVertex.EnableSelection(selectionEnabled);
         }
     }
 

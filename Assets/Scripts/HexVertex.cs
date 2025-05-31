@@ -53,6 +53,10 @@ public class HexVertex
         }
 
         Building = new Building(type, this, owner);
+        if (VertexObject != null)
+        {
+            VertexObject.Refresh();
+        }
         return true;
     }
 

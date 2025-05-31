@@ -8,6 +8,8 @@ public class HumanPlayer : IPlayer
 {
     public int PlayerId => playerId;
 
+    public Color PlayerColor => PlayerColorManager.GetPlayerColor(playerId);
+
     private int playerId;
     private IBoardManager boardManager;
 

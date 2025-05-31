@@ -47,6 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   selectionObject: {fileID: 398412041165025779}
+  settlementObject: {fileID: 7068263463389442094}
 --- !u!1 &3582802034141128046
 GameObject:
   m_ObjectHideFlags: 0
@@ -56,6 +57,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1621927741438456132}
+  - component: {fileID: 7068263463389442094}
   m_Layer: 0
   m_Name: SettlementObject
   m_TagString: Untagged
@@ -79,6 +81,18 @@ Transform:
   - {fileID: 4320672515474160395}
   m_Father: {fileID: 289715323650132141}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7068263463389442094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3582802034141128046}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0aaba06c95e8c9149b678a968ab3708f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7008259033134808129
 GameObject:
   m_ObjectHideFlags: 0
@@ -258,6 +272,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7635826562936255635, guid: 56218f1284f73094e997b8c3c6cbce42,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
     - target: {fileID: 919132149155446097, guid: 56218f1284f73094e997b8c3c6cbce42,
         type: 3}
       propertyPath: m_Name

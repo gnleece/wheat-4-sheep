@@ -8,6 +8,9 @@ public class HexVertexObject : MonoBehaviour
     [SerializeField]
     private BuildingLocationSelectionObject selectionObject;
 
+    [SerializeField]
+    private SettlementObject settlementObject;
+
     #endregion
 
     #region Private fields
@@ -30,6 +33,14 @@ public class HexVertexObject : MonoBehaviour
         }
 
         EnableSelection(false);
+    }
+
+    public void Refresh()
+    {
+        if (settlementObject != null)
+        {
+            settlementObject.Refresh(hexVertex.Building);
+        }
     }
 
     private void HandleBuildingLocationSelected()

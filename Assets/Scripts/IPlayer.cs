@@ -8,6 +8,8 @@ public interface IPlayer
 {
     public int PlayerId { get; }
 
+    public Color PlayerColor { get; }
+
     public void Initialize(int playerId, IBoardManager boardManager);
 
     public Task PlaceFirstSettlementAndRoadAsync();
