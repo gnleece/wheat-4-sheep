@@ -10,16 +10,34 @@ public class HexVertexObject : MonoBehaviour
 
     #endregion
 
+    #region Private fields
+
+    private IBoardManager boardManager;
+    private HexVertex hexVertex;
+
+    #endregion
+
     #region Public methods
 
     public void Initialize(IBoardManager boardManager, HexVertex hexVertex)
     {
+        this.boardManager = boardManager;
+        this.hexVertex = hexVertex;
         if (selectionObject != null)
         {
-            selectionObject.Initialize(boardManager, hexVertex);
+            selectionObject.Initialize(hexVertex);
+            selectionObject.OnBuildingLocationSelected += HandleBuildingLocationSelected;
         }
 
         EnableSelection(false);
+    }
+
+    private void HandleBuildingLocationSelected()
+    {
+        if (boardManager.TrySelectSettlementLocation(hexVertex))
+        {
+            EnableSelection(false);
+        }
     }
 
     public void EnableSelection(bool enable)
@@ -30,5 +48,14 @@ public class HexVertexObject : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        if (selectionObject != null)
+        {
+            selectionObject.OnBuildingLocationSelected -= HandleBuildingLocationSelected;
+        }
+    }
+
     #endregion
 }
+
