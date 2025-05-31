@@ -29,11 +29,11 @@ public class HexVertex
         return $"Vertex {VertexCoord}";
     }
 
-    public void EnableSelection(bool enable)
+    public void EnableSelection(bool enable, Color? hoverColor = null)
     {
         if (VertexObject != null)
         {
-            VertexObject.EnableSelection(enable);
+            VertexObject.EnableSelection(enable, hoverColor);
         }
     }
 

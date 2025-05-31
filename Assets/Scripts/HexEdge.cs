@@ -28,11 +28,11 @@ public class HexEdge
         return $"Edge {EdgeCoord}";
     }
 
-    public void EnableSelection(bool enable)
+    public void EnableSelection(bool enable, Color? hoverColor = null)
     {
         if (EdgeObject != null)
         {
-            EdgeObject.EnableSelection(enable);
+            EdgeObject.EnableSelection(enable, hoverColor);
         }
     }
 

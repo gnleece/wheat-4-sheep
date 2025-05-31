@@ -113,7 +113,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
         boardStateMachine = new StateMachine<BoardMode>("BoardMode");
 
-        boardStateMachine.AddState(BoardMode.Idle, null, null, null);
+        boardStateMachine.AddState(BoardMode.Idle, OnEnterIdleMode, null, null);
         boardStateMachine.AddState(BoardMode.BuildSettlement, OnEnterSettlementPlacementMode, null, OnExitSettlementPlacementMode);
         boardStateMachine.AddState(BoardMode.BuildRoad, OnEnterRoadPlacementMode, null, OnExitRoadPlacementMode);
 
@@ -270,12 +270,25 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
     #region State machine
 
-    private void OnEnterSettlementPlacementMode()
+    private void OnEnterIdleMode()
     {
         foreach (var hexVertex in vertexMap.Values)
         {
+            hexVertex.EnableSelection(false);
+        }
+        foreach (var hexEdge in edgeMap.Values)
+        {
+            hexEdge.EnableSelection(false);
+        }
+    }
+
+    private void OnEnterSettlementPlacementMode()
+    {
+        var playerColor = currentPlayerActionRequest.Player.PlayerColor;
+        foreach (var hexVertex in vertexMap.Values)
+        {
             var selectionEnabled = hexVertex.CanHaveBuildings() && !hexVertex.IsOccupied;
-            hexVertex.EnableSelection(selectionEnabled);
+            hexVertex.EnableSelection(selectionEnabled, playerColor);
         }
     }
 
@@ -289,10 +302,11 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
     private void OnEnterRoadPlacementMode()
     {
+        var playerColor = currentPlayerActionRequest.Player.PlayerColor;
         foreach (var hexEdge in edgeMap.Values)
         {
             var selectionEnabled = hexEdge.CanHaveRoads() && !hexEdge.IsOccupied;
-            hexEdge.EnableSelection(selectionEnabled);
+            hexEdge.EnableSelection(selectionEnabled, playerColor);
         }
     }
 

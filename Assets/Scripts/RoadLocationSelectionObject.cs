@@ -8,6 +8,7 @@ public class RoadLocationSelectionObject : MonoBehaviour, IInteractable
 {
     private new Renderer renderer;
     private HexEdge hexEdge;
+    private Color hoverColor = Color.yellow;
 
     public event Action OnRoadLocationSelected;
 
@@ -15,6 +16,11 @@ public class RoadLocationSelectionObject : MonoBehaviour, IInteractable
     {
         this.hexEdge = hexEdge;
         renderer = gameObject.GetComponent<Renderer>();
+    }
+
+    public void SetHoverColor(Color color)
+    {
+        hoverColor = color;
     }
 
     public void Select()
@@ -31,7 +37,7 @@ public class RoadLocationSelectionObject : MonoBehaviour, IInteractable
 
         if (renderer != null)
         {
-            renderer.material.color = Color.yellow;
+            renderer.material.color = hoverColor;
         }
     }
 

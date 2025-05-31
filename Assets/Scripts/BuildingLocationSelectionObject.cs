@@ -8,6 +8,7 @@ public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 {
     private new Renderer renderer;
     private HexVertex hexVertex;
+    private Color hoverColor = Color.yellow;
 
     public event Action OnBuildingLocationSelected;
 
@@ -15,6 +16,11 @@ public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
     {
         this.hexVertex = hexVertex;
         renderer = gameObject.GetComponent<Renderer>();
+    }
+
+    public void SetHoverColor(Color color)
+    {
+        hoverColor = color;
     }
 
     public void Select()
@@ -31,7 +37,7 @@ public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 
         if (renderer != null)
         {
-            renderer.material.color = Color.yellow;
+            renderer.material.color = hoverColor;
         }
     }
 

@@ -51,11 +51,15 @@ public class HexVertexObject : MonoBehaviour
         }
     }
 
-    public void EnableSelection(bool enable)
+    public void EnableSelection(bool enable, Color? hoverColor = null)
     {
         if (selectionObject != null)
         {
             selectionObject.gameObject.SetActive(enable);
+            if (enable && hoverColor.HasValue)
+            {
+                selectionObject.SetHoverColor(hoverColor.Value);
+            }
         }
     }
 
