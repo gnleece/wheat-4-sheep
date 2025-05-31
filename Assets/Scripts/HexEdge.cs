@@ -6,7 +6,9 @@ public class HexEdge
 {
     public EdgeCoord EdgeCoord { get; private set; }
 
-    public GameObject SelectionObject { get; set; }
+    public RoadLocationSelectionObject SelectionObject { get; set; }
+
+    public HexEdgeObject EdgeObject { get; set; }
 
     public Road Road { get; private set; }
 
@@ -28,13 +30,13 @@ public class HexEdge
 
     public void EnableSelection(bool enable)
     {
-        if (SelectionObject != null)
+        if (EdgeObject != null)
         {
-            SelectionObject.SetActive(enable);
+            EdgeObject.EnableSelection(enable);
         }
     }
 
-    public bool PlaceRoad(IPlayer owner)
+    public bool TryPlaceRoad(IPlayer owner)
     {
         if (IsOccupied || owner == null)
         {

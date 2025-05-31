@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 /// <summary>
 /// Manages the state of the board.
@@ -213,7 +214,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
         Debug.Log($"Trying to place road at {hexEdge}");
 
-        var success = hexEdge.PlaceRoad(currentPlayerActionRequest.Player);
+        var success = hexEdge.TryPlaceRoad(currentPlayerActionRequest.Player);
         if (success)
         {
             currentPlayerActionRequest.Success = success;
@@ -290,7 +291,8 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
     {
         foreach (var hexEdge in edgeMap.Values)
         {
-            hexEdge.EnableSelection(true);
+            var selectionEnabled = hexEdge.CanHaveRoads() && !hexEdge.IsOccupied;
+            hexEdge.EnableSelection(selectionEnabled);
         }
     }
 
@@ -435,7 +437,11 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
                 }
 
                 var edgeObject = Instantiate(HexEdgePrefab, Vector3.zero, Quaternion.identity);
-                switch(edge.EdgeCoord.Orientation)
+
+                edge.EdgeObject = edgeObject.GetComponent<HexEdgeObject>();
+                edge.EdgeObject.Initialize(this, edge);
+
+                switch (edge.EdgeCoord.Orientation)
                 {
                     case EdgeOrientation.West:
                         edgeObject.transform.parent = hex.TileObject.WestEdgeTransform;
@@ -453,12 +459,6 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
                 edgeObject.transform.localPosition = Vector3.zero;
                 edgeObject.transform.localRotation = Quaternion.identity;
-                edge.SelectionObject = edgeObject;
-
-                var roadLocation = edgeObject.GetComponentInChildren<RoadLocationSelectionObject>();
-                roadLocation.Initialize(this, edge);
-
-                edgeObject.SetActive(false);
             }
             else
             {

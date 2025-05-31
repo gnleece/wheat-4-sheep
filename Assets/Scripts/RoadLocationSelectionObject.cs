@@ -1,4 +1,5 @@
 using Grid;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,27 +7,19 @@ using UnityEngine;
 public class RoadLocationSelectionObject : MonoBehaviour, IInteractable
 {
     private new Renderer renderer;
-
-    private IBoardManager boardManager;
     private HexEdge hexEdge;
 
-    public void Initialize(IBoardManager boardManager, HexEdge hexEdge)
-    {
-        this.boardManager = boardManager;
-        this.hexEdge = hexEdge;
+    public event Action OnRoadLocationSelected;
 
+    public void Initialize(HexEdge hexEdge)
+    {
+        this.hexEdge = hexEdge;
         renderer = gameObject.GetComponent<Renderer>();
     }
 
     public void Select()
     {
-        if (boardManager.TrySelectRoadLocation(hexEdge))
-        {
-            if (renderer != null)
-            {
-                PlayerColorManager.ApplyColorToRenderer(renderer, hexEdge.Road.Owner.PlayerId);
-            }
-        }
+        OnRoadLocationSelected?.Invoke();
     }
 
     public void HoverOn()
@@ -38,15 +31,7 @@ public class RoadLocationSelectionObject : MonoBehaviour, IInteractable
 
         if (renderer != null)
         {
-            var currentPlayerId = boardManager.GetCurrentPlayerId();
-            if (currentPlayerId.HasValue)
-            {
-                PlayerColorManager.ApplyColorToRenderer(renderer, currentPlayerId.Value);
-            }
-            else
-            {
-                renderer.material.color = Color.red;
-            }
+            renderer.material.color = Color.yellow;
         }
     }
 
