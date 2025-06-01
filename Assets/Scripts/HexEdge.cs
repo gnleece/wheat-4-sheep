@@ -83,6 +83,53 @@ public class HexEdge
         return false;
     }
 
+    public bool AvailableForBuilding(IPlayer player, HexVertex requiredNeighborVertex = null)
+    {
+        if (!CanHaveRoads())
+        {
+            return false;
+        }
+
+        if (IsOccupied)
+        {
+            return false;
+        }
+
+        if (requiredNeighborVertex != null)
+        {
+            // Check if edge is connected to the required neighbor vertex
+            foreach (var vertex in neighborVertices)
+            {
+                if (vertex == requiredNeighborVertex)
+                {
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            // Check if edge is connected to a building owned by the player
+            foreach (var vertex in neighborVertices)
+            {
+                if (vertex.IsOccupied && vertex.Owner == player)
+                {
+                    return true;
+                }
+            }
+
+            // Check if edge is connected to a road owned by the player
+            foreach (var edge in neighborEdges)
+            {
+                if (edge.IsOccupied && edge.Road.Owner == player)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public void InitializeNeighbors(IGrid grid)
     {
         neighborHexes = new List<HexTile>();

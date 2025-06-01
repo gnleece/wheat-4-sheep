@@ -285,9 +285,10 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
     private void OnEnterSettlementPlacementMode()
     {
         var playerColor = currentPlayerActionRequest.Player.PlayerColor;
+        var mustConnectToRoad = false; // TODO: Get this from game state
         foreach (var hexVertex in vertexMap.Values)
         {
-            var selectionEnabled = hexVertex.CanHaveBuildings() && !hexVertex.IsOccupied;
+            var selectionEnabled = hexVertex.AvailableForBuilding(currentPlayerActionRequest.Player, mustConnectToRoad);
             hexVertex.EnableSelection(selectionEnabled, playerColor);
         }
     }
@@ -305,7 +306,8 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         var playerColor = currentPlayerActionRequest.Player.PlayerColor;
         foreach (var hexEdge in edgeMap.Values)
         {
-            var selectionEnabled = hexEdge.CanHaveRoads() && !hexEdge.IsOccupied;
+            // TODO: During initial placement, second road must connect to the second settlement
+            var selectionEnabled = hexEdge.AvailableForBuilding(currentPlayerActionRequest.Player);
             hexEdge.EnableSelection(selectionEnabled, playerColor);
         }
     }

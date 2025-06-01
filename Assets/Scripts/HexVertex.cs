@@ -68,6 +68,7 @@ public class HexVertex
             return false;
         }
 
+        // Check if vertex is on a valid hex tile
         foreach (var hex in neighborHexes)
         {
             if (hex.CanHaveBuildingsAndRoads)
@@ -77,6 +78,44 @@ public class HexVertex
         }
 
         return false;
+    }
+
+    public bool AvailableForBuilding(IPlayer player, bool mustConnectToRoad)
+    {
+        if (!CanHaveBuildings())
+        {
+            return false;
+        }
+
+        // Check if vertex is already occupied
+        if (IsOccupied)
+        {
+            return false;
+        }
+
+        // Check distance rule - no adjacent vertices can be occupied
+        foreach (var neighbor in neighborVertices)
+        {
+            if (neighbor.IsOccupied)
+            {
+                return false;
+            }
+        }
+
+        if (mustConnectToRoad)
+        {
+            // Check if vertex is connected to a road owned by the player
+            foreach (var edge in neighborEdges)
+            {
+                if (edge.IsOccupied && edge.Road.Owner == player)
+                {
+                    break;
+                }
+            }
+            return false;
+        }
+
+        return true;
     }
 
     public void InitializeNeighbors(IGrid grid)
