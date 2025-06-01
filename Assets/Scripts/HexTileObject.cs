@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Grid;
+using UnityEngine.UI;
 
 public class HexTileObject : MonoBehaviour
 {
@@ -41,8 +43,49 @@ public class HexTileObject : MonoBehaviour
 
     #endregion
 
-    public void SetDebugText(string text)
+    #region Private fields
+
+    private HexTile hexTile;
+
+    #endregion
+
+    public void Initialize(HexTile hexTile, int? diceNumber)
     {
-        debugText.text = text;
+        this.hexTile = hexTile;
+        this.DiceNumber = diceNumber;
+        RefreshDebugText();
+    }
+
+    private void OnEnable()
+    {
+        if (DebugSettings.Instance != null)
+        {
+            DebugSettings.Instance.OnSettingsChanged += RefreshDebugText;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (DebugSettings.Instance != null)
+        {
+            DebugSettings.Instance.OnSettingsChanged -= RefreshDebugText;
+        }
+    }
+
+    public void RefreshDebugText()
+    {
+        if (debugText != null && hexTile != null)
+        {
+            var text = "";
+            if (DebugSettings.Instance.ShowHexCoordinates)
+            {
+                text += $"{hexTile.HexCoordinates}\n";
+            }
+            if (DiceNumber.HasValue)
+            {
+                text += $"{DiceNumber}";
+            }
+            debugText.text = text;
+        }
     }
 }

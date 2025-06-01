@@ -14,12 +14,4 @@ public class HexTile
         HexCoordinates = coord;
         CanHaveBuildingsAndRoads = isValidForBuilding;
     }
-
-    public void SetDebugText(string text)
-    {
-        if (TileObject != null)
-        {
-            TileObject.SetDebugText(text);
-        }
-    }
 }

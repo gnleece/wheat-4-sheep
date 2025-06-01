@@ -1,0 +1,7 @@
+Cursor notes
+
+5/31/25 Using player color as hover color for selection objects
+
+5/31/25 Adding unity editor window for debug settings
+- Worked pretty well - got the editor window working first try 
+- Incorrectly did GetComponent for HexTile which isn't a monobehavior

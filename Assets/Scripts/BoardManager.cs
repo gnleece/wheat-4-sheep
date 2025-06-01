@@ -395,9 +395,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
             var tileObject = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
             var tileObjectComponent = tileObject.GetComponent<HexTileObject>();
             hex.TileObject = tileObjectComponent;
-
-            tileObjectComponent.DiceNumber = diceNumber;
-            tileObjectComponent.SetDebugText($"{hex.HexCoordinates}\n{diceNumber}");
+            tileObjectComponent.Initialize(hex, diceNumber);
         }
 
         // Spawn vertex objects and initialize neighbors
