@@ -98,6 +98,9 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
     private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
     private Dictionary<EdgeCoord, HexEdge> edgeMap = new Dictionary<EdgeCoord, HexEdge>();
 
+    // Add player resource hands
+    private Dictionary<IPlayer, ResourceHand> playerResourceHands = new Dictionary<IPlayer, ResourceHand>();
+
     private StateMachine<BoardMode> boardStateMachine;
 
     private PlayerActionRequest currentPlayerActionRequest = null;
@@ -236,6 +239,16 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
             return null;
         }
         return currentPlayerActionRequest.Player.PlayerId;
+    }
+
+    // Call this before StartNewGame to set up player resource hands
+    public void InitializePlayerResourceHands(IEnumerable<IPlayer> players)
+    {
+        playerResourceHands.Clear();
+        foreach (var player in players)
+        {
+            playerResourceHands[player] = new ResourceHand();
+        }
     }
 
     #endregion
@@ -540,4 +553,25 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         Util.Shuffle(diceNumbers);
         return diceNumbers;
     }
+
+    #region Debugging
+
+    // Returns a string with the current resource hands of each player for debugging
+    public string GetAllPlayerResourceHandsDebugString()
+    {
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        foreach (var kvp in playerResourceHands)
+        {
+            var player = kvp.Key;
+            var hand = kvp.Value;
+            sb.AppendLine($"Player {player.PlayerId}:");
+            foreach (var resourceKvp in hand.GetAll())
+            {
+                sb.AppendLine($"  {resourceKvp.Key}: {resourceKvp.Value}");
+            }
+        }
+        return sb.ToString();
+    }
+
+    #endregion
 }

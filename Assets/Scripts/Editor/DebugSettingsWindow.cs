@@ -71,5 +71,19 @@ public class DebugSettingsWindow : EditorWindow
                 tile.RefreshDebugText();
             }
         }
+
+        EditorGUILayout.Space(10);
+        if (GUILayout.Button("Print Player Resource Hands"))
+        {
+            var boardManager = Object.FindFirstObjectByType<BoardManager>();
+            if (boardManager != null)
+            {
+                Debug.Log(boardManager.GetAllPlayerResourceHandsDebugString());
+            }
+            else
+            {
+                Debug.LogWarning("BoardManager not found in scene.");
+            }
+        }
     }
 } 

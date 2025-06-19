@@ -61,8 +61,8 @@ public class GameManager : MonoBehaviour
 
         gameStateMachine.AddState(GameState.PlayerSetup, OnEnterPlayerSetup, OnUpdatePlayerSetup, OnExitPlayerSetup);
         gameStateMachine.AddState(GameState.BoardSetup, OnEnterBoardSetup, OnUpdateBoardSetup, OnExitBoardSetup);
-        gameStateMachine.AddState(GameState.InitialPlacement, OnEnterInitialPlacment, OnUpdateInitialPlacement, OnExitInitialPlacement);
-        gameStateMachine.AddState(GameState.Playing, null, null, null);
+        gameStateMachine.AddState(GameState.InitialPlacement, OnEnterInitialPlacement, OnUpdateInitialPlacement, OnExitInitialPlacement);
+        gameStateMachine.AddState(GameState.Playing, OnEnterPlaying, OnUpdatePlaying, OnExitPlaying);
         gameStateMachine.AddState(GameState.GameOver, null, null, null);
 
         gameStateMachine.GoToState(GameState.PlayerSetup);
@@ -100,6 +100,8 @@ public class GameManager : MonoBehaviour
             playerList.Add(player);
         }
 
+        boardManager.InitializePlayerResourceHands(playerList);
+
         ClearHudText();
     }
 
@@ -136,7 +138,7 @@ public class GameManager : MonoBehaviour
 
     private Task placementTask;
 
-    private void OnEnterInitialPlacment()
+    private void OnEnterInitialPlacement()
     {
         placementTask = RunInitialPlacement();
     }
@@ -171,6 +173,25 @@ public class GameManager : MonoBehaviour
 
             await player.PlaceSecondSettlementAndRoadAsync();
         }
+    }
+
+    #endregion
+
+    #region Playing
+
+    private void OnEnterPlaying()
+    {
+        
+    }
+
+    private void OnUpdatePlaying()
+    {
+
+    }
+
+    private void OnExitPlaying()
+    {
+
     }
 
     #endregion
