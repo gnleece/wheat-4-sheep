@@ -6,12 +6,13 @@ using UnityEngine;
 /// <summary>
 /// Main controller that manages game state and player setup.
 /// </summary>
-public class GameManager : MonoBehaviour
+public class GameManager : MonoBehaviour, IGameManager
 {
     #region Enums
 
-    private enum GameState
+    public enum GameState
     {
+        None,
         PlayerSetup,
         BoardSetup,
         InitialPlacement,
@@ -35,6 +36,8 @@ public class GameManager : MonoBehaviour
 
     private int playerCount = 0;
     private List<IPlayer> playerList = new List<IPlayer>();
+
+    public GameState CurrentGameState => gameStateMachine != null ? gameStateMachine.CurrentState : GameState.None;
 
     private void Start()
     {
@@ -111,7 +114,7 @@ public class GameManager : MonoBehaviour
 
     private void OnEnterBoardSetup()
     {
-        boardManager.StartNewGame();
+        boardManager.StartNewGame(this);
         SetHudText("Press 1 to accept board, press 2 to reset");
     }
 
@@ -123,7 +126,7 @@ public class GameManager : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            boardManager.StartNewGame();
+            boardManager.StartNewGame(this);
         }
     }
 

@@ -94,14 +94,15 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
     #region Private members
 
+    private IGameManager gameManager;
+
+    private StateMachine<BoardMode> boardStateMachine;
+
     private Dictionary<HexCoord, HexTile> hexMap = new Dictionary<HexCoord, HexTile>();
     private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
     private Dictionary<EdgeCoord, HexEdge> edgeMap = new Dictionary<EdgeCoord, HexEdge>();
 
-    // Add player resource hands
     private Dictionary<IPlayer, ResourceHand> playerResourceHands = new Dictionary<IPlayer, ResourceHand>();
-
-    private StateMachine<BoardMode> boardStateMachine;
 
     private PlayerActionRequest currentPlayerActionRequest = null;
 
@@ -109,8 +110,15 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
     #region Public methods
 
-    public void StartNewGame()
+    public void StartNewGame(IGameManager gameManager)
     {
+        if (gameManager == null)
+        {
+            Debug.LogError("Game manager cannot be null");
+            return;
+        }
+        this.gameManager = gameManager;
+
         ClearBoard();
         InitializeBoard(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
 
@@ -249,6 +257,16 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         {
             playerResourceHands[player] = new ResourceHand();
         }
+    }
+
+    // Returns a copy of the resource hand for the given player, or null if not found
+    public Dictionary<ResourceType, int> GetResourceHandForPlayer(IPlayer player)
+    {
+        if (playerResourceHands.TryGetValue(player, out var hand))
+        {
+            return hand.GetAll(); // returns a copy
+        }
+        return null;
     }
 
     #endregion
