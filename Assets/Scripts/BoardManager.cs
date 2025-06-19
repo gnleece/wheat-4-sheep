@@ -49,6 +49,12 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         public override string ToString() => $"Player {Player.PlayerId}, Mode {Mode}, State {State}";
     }
 
+    private class PlayerTurn
+    {
+        public IPlayer Player;
+        public int? DiceRoll = null;
+    }
+
     #endregion
 
     #region Serialized fields
@@ -86,7 +92,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
     #region Properties
 
-    public IReadOnlyDictionary<HexCoord, HexTile> HexMap => hexMap;
+    public IReadOnlyDictionary<HexCoord, HexTile> HexMap => hexTileMap;
     public IReadOnlyDictionary<VertexCoord, HexVertex> VertexMap => vertexMap;
     public IReadOnlyDictionary<EdgeCoord, HexEdge> EdgeMap => edgeMap;
 
@@ -94,16 +100,19 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
     #region Private members
 
+    private System.Random random = new System.Random();   // TODO: use a single global random instance that can be seeded
+
     private IGameManager gameManager;
 
     private StateMachine<BoardMode> boardStateMachine;
 
-    private Dictionary<HexCoord, HexTile> hexMap = new Dictionary<HexCoord, HexTile>();
+    private Dictionary<HexCoord, HexTile> hexTileMap = new Dictionary<HexCoord, HexTile>();
     private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
     private Dictionary<EdgeCoord, HexEdge> edgeMap = new Dictionary<EdgeCoord, HexEdge>();
 
     private Dictionary<IPlayer, ResourceHand> playerResourceHands = new Dictionary<IPlayer, ResourceHand>();
 
+    private PlayerTurn currentPlayerTurn = null;
     private PlayerActionRequest currentPlayerActionRequest = null;
 
     #endregion
@@ -133,6 +142,8 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
     public async Task<bool> ClaimBoardForPlayerActionAsync(IPlayer player, BoardMode mode)
     {
+        // TODO: check if the player has already started a turn
+
         var actionRequest = new PlayerActionRequest(player, mode);
 
         if (currentPlayerActionRequest != null)
@@ -293,6 +304,97 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         return null;
     }
 
+    public bool BeginPlayerTurn(IPlayer player)
+    {
+        if (player == null || !playerResourceHands.ContainsKey(player))
+        {
+            Debug.LogError("Cannot begin player turn: player is null or not initialized");
+            return false;
+        }
+
+        if (currentPlayerTurn != null)
+        {
+            Debug.LogError($"Cannot begin player turn: a player turn is already in progress for player {currentPlayerTurn.Player.PlayerId}");
+            return false;
+        }
+
+        // TODO: confirm that the board is in a valid state for the turn to begin
+
+        currentPlayerTurn = new PlayerTurn { Player = player };
+
+        Debug.Log($"Player {player.PlayerId} turn started");
+        return true;
+    }
+
+    public bool EndPlayerTurn(IPlayer player)
+    {
+        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        {
+            Debug.LogError($"Cannot end player turn: no player turn in progress for player {player.PlayerId}");
+            return false;
+        }
+
+        if (currentPlayerTurn.DiceRoll == null)
+        {
+            Debug.LogError($"Cannot end player turn: dice roll is not set for player {player.PlayerId}");
+            return false;
+        }
+
+        Debug.Log($"Player {player.PlayerId} turn ended");
+        currentPlayerTurn = null;
+        return true;
+    }
+
+    public async Task<int?> RollDice(IPlayer player)
+    {
+        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        {
+            Debug.LogError($"Cannot roll dice: no player turn in progress for player {player.PlayerId}");
+            return null;
+        }
+
+        var dieA = random.Next(1, 7);
+        var dieB = random.Next(1, 7);
+        var diceRoll = dieA + dieB;
+        
+        currentPlayerTurn.DiceRoll = diceRoll;
+        Debug.Log($"Player {player.PlayerId} rolled a {diceRoll} ({dieA} + {dieB})");
+
+        // Award resources to players who have tiles with the same dice roll
+        foreach (var hexTile in hexTileMap.Values)
+        {
+            if (hexTile.DiceNumber == diceRoll)
+            {
+                GiveAllPlayersResourcesForHexTile(hexTile);
+            }
+        }
+
+        // TODO: if the roll is 7, force players with more than 7 cards to discard
+        // TODO: if the roll is 7, have the current player move the robber
+
+        await Task.Delay(10); // Simulate some delay as stub for missing todos above
+
+        return diceRoll;
+    }
+
+    private void GiveAllPlayersResourcesForHexTile(HexTile hexTile)
+    {
+        if (hexTile == null) return;
+        var resourceType = hexTile.ResourceType;
+        if (resourceType == ResourceType.None) return;
+
+        foreach (var vertex in hexTile.NeighborVertices)
+        {
+            if (vertex == null || vertex.Building == null || vertex.Owner == null) continue;
+            if (!playerResourceHands.TryGetValue(vertex.Owner, out var hand)) continue;
+
+            int amount = vertex.Building.Type == Building.BuildingType.City ? 2 : 1;
+            hand.Add(resourceType, amount);
+
+            Debug.Log($"Player {vertex.Owner.PlayerId} awarded {amount} {resourceType} from hex {hexTile.HexCoordinates}");
+        }
+    }
+
     #endregion
 
     #region Unity lifecycle
@@ -390,7 +492,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
                     var coord = new HexCoord(q, r);
                     var isValidForBuilding = coord.Ring <= shuffleableGridSize;
                     var hexTile = new HexTile(coord, isValidForBuilding);
-                    hexMap.Add(coord, hexTile);
+                    hexTileMap.Add(coord, hexTile);
 
                     // Verts
                     var northVertexCoord = new VertexCoord(coord, VertexOrientation.North);
@@ -424,7 +526,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         var shuffledTileCount = 0;
         var shuffledDiceNumbers = GetShuffledTileDiceNumbers();
         var shuffledDiceNumbersCount = 0;
-        foreach (var hex in hexMap.Values)
+        foreach (var hex in hexTileMap.Values)
         {
             var offsetCoord = GridHelpers.AxialHexToOffsetCoord(hex.HexCoordinates);
             
@@ -458,7 +560,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         // Spawn vertex objects and initialize neighbors
         foreach (var vertex in vertexMap.Values)
         {
-            if (hexMap.TryGetValue(vertex.VertexCoord.HexCoord, out var hex))
+            if (hexTileMap.TryGetValue(vertex.VertexCoord.HexCoord, out var hex))
             {
                 vertex.InitializeNeighbors(this);
 
@@ -493,10 +595,16 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
             }
         }
 
+        // After all vertices are initialized, initialize hex tile neighbors
+        foreach (var hexTile in hexTileMap.Values)
+        {
+            hexTile.InitializeNeighbors(this);
+        }
+
         // Spawn edge objects
         foreach (var edge in edgeMap.Values)
         {
-            if (hexMap.TryGetValue(edge.EdgeCoord.HexCoord, out var hex))
+            if (hexTileMap.TryGetValue(edge.EdgeCoord.HexCoord, out var hex))
             {
                 edge.InitializeNeighbors(this);
 
@@ -540,11 +648,11 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
     {
         currentPlayerActionRequest = null;
 
-        foreach (var tile in hexMap.Values)
+        foreach (var tile in hexTileMap.Values)
         {
             Destroy(tile.TileObject.gameObject);
         }
-        hexMap.Clear();
+        hexTileMap.Clear();
 
         foreach (var vertex in vertexMap.Values)
         {

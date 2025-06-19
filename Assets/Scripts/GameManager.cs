@@ -211,19 +211,37 @@ public class GameManager : MonoBehaviour, IGameManager
 
     #region Playing
 
+    Task playingTask = null;
+
     private void OnEnterPlaying()
     {
-        
+        playingTask = RunPlaying();
     }
 
     private void OnUpdatePlaying()
     {
-
+        if (playingTask != null && playingTask.IsCompleted)
+        {
+            playingTask = null; // Clear the task reference
+            gameStateMachine.GoToState(GameState.GameOver);
+        }
     }
 
     private void OnExitPlaying()
     {
+        ClearHudText();
+    }
 
+    private async Task RunPlaying()
+    {
+        while (true)
+        {
+            foreach (var player in playerList)
+            {
+                SetHudText($"Player {player.PlayerId} turn");
+                await player.PlayTurnAsync();
+            }
+        }
     }
 
     #endregion

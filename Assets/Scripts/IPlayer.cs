@@ -15,4 +15,6 @@ public interface IPlayer
     public Task PlaceFirstSettlementAndRoadAsync();
 
     public Task PlaceSecondSettlementAndRoadAsync();
+
+    public Task PlayTurnAsync();
 }

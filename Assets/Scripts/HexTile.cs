@@ -1,5 +1,7 @@
 using Grid;
 using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
 
 public class HexTile
 {
@@ -8,6 +10,9 @@ public class HexTile
     public int Ring => HexCoordinates.Ring;
 
     public HexTileObject TileObject { get; set; }
+
+    private List<HexVertex> neighborVertices = new List<HexVertex>();
+    public IReadOnlyList<HexVertex> NeighborVertices => neighborVertices;
 
     public HexTile(HexCoord coord, bool isValidForBuilding)
     {
@@ -28,6 +33,20 @@ public class HexTile
                 case TileType.Wheat: return ResourceType.Wheat;
                 case TileType.Ore: return ResourceType.Ore;
                 default: return ResourceType.None;
+            }
+        }
+    }
+
+    public int? DiceNumber => TileObject?.DiceNumber;
+
+    public void InitializeNeighbors(IGrid grid)
+    {
+        neighborVertices = new List<HexVertex>();
+        foreach (var vertex in grid.VertexMap.Values)
+        {
+            if (vertex.NeighborHexTiles.Any(h => h.HexCoordinates.Equals(this.HexCoordinates)))
+            {
+                neighborVertices.Add(vertex);
             }
         }
     }
