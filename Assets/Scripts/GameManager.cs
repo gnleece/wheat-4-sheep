@@ -15,7 +15,8 @@ public class GameManager : MonoBehaviour, IGameManager
         None,
         PlayerSetup,
         BoardSetup,
-        InitialPlacement,
+        FirstSettlementPlacement,
+        SecondSettlementPlacement,
         Playing,
         GameOver
     }
@@ -64,7 +65,8 @@ public class GameManager : MonoBehaviour, IGameManager
 
         gameStateMachine.AddState(GameState.PlayerSetup, OnEnterPlayerSetup, OnUpdatePlayerSetup, OnExitPlayerSetup);
         gameStateMachine.AddState(GameState.BoardSetup, OnEnterBoardSetup, OnUpdateBoardSetup, OnExitBoardSetup);
-        gameStateMachine.AddState(GameState.InitialPlacement, OnEnterInitialPlacement, OnUpdateInitialPlacement, OnExitInitialPlacement);
+        gameStateMachine.AddState(GameState.FirstSettlementPlacement, OnEnterFirstSettlementPlacement, OnUpdateFirstSettlementPlacement, OnExitFirstSettlementPlacement);
+        gameStateMachine.AddState(GameState.SecondSettlementPlacement, OnEnterSecondSettlementPlacement, OnUpdateSecondSettlementPlacement, OnExitSecondSettlementPlacement);
         gameStateMachine.AddState(GameState.Playing, OnEnterPlaying, OnUpdatePlaying, OnExitPlaying);
         gameStateMachine.AddState(GameState.GameOver, null, null, null);
 
@@ -122,7 +124,7 @@ public class GameManager : MonoBehaviour, IGameManager
     {
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            gameStateMachine.GoToState(GameState.InitialPlacement);
+            gameStateMachine.GoToState(GameState.FirstSettlementPlacement);
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
@@ -137,29 +139,30 @@ public class GameManager : MonoBehaviour, IGameManager
 
     #endregion
 
-    #region Initial Placement
+    #region First Settlement Placement
 
     private Task placementTask;
 
-    private void OnEnterInitialPlacement()
+    private void OnEnterFirstSettlementPlacement()
     {
-        placementTask = RunInitialPlacement();
+        placementTask = RunFirstSettlementPlacement();
     }
 
-    private void OnUpdateInitialPlacement()
+    private void OnUpdateFirstSettlementPlacement()
     {
         if (placementTask != null && placementTask.IsCompleted)
         {
-            gameStateMachine.GoToState(GameState.Playing);
+            placementTask = null; // Clear the task reference
+            gameStateMachine.GoToState(GameState.SecondSettlementPlacement);
         }
     }
 
-    private void OnExitInitialPlacement()
+    private void OnExitFirstSettlementPlacement()
     {
         ClearHudText();
     }
 
-    private async Task RunInitialPlacement()
+    private async Task RunFirstSettlementPlacement()
     {
         foreach (var player in playerList)
         {
@@ -167,7 +170,33 @@ public class GameManager : MonoBehaviour, IGameManager
 
             await player.PlaceFirstSettlementAndRoadAsync();
         }
+    }
 
+    #endregion
+
+    #region Second Settlement Placement
+
+    private void OnEnterSecondSettlementPlacement()
+    {
+        placementTask = RunSecondSettlementPlacement();
+    }
+
+    private void OnUpdateSecondSettlementPlacement()
+    {
+        if (placementTask != null && placementTask.IsCompleted)
+        {
+            placementTask = null; // Clear the task reference
+            gameStateMachine.GoToState(GameState.Playing);
+        }
+    }
+
+    private void OnExitSecondSettlementPlacement()
+    {
+        ClearHudText();
+    }
+
+    private async Task RunSecondSettlementPlacement()
+    {
         for (int i = playerCount - 1; i >= 0; i--)
         {
             var player = playerList[i];
