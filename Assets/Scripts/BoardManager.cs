@@ -192,6 +192,12 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         var success = hexVertex.TryPlaceBuilding(Building.BuildingType.Settlement, currentPlayerActionRequest.Player);
         if (success)
         {
+            // If this is the second settlement during initial game setup, give the player resources from each of the adjacent hex tiles
+            if (gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement)
+            {
+                GivePlayerResourcesForNeighborHexTiles(currentPlayerActionRequest.Player, hexVertex);
+            }
+
             Debug.Log($"PLACED SETTLEMENT: {hexVertex}");
             currentPlayerActionRequest.Success = success;
             currentPlayerActionRequest.State = PlayerActionRequest.RequestState.Complete;
@@ -202,6 +208,24 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         }
 
         return success;
+    }
+
+    private void GivePlayerResourcesForNeighborHexTiles(IPlayer player, HexVertex hexVertex)
+    {
+        if (player == null || hexVertex == null) return;
+        if (!playerResourceHands.TryGetValue(player, out var hand)) return;
+        if (hexVertex.Building == null) return;
+
+        int amount = hexVertex.Building.Type == Building.BuildingType.City ? 2 : 1;
+
+        foreach (var hex in hexVertex.NeighborHexTiles)
+        {
+            var resourceType = hex.ResourceType;
+            if (resourceType != ResourceType.None)
+            {
+                hand.Add(resourceType, amount);
+            }
+        }
     }
 
     public bool TrySelectRoadLocation(HexEdge hexEdge)

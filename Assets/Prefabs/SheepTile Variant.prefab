@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 594723812895058384, guid: fb910190580e2cb4aa0fb51632ca2adb,
@@ -65,12 +66,20 @@ PrefabInstance:
     - target: {fileID: 6393153745293525936, guid: fb910190580e2cb4aa0fb51632ca2adb,
         type: 3}
       propertyPath: m_Name
-      value: SheepTile
+      value: SheepTile Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 7259177731705854806, guid: fb910190580e2cb4aa0fb51632ca2adb,
+        type: 3}
+      propertyPath: tileType
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7381787750366333458, guid: fb910190580e2cb4aa0fb51632ca2adb,
         type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: d4f9ca31371f86d4abaa39450a681ec2, type: 2}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fb910190580e2cb4aa0fb51632ca2adb, type: 3}

@@ -14,4 +14,21 @@ public class HexTile
         HexCoordinates = coord;
         CanHaveBuildingsAndRoads = isValidForBuilding;
     }
+
+    public ResourceType ResourceType
+    {
+        get
+        {
+            if (TileObject == null) return ResourceType.None;
+            switch (TileObject.TileType)
+            {
+                case TileType.Wood: return ResourceType.Wood;
+                case TileType.Clay: return ResourceType.Clay;
+                case TileType.Sheep: return ResourceType.Sheep;
+                case TileType.Wheat: return ResourceType.Wheat;
+                case TileType.Ore: return ResourceType.Ore;
+                default: return ResourceType.None;
+            }
+        }
+    }
 }
