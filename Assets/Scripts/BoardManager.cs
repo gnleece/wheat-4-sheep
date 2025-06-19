@@ -52,7 +52,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
     private class PlayerTurn
     {
         public IPlayer Player;
-        public int? DiceRoll = null;
+        public bool HasRolledDice = false;
     }
 
     #endregion
@@ -334,7 +334,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
             return false;
         }
 
-        if (currentPlayerTurn.DiceRoll == null)
+        if (!currentPlayerTurn.HasRolledDice)
         {
             Debug.LogError($"Cannot end player turn: dice roll is not set for player {player.PlayerId}");
             return false;
@@ -353,11 +353,16 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
             return null;
         }
 
+        if (currentPlayerTurn.HasRolledDice)
+        {
+            Debug.LogError($"Cannot roll dice: player {player.PlayerId} has already rolled this turn");
+            return null;
+        }
+
         var dieA = random.Next(1, 7);
         var dieB = random.Next(1, 7);
         var diceRoll = dieA + dieB;
-        
-        currentPlayerTurn.DiceRoll = diceRoll;
+
         Debug.Log($"Player {player.PlayerId} rolled a {diceRoll} ({dieA} + {dieB})");
 
         // Award resources to players who have tiles with the same dice roll
@@ -373,6 +378,8 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         // TODO: if the roll is 7, have the current player move the robber
 
         await Task.Delay(10); // Simulate some delay as stub for missing todos above
+
+        currentPlayerTurn.HasRolledDice = true;
 
         return diceRoll;
     }
@@ -650,19 +657,28 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
         foreach (var tile in hexTileMap.Values)
         {
-            Destroy(tile.TileObject.gameObject);
+            if (tile.TileObject != null)
+            {
+                Destroy(tile.TileObject.gameObject);
+            }
         }
         hexTileMap.Clear();
 
         foreach (var vertex in vertexMap.Values)
         {
-            Destroy(vertex.VertexObject.gameObject);
+            if (vertex.VertexObject != null)
+            {
+                Destroy(vertex.VertexObject.gameObject);
+            }
         }
         vertexMap.Clear();
 
         foreach (var edge in edgeMap.Values)
         {
-            Destroy(edge.SelectionObject);
+            if (edge.EdgeObject != null)
+            {
+                Destroy(edge.EdgeObject.gameObject);
+            }
         }
         edgeMap.Clear();
     }
