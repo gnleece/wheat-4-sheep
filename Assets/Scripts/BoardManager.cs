@@ -12,7 +12,7 @@ using UnityEngine.UIElements;
 /// 
 /// </summary>
 
-public class BoardManager : MonoBehaviour, IBoardManager, IGrid
+public class BoardManager : MonoBehaviour, IBoardManager
 {
     #region Consts
 
@@ -23,36 +23,29 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
     #region Classes and structs
 
-    private class PlayerActionRequest
-    {
-        public enum RequestState
-        {
-            NotStarted,
-            InProgress,
-            Complete,
-            ReadyForCleanup,
-            CleanupFinished
-        }
-
-        public IPlayer Player;
-        public BoardMode Mode;
-
-        public RequestState State = RequestState.NotStarted;
-        public bool Success = false;
-
-        public PlayerActionRequest(IPlayer player, BoardMode mode)
-        {
-            Player = player;
-            Mode = mode;
-        }
-
-        public override string ToString() => $"Player {Player.PlayerId}, Mode {Mode}, State {State}";
-    }
-
     private class PlayerTurn
     {
         public IPlayer Player;
+        public PlayerTurnType TurnType;
         public bool HasRolledDice = false;
+
+        public bool CanEndTurn
+        {
+            get
+            {
+                switch (TurnType)
+                {
+                    case PlayerTurnType.InitialPlacement:
+                        // TODO: validate that player has successfully placed their settlement and road
+                        return true;
+                    case PlayerTurnType.RegularTurn:
+                        // In regular turns, players must roll the dice before they can end their turn
+                        return HasRolledDice;
+                    default:
+                        return false;
+                }
+            }
+        }
     }
 
     #endregion
@@ -113,7 +106,9 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
     private Dictionary<IPlayer, ResourceHand> playerResourceHands = new Dictionary<IPlayer, ResourceHand>();
 
     private PlayerTurn currentPlayerTurn = null;
-    private PlayerActionRequest currentPlayerActionRequest = null;
+
+    private HexVertex manuallySelectedSettlementLocation = null;
+    private HexEdge manuallySelectedRoadLocation = null;
 
     #endregion
 
@@ -134,84 +129,79 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         boardStateMachine = new StateMachine<BoardMode>("BoardMode");
 
         boardStateMachine.AddState(BoardMode.Idle, OnEnterIdleMode, null, null);
-        boardStateMachine.AddState(BoardMode.BuildSettlement, OnEnterSettlementPlacementMode, null, OnExitSettlementPlacementMode);
-        boardStateMachine.AddState(BoardMode.BuildRoad, OnEnterRoadPlacementMode, null, OnExitRoadPlacementMode);
+        boardStateMachine.AddState(BoardMode.ChooseSettlementLocation, OnEnterSettlementLocationSelectionMode, null, OnExitSettlementLocationSelectionMode);
+        boardStateMachine.AddState(BoardMode.ChooseRoadLocation, OnEnterRoadLocationSelectionMode, null, OnExitRoadLocationSelectionMode);
 
         boardStateMachine.GoToState(BoardMode.Idle);
     }
 
-    public async Task<bool> ClaimBoardForPlayerActionAsync(IPlayer player, BoardMode mode)
+    
+    public async Task<HexVertex> GetManualSelectionForSettlementLocation(IPlayer player)
+    {
+        if (boardStateMachine.CurrentState != BoardMode.Idle)
+        {
+            Debug.LogError($"Cannot get manual selection for settlement location: board is not in idle mode, current state is {boardStateMachine.CurrentState}");
+            return null;
+        }
+
+        manuallySelectedSettlementLocation = null;
+
+        boardStateMachine.GoToState(BoardMode.ChooseSettlementLocation);
+
+        while (manuallySelectedSettlementLocation == null)
+        {
+            await Task.Yield();
+        }
+
+        boardStateMachine.GoToState(BoardMode.Idle);
+
+        return manuallySelectedSettlementLocation;
+    }
+
+
+    
+    public async Task<HexEdge> GetManualSelectionForRoadLocation(IPlayer player)
+    {
+        if (boardStateMachine.CurrentState != BoardMode.Idle)
+        {
+            Debug.LogError($"Cannot get manual selection for road location: board is not in idle mode, current state is {boardStateMachine.CurrentState}");
+            return null;
+        }
+
+        manuallySelectedRoadLocation = null;
+
+        boardStateMachine.GoToState(BoardMode.ChooseRoadLocation);
+
+        while (manuallySelectedRoadLocation == null)
+        {
+            await Task.Yield();
+        }
+
+        boardStateMachine.GoToState(BoardMode.Idle);
+
+        return manuallySelectedRoadLocation;
+    }
+
+    public bool BuildSettlement(IPlayer player, HexVertex hexVertex)
     {
         // TODO: check if the player has already started a turn
 
-        var actionRequest = new PlayerActionRequest(player, mode);
-
-        if (currentPlayerActionRequest != null)
-        {
-            Debug.LogError($"Board manager ClaimBoardForPlayerActionAsync failed for request: {actionRequest}. Current request: {currentPlayerActionRequest}");
-            return false;
-        }
-
-        if (boardStateMachine.CurrentState != BoardMode.Idle)
-        {
-            Debug.LogError($"Board manager has no active request but board is not in idle mode");
-            return false;
-        }
-
-        // Don't transition modes right away. Instead wait to process the request on the
-        // next Update, so that operations are guaranteed to happen on the main thread.
-        currentPlayerActionRequest = actionRequest;
-
-        // Wait for the request to complete
-        while (currentPlayerActionRequest.State != PlayerActionRequest.RequestState.Complete)
-        {
-            await Task.Yield();
-        }
-
-        // Mark the request for cleanup & wait for cleanup to finish before returning
-        currentPlayerActionRequest.State = PlayerActionRequest.RequestState.ReadyForCleanup;
-        while (currentPlayerActionRequest.State != PlayerActionRequest.RequestState.CleanupFinished)
-        {
-            await Task.Yield();
-        }
-
-        var success = currentPlayerActionRequest.Success;
-        currentPlayerActionRequest = null;
-
-        return success;
-    }
-
-    public bool TrySelectSettlementLocation(HexVertex hexVertex)
-    {
-        if (currentPlayerActionRequest == null)
-        {
-            Debug.LogError("Board manager: settlement location selected but there is no active player action request");
-            return false;
-        }
-        if (boardStateMachine.CurrentState != BoardMode.BuildSettlement)
-        {
-            Debug.LogError($"Board manager: settlement location selected but board is in {boardStateMachine.CurrentState} mode");
-            return false;
-        }
-
         if (hexVertex == null)
         {
-            Debug.LogError("Board manager: settlement location selected but hex vertex is null");
+            Debug.LogError("Board manager BuildSettlement: hex vertex is null");
             return false;
         }
 
-        var success = hexVertex.TryPlaceBuilding(Building.BuildingType.Settlement, currentPlayerActionRequest.Player);
+        var success = hexVertex.TryPlaceBuilding(Building.BuildingType.Settlement, player);
         if (success)
         {
             // If this is the second settlement during initial game setup, give the player resources from each of the adjacent hex tiles
             if (gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement)
             {
-                GivePlayerResourcesForNeighborHexTiles(currentPlayerActionRequest.Player, hexVertex);
+                GivePlayerResourcesForNeighborHexTiles(player, hexVertex);
             }
 
             Debug.Log($"PLACED SETTLEMENT: {hexVertex}");
-            currentPlayerActionRequest.Success = success;
-            currentPlayerActionRequest.State = PlayerActionRequest.RequestState.Complete;
         }
         else
         {
@@ -239,32 +229,22 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         }
     }
 
-    public bool TrySelectRoadLocation(HexEdge hexEdge)
+    public bool BuildRoad(IPlayer player, HexEdge hexEdge)
     {
-        if (currentPlayerActionRequest == null)
-        {
-            Debug.LogError("Board manager: road location selected but there is no active player action request");
-            return false;
-        }
-        if (boardStateMachine.CurrentState != BoardMode.BuildRoad)
-        {
-            Debug.LogError($"Board manager: road location selected but board is in {boardStateMachine.CurrentState} mode");
-            return false;
-        }
+        // TODO: check if the player has already started a turn
 
         if (hexEdge == null)
         {
-            Debug.LogError("Board manager: road location selected but hex edge is null");
+            Debug.LogError("Board manager BuildRoad: hex edge is null");
             return false;
         }
 
         Debug.Log($"Trying to place road at {hexEdge}");
 
-        var success = hexEdge.TryPlaceRoad(currentPlayerActionRequest.Player);
+        var success = hexEdge.TryPlaceRoad(player);
         if (success)
         {
-            currentPlayerActionRequest.Success = success;
-            currentPlayerActionRequest.State = PlayerActionRequest.RequestState.Complete;
+            Debug.Log($"PLACED ROAD: {hexEdge}");
         }
         else
         {
@@ -272,16 +252,6 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         }
 
         return success;
-    }
-
-    public int? GetCurrentPlayerId()
-    {
-        if (currentPlayerActionRequest == null || 
-            currentPlayerActionRequest.State != PlayerActionRequest.RequestState.InProgress)
-        {
-            return null;
-        }
-        return currentPlayerActionRequest.Player.PlayerId;
     }
 
     // Call this before StartNewGame to set up player resource hands
@@ -304,7 +274,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         return null;
     }
 
-    public bool BeginPlayerTurn(IPlayer player)
+    public bool BeginPlayerTurn(IPlayer player, PlayerTurnType turnType)
     {
         if (player == null || !playerResourceHands.ContainsKey(player))
         {
@@ -320,7 +290,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
         // TODO: confirm that the board is in a valid state for the turn to begin
 
-        currentPlayerTurn = new PlayerTurn { Player = player };
+        currentPlayerTurn = new PlayerTurn { Player = player, TurnType = turnType };
 
         Debug.Log($"Player {player.PlayerId} turn started");
         return true;
@@ -334,9 +304,9 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
             return false;
         }
 
-        if (!currentPlayerTurn.HasRolledDice)
+        if (!currentPlayerTurn.CanEndTurn)
         {
-            Debug.LogError($"Cannot end player turn: dice roll is not set for player {player.PlayerId}");
+            Debug.LogError($"Cannot end player turn");
             return false;
         }
 
@@ -413,20 +383,6 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
             return;
         }
 
-        if (currentPlayerActionRequest != null &&
-            currentPlayerActionRequest.State == PlayerActionRequest.RequestState.NotStarted)
-        {
-            currentPlayerActionRequest.State = PlayerActionRequest.RequestState.InProgress;
-            boardStateMachine.GoToState(currentPlayerActionRequest.Mode);
-        }
-
-        if (currentPlayerActionRequest != null &&
-            currentPlayerActionRequest.State == PlayerActionRequest.RequestState.ReadyForCleanup)
-        {
-            boardStateMachine.GoToState(BoardMode.Idle);
-            currentPlayerActionRequest.State = PlayerActionRequest.RequestState.CleanupFinished;
-        }
-
         boardStateMachine.Update();
     }
 
@@ -446,18 +402,27 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         }
     }
 
-    private void OnEnterSettlementPlacementMode()
+    private void OnEnterSettlementLocationSelectionMode()
     {
-        var playerColor = currentPlayerActionRequest.Player.PlayerColor;
-        var mustConnectToRoad = false; // TODO: Get this from game state
+        var playerColor = currentPlayerTurn.Player.PlayerColor;
+
+        var mustConnectToRoad = false; // TODO fix me
+                                //gameManager.CurrentGameState != GameManager.GameState.FirstSettlementPlacement &&
+                                //gameManager.CurrentGameState != GameManager.GameState.SecondSettlementPlacement;
+
         foreach (var hexVertex in vertexMap.Values)
         {
-            var selectionEnabled = hexVertex.AvailableForBuilding(currentPlayerActionRequest.Player, mustConnectToRoad);
+            var selectionEnabled = hexVertex.AvailableForBuilding(currentPlayerTurn.Player, mustConnectToRoad);
             hexVertex.EnableSelection(selectionEnabled, playerColor);
         }
     }
 
-    private void OnExitSettlementPlacementMode()
+    public void ManualSettlementLocationSelected(HexVertex hexVertex)
+    {
+        manuallySelectedSettlementLocation = hexVertex;
+    }
+
+    private void OnExitSettlementLocationSelectionMode()
     {
         foreach (var hexVertex in vertexMap.Values)
         {
@@ -465,18 +430,24 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
         }
     }
 
-    private void OnEnterRoadPlacementMode()
+    private void OnEnterRoadLocationSelectionMode()
     {
-        var playerColor = currentPlayerActionRequest.Player.PlayerColor;
+        var playerColor = currentPlayerTurn.Player.PlayerColor;
+
         foreach (var hexEdge in edgeMap.Values)
         {
-            // TODO: During initial placement, second road must connect to the second settlement
-            var selectionEnabled = hexEdge.AvailableForBuilding(currentPlayerActionRequest.Player);
+            // TODO: During initial placement, the second road must connect to the second settlement, not the first
+            var selectionEnabled = hexEdge.AvailableForBuilding(currentPlayerTurn.Player);
             hexEdge.EnableSelection(selectionEnabled, playerColor);
         }
     }
 
-    private void OnExitRoadPlacementMode()
+    public void ManualRoadLocationSelected(HexEdge hexEdge)
+    {
+        manuallySelectedRoadLocation = hexEdge;
+    }
+
+    private void OnExitRoadLocationSelectionMode()
     {
         foreach (var hexEdge in edgeMap.Values)
         {
@@ -653,7 +624,7 @@ public class BoardManager : MonoBehaviour, IBoardManager, IGrid
 
     private void ClearBoard()
     {
-        currentPlayerActionRequest = null;
+        currentPlayerTurn = null;
 
         foreach (var tile in hexTileMap.Values)
         {

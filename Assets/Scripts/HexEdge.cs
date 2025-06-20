@@ -60,6 +60,10 @@ public class HexEdge
         if (success)
         {
             Road = new Road(this, owner);
+            if (EdgeObject != null)
+            {
+                EdgeObject.Refresh();
+            }
         }
         return success;
     }
@@ -130,7 +134,7 @@ public class HexEdge
         return false;
     }
 
-    public void InitializeNeighbors(IGrid grid)
+    public void InitializeNeighbors(IBoardManager boardManager)
     {
         neighborHexes = new List<HexTile>();
         neighborVertices = new List<HexVertex>();
@@ -143,29 +147,29 @@ public class HexEdge
         {
             case EdgeOrientation.West:
                 {
-                    TryAddNeighborHex(new HexCoord(q, r), grid);
-                    TryAddNeighborHex(new HexCoord(q - 1, r), grid);
+                    TryAddNeighborHex(new HexCoord(q, r), boardManager);
+                    TryAddNeighborHex(new HexCoord(q - 1, r), boardManager);
 
-                    TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.North), grid);
-                    TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.South), grid);
+                    TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.North), boardManager);
+                    TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.South), boardManager);
                     break;
                 }
             case EdgeOrientation.NorthWest:
                 {
-                    TryAddNeighborHex(new HexCoord(q, r), grid);
-                    TryAddNeighborHex(new HexCoord(q - 1, r + 1), grid);
+                    TryAddNeighborHex(new HexCoord(q, r), boardManager);
+                    TryAddNeighborHex(new HexCoord(q - 1, r + 1), boardManager);
 
-                    TryAddNeighborVertex(new VertexCoord(q, r, VertexOrientation.North), grid);
-                    TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.South), grid);
+                    TryAddNeighborVertex(new VertexCoord(q, r, VertexOrientation.North), boardManager);
+                    TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.South), boardManager);
                     break;
                 }
             case EdgeOrientation.NorthEast:
                 {
-                    TryAddNeighborHex(new HexCoord(q, r), grid);
-                    TryAddNeighborHex(new HexCoord(q, r + 1), grid);
+                    TryAddNeighborHex(new HexCoord(q, r), boardManager);
+                    TryAddNeighborHex(new HexCoord(q, r + 1), boardManager);
 
-                    TryAddNeighborVertex(new VertexCoord(q, r, VertexOrientation.North), grid);
-                    TryAddNeighborVertex(new VertexCoord(q, r + 1, VertexOrientation.South), grid);
+                    TryAddNeighborVertex(new VertexCoord(q, r, VertexOrientation.North), boardManager);
+                    TryAddNeighborVertex(new VertexCoord(q, r + 1, VertexOrientation.South), boardManager);
                     break;
                 }
             default:
@@ -176,25 +180,25 @@ public class HexEdge
         }
     }
 
-    private void TryAddNeighborHex(HexCoord hexCoord, IGrid grid)
+    private void TryAddNeighborHex(HexCoord hexCoord, IBoardManager boardManager)
     {
-        if (grid.HexMap.TryGetValue(hexCoord, out var hex))
+        if (boardManager.HexMap.TryGetValue(hexCoord, out var hex))
         {
             neighborHexes.Add(hex);
         }
     }
 
-    private void TryAddNeighborVertex(VertexCoord vertexCoord, IGrid grid)
+    private void TryAddNeighborVertex(VertexCoord vertexCoord, IBoardManager boardManager)
     {
-        if (grid.VertexMap.TryGetValue(vertexCoord, out var vertex))
+        if (boardManager.VertexMap.TryGetValue(vertexCoord, out var vertex))
         {
             neighborVertices.Add(vertex);
         }
     }
 
-    private void TryAddNeighborEdge(EdgeCoord edgeCoord, IGrid grid)
+    private void TryAddNeighborEdge(EdgeCoord edgeCoord, IBoardManager boardManager)
     {
-        if (grid.EdgeMap.TryGetValue(edgeCoord, out var edge))
+        if (boardManager.EdgeMap.TryGetValue(edgeCoord, out var edge))
         {
             neighborEdges.Add(edge);
         }

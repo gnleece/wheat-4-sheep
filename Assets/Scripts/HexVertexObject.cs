@@ -45,10 +45,7 @@ public class HexVertexObject : MonoBehaviour
 
     private void HandleBuildingLocationSelected()
     {
-        if (boardManager.TrySelectSettlementLocation(hexVertex))
-        {
-            EnableSelection(false);
-        }
+        boardManager.ManualSettlementLocationSelected(hexVertex);
     }
 
     public void EnableSelection(bool enable, Color? hoverColor = null)

@@ -22,21 +22,38 @@ public class HumanPlayer : IPlayer
 
     public async Task PlaceFirstSettlementAndRoadAsync()
     {
-        await boardManager.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildSettlement);
-
-        await boardManager.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
+        boardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
+        await PlaceInitialSettlementAndRoad();
+        boardManager.EndPlayerTurn(this);
     }
 
     public async Task PlaceSecondSettlementAndRoadAsync()
     {
-        await boardManager.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildSettlement);
+        boardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
+        await PlaceInitialSettlementAndRoad();
+        boardManager.EndPlayerTurn(this);
+    }
 
-        await boardManager.ClaimBoardForPlayerActionAsync(this, BoardMode.BuildRoad);
+    private async Task PlaceInitialSettlementAndRoad()
+    {
+        var settlementPlaced = false;
+        while (!settlementPlaced)
+        {
+            var chosenSettlmentLocation = await boardManager.GetManualSelectionForSettlementLocation(this);
+            settlementPlaced = boardManager.BuildSettlement(this, chosenSettlmentLocation);
+        }
+
+        var roadPlaced = false;
+        while (!roadPlaced)
+        {
+            var chosenRoadLocation = await boardManager.GetManualSelectionForRoadLocation(this);
+            roadPlaced = boardManager.BuildRoad(this, chosenRoadLocation);
+        }
     }
 
     public async Task PlayTurnAsync()
     {
-        boardManager.BeginPlayerTurn(this);
+        boardManager.BeginPlayerTurn(this, PlayerTurnType.RegularTurn);
 
         while (true)
         {

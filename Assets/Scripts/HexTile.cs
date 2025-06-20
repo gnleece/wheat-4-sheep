@@ -39,10 +39,10 @@ public class HexTile
 
     public int? DiceNumber => TileObject?.DiceNumber;
 
-    public void InitializeNeighbors(IGrid grid)
+    public void InitializeNeighbors(IBoardManager boardManager)
     {
         neighborVertices = new List<HexVertex>();
-        foreach (var vertex in grid.VertexMap.Values)
+        foreach (var vertex in boardManager.VertexMap.Values)
         {
             if (vertex.NeighborHexTiles.Any(h => h.HexCoordinates.Equals(this.HexCoordinates)))
             {

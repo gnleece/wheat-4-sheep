@@ -111,7 +111,7 @@ public class HexVertex
             {
                 if (edge.IsOccupied && edge.Road.Owner == player)
                 {
-                    break;
+                    return true;
                 }
             }
             return false;
@@ -120,7 +120,7 @@ public class HexVertex
         return true;
     }
 
-    public void InitializeNeighbors(IGrid grid)
+    public void InitializeNeighbors(IBoardManager boardManager)
     {
         neighborHexes = new List<HexTile>();
         neighborVertices = new List<HexVertex>();
@@ -133,32 +133,32 @@ public class HexVertex
         {
             case VertexOrientation.North:
                 {
-                    TryAddNeighborHex(new HexCoord(q, r), grid);
-                    TryAddNeighborHex(new HexCoord(q, r + 1), grid);
-                    TryAddNeighborHex(new HexCoord(q - 1, r + 1), grid);
+                    TryAddNeighborHex(new HexCoord(q, r), boardManager);
+                    TryAddNeighborHex(new HexCoord(q, r + 1), boardManager);
+                    TryAddNeighborHex(new HexCoord(q - 1, r + 1), boardManager);
 
-                    TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.South), grid);
-                    TryAddNeighborVertex(new VertexCoord(q - 1, r + 2, VertexOrientation.South), grid);
-                    TryAddNeighborVertex(new VertexCoord(q, r + 1, VertexOrientation.South), grid);
+                    TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.South), boardManager);
+                    TryAddNeighborVertex(new VertexCoord(q - 1, r + 2, VertexOrientation.South), boardManager);
+                    TryAddNeighborVertex(new VertexCoord(q, r + 1, VertexOrientation.South), boardManager);
 
-                    TryAddNeighborEdge(new EdgeCoord(q, r + 1, EdgeOrientation.NorthWest), grid);
-                    TryAddNeighborEdge(new EdgeCoord(q - 1, r + 1, EdgeOrientation.NorthEast), grid);
-                    TryAddNeighborEdge(new EdgeCoord(q, r + 1, EdgeOrientation.West), grid);
+                    TryAddNeighborEdge(new EdgeCoord(q, r + 1, EdgeOrientation.NorthWest), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q - 1, r + 1, EdgeOrientation.NorthEast), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r + 1, EdgeOrientation.West), boardManager);
                     break;
                 }
             case VertexOrientation.South:
                 {
-                    TryAddNeighborHex(new HexCoord(q, r), grid);
-                    TryAddNeighborHex(new HexCoord(q, r - 1), grid);
-                    TryAddNeighborHex(new HexCoord(q + 1, r - 1), grid);
+                    TryAddNeighborHex(new HexCoord(q, r), boardManager);
+                    TryAddNeighborHex(new HexCoord(q, r - 1), boardManager);
+                    TryAddNeighborHex(new HexCoord(q + 1, r - 1), boardManager);
 
-                    TryAddNeighborVertex(new VertexCoord(q + 1, r - 2, VertexOrientation.North), grid);
-                    TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.North), grid);
-                    TryAddNeighborVertex(new VertexCoord(q + 1, r - 1, VertexOrientation.North), grid);
+                    TryAddNeighborVertex(new VertexCoord(q + 1, r - 2, VertexOrientation.North), boardManager);
+                    TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.North), boardManager);
+                    TryAddNeighborVertex(new VertexCoord(q + 1, r - 1, VertexOrientation.North), boardManager);
 
-                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthEast), grid);
-                    TryAddNeighborEdge(new EdgeCoord(q + 1, r - 1, EdgeOrientation.West), grid);
-                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthWest), grid);
+                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthEast), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q + 1, r - 1, EdgeOrientation.West), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthWest), boardManager);
                     break;
                 }
             default:
@@ -169,25 +169,25 @@ public class HexVertex
         }
     }
 
-    private void TryAddNeighborHex(HexCoord hexCoord, IGrid grid)
+    private void TryAddNeighborHex(HexCoord hexCoord, IBoardManager boardManager)
     {
-        if (grid.HexMap.TryGetValue(hexCoord, out var hex))
+        if (boardManager.HexMap.TryGetValue(hexCoord, out var hex))
         {
             neighborHexes.Add(hex);
         }
     }
 
-    private void TryAddNeighborVertex(VertexCoord vertexCoord, IGrid grid)
+    private void TryAddNeighborVertex(VertexCoord vertexCoord, IBoardManager boardManager)
     {
-        if (grid.VertexMap.TryGetValue(vertexCoord, out var vertex))
+        if (boardManager.VertexMap.TryGetValue(vertexCoord, out var vertex))
         {
             neighborVertices.Add(vertex);
         }
     }
 
-    private void TryAddNeighborEdge(EdgeCoord edgeCoord, IGrid grid)
+    private void TryAddNeighborEdge(EdgeCoord edgeCoord, IBoardManager boardManager)
     {
-        if (grid.EdgeMap.TryGetValue(edgeCoord, out var edge))
+        if (boardManager.EdgeMap.TryGetValue(edgeCoord, out var edge))
         {
             neighborEdges.Add(edge);
         }

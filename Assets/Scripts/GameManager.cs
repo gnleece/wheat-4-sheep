@@ -100,7 +100,7 @@ public class GameManager : MonoBehaviour, IGameManager
 
         for (int i = 0; i < playerCount; i++)
         {
-            var player = new HumanPlayer();             // Only human players for now
+            IPlayer player = i == 0 ? new HumanPlayer() : new AIPlayer();
             player.Initialize(i, boardManager);
             playerList.Add(player);
         }
@@ -167,7 +167,6 @@ public class GameManager : MonoBehaviour, IGameManager
         foreach (var player in playerList)
         {
             SetHudText($"Player {player.PlayerId} placing first settlement and road");
-
             await player.PlaceFirstSettlementAndRoadAsync();
         }
     }
@@ -215,7 +214,7 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void OnEnterPlaying()
     {
-        playingTask = RunPlaying();
+        //playingTask = RunPlaying();
     }
 
     private void OnUpdatePlaying()
