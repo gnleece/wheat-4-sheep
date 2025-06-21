@@ -66,10 +66,14 @@ public class HumanPlayer : IPlayer
             else if (Input.GetKeyDown(KeyCode.Alpha2))
             {
                 // Build Settlement
+                var chosenSettlementLocation = await boardManager.GetManualSelectionForSettlementLocation(this);
+                boardManager.BuildSettlement(this, chosenSettlementLocation);
             }
             else if (Input.GetKeyDown(KeyCode.Alpha3))
             {
                 // Build Road
+                var chosenRoadLocation = await boardManager.GetManualSelectionForRoadLocation(this);
+                boardManager.BuildRoad(this, chosenRoadLocation);
             }
             else if (Input.GetKeyDown(KeyCode.Alpha0))
             {

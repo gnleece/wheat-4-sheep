@@ -214,7 +214,7 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void OnEnterPlaying()
     {
-        //playingTask = RunPlaying();
+        playingTask = RunPlaying();
     }
 
     private void OnUpdatePlaying()

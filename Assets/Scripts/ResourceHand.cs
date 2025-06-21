@@ -38,9 +38,27 @@ public class ResourceHand
         resourceCounts[type] = Mathf.Max(0, resourceCounts[type] - amount);
     }
 
+    public void Remove(Dictionary<ResourceType, int> costs)
+    {
+        foreach (var cost in costs)
+        {
+            Remove(cost.Key, cost.Value);
+        }
+    }
+
     public Dictionary<ResourceType, int> GetAll()
     {
         // Return a copy to prevent external modification
         return new Dictionary<ResourceType, int>(resourceCounts);
+    }
+    
+    public bool HasEnoughResources(Dictionary<ResourceType, int> costs)
+    {
+        foreach (var cost in costs)
+        {
+            if (GetCount(cost.Key) < cost.Value)
+                return false;
+        }
+        return true;
     }
 } 

@@ -184,7 +184,17 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool BuildSettlement(IPlayer player, HexVertex hexVertex)
     {
-        // TODO: check if the player has already started a turn
+        if (currentPlayerTurn == null ||  currentPlayerTurn.Player != player)
+        {
+            Debug.LogError($"Board manager BuildSettlement: turn is not active for {player}");
+            return false;
+        }
+
+        if (currentPlayerTurn.TurnType == PlayerTurnType.RegularTurn && !currentPlayerTurn.HasRolledDice)
+        {
+            Debug.LogError($"Player {player.PlayerId} must roll dice before building settlements");
+            return false;
+        }
 
         if (hexVertex == null)
         {
@@ -192,9 +202,26 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return false;
         }
 
+        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
+
+        var isBuildingFree = gameManager.CurrentGameState == GameManager.GameState.FirstSettlementPlacement ||
+                             gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement;
+
+        if (!isBuildingFree && !currentPlayerHand.HasEnoughResources(BuildingCosts.SettlementCost))
+        {
+            Debug.LogError($"Player {player.PlayerId} does not have enough resources to build a settlement");
+            return false;
+        }
+
         var success = hexVertex.TryPlaceBuilding(Building.BuildingType.Settlement, player);
         if (success)
         {
+            if (!isBuildingFree)
+            {
+                // Deduct resources from the player's hand
+                currentPlayerHand.Remove(BuildingCosts.SettlementCost);
+            }
+
             // If this is the second settlement during initial game setup, give the player resources from each of the adjacent hex tiles
             if (gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement)
             {
@@ -231,11 +258,32 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool BuildRoad(IPlayer player, HexEdge hexEdge)
     {
-        // TODO: check if the player has already started a turn
+        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        {
+            Debug.LogError($"Board manager BuildRoad: turn is not active for {player}");
+            return false;
+        }
+
+        if (currentPlayerTurn.TurnType == PlayerTurnType.RegularTurn && !currentPlayerTurn.HasRolledDice)
+        {
+            Debug.LogError($"Player {player.PlayerId} must roll dice before building roads");
+            return false;
+        }
 
         if (hexEdge == null)
         {
             Debug.LogError("Board manager BuildRoad: hex edge is null");
+            return false;
+        }
+
+        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
+
+        var isBuildingFree = gameManager.CurrentGameState == GameManager.GameState.FirstSettlementPlacement ||
+                             gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement;
+
+        if (!isBuildingFree && !currentPlayerHand.HasEnoughResources(BuildingCosts.RoadCost))
+        {
+            Debug.LogError($"Player {player.PlayerId} does not have enough resources to build a road");
             return false;
         }
 
@@ -244,6 +292,11 @@ public class BoardManager : MonoBehaviour, IBoardManager
         var success = hexEdge.TryPlaceRoad(player);
         if (success)
         {
+            if (!isBuildingFree)
+            {
+                // Deduct resources from the player's hand
+                currentPlayerHand.Remove(BuildingCosts.RoadCost);
+            }
             Debug.Log($"PLACED ROAD: {hexEdge}");
         }
         else
