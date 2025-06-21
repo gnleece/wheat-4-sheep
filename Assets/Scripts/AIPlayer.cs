@@ -39,9 +39,9 @@ public class AIPlayer : IPlayer
     public async Task PlayTurnAsync()
     {
         boardManager.BeginPlayerTurn(this, PlayerTurnType.RegularTurn);
-        await Task.Delay(500); // Simulate thinking
+        await Task.Delay(500);
         await boardManager.RollDice(this);
-        await Task.Delay(500); // Simulate thinking
+        await Task.Delay(500);
 
         var actionCount = 0;
         while (actionCount < MAX_ACTIONS_PER_TURN)  // Prevent infinite loops
@@ -81,6 +81,7 @@ public class AIPlayer : IPlayer
             }
 
             actionCount++;
+            await Task.Delay(500);
         }
 
         boardManager.EndPlayerTurn(this);

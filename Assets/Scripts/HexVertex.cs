@@ -141,8 +141,8 @@ public class HexVertex
                     TryAddNeighborVertex(new VertexCoord(q - 1, r + 2, VertexOrientation.South), boardManager);
                     TryAddNeighborVertex(new VertexCoord(q, r + 1, VertexOrientation.South), boardManager);
 
-                    TryAddNeighborEdge(new EdgeCoord(q, r + 1, EdgeOrientation.NorthWest), boardManager);
-                    TryAddNeighborEdge(new EdgeCoord(q - 1, r + 1, EdgeOrientation.NorthEast), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthWest), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthEast), boardManager);
                     TryAddNeighborEdge(new EdgeCoord(q, r + 1, EdgeOrientation.West), boardManager);
                     break;
                 }
@@ -156,9 +156,9 @@ public class HexVertex
                     TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.North), boardManager);
                     TryAddNeighborVertex(new VertexCoord(q + 1, r - 1, VertexOrientation.North), boardManager);
 
-                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthEast), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r - 1, EdgeOrientation.NorthEast), boardManager);
                     TryAddNeighborEdge(new EdgeCoord(q + 1, r - 1, EdgeOrientation.West), boardManager);
-                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthWest), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q + 1, r - 1, EdgeOrientation.NorthWest), boardManager);
                     break;
                 }
             default:

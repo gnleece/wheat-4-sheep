@@ -314,6 +314,10 @@ public class BoardManager : MonoBehaviour, IBoardManager
         foreach (var player in players)
         {
             playerResourceHands[player] = new ResourceHand();
+            playerResourceHands[player].Add(ResourceType.Wood, 10);
+            playerResourceHands[player].Add(ResourceType.Clay, 10);
+            playerResourceHands[player].Add(ResourceType.Sheep, 10);
+            playerResourceHands[player].Add(ResourceType.Wheat, 10);
         }
     }
 
@@ -459,9 +463,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
     {
         var playerColor = currentPlayerTurn.Player.PlayerColor;
 
-        var mustConnectToRoad = false; // TODO fix me
-                                //gameManager.CurrentGameState != GameManager.GameState.FirstSettlementPlacement &&
-                                //gameManager.CurrentGameState != GameManager.GameState.SecondSettlementPlacement;
+        var mustConnectToRoad = gameManager.CurrentGameState != GameManager.GameState.FirstSettlementPlacement &&
+                                gameManager.CurrentGameState != GameManager.GameState.SecondSettlementPlacement;
 
         foreach (var hexVertex in vertexMap.Values)
         {
