@@ -47,14 +47,17 @@ public class StateMachine<T> where T : struct
     {
         if (stateMap != null && stateMap.TryGetValue(stateId, out var newState))
         {
-            DebugLogStateTransition(currentState, newState);
+            var previousState = currentState;
 
-            currentState?.OnStateExit?.Invoke();
-            newState.OnStateEnter?.Invoke();
+            DebugLogStateTransition(previousState, newState);
 
-            OnStateChange?.Invoke(currentState?.Id, newState?.Id);
+            previousState?.OnStateExit?.Invoke();
 
             currentState = newState;
+            newState.OnStateEnter?.Invoke();
+
+            OnStateChange?.Invoke(previousState?.Id, newState?.Id);
+
             return true;
         }
         else
