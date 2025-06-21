@@ -13,6 +13,7 @@ public class HexEdge
     public Road Road { get; private set; }
 
     public bool IsOccupied => Road != null;
+    public IPlayer Owner => Road?.Owner;
 
     private List<HexTile> neighborHexes = null;
     private List<HexVertex> neighborVertices = null;
@@ -45,6 +46,8 @@ public class HexEdge
 
         // Roads must be connected to an existing road or building with the same owner
         var success = false;
+        
+        // Check if connected to a building (settlement/city) owned by the player
         foreach (var neighbor in neighborVertices)
         {
             Debug.Log($"....neighbor vertex: {neighbor}, occupied = {neighbor.IsOccupied}, owner = {neighbor.Owner}");
@@ -55,7 +58,19 @@ public class HexEdge
             }
         }
 
-        // TODO check for neighboring roads
+        // Check if connected to a road owned by the player
+        if (!success)
+        {
+            foreach (var edge in neighborEdges)
+            {
+                Debug.Log($"....neighbor edge: {edge}, occupied = {edge.IsOccupied}, owner = {edge.Road?.Owner}");
+                if (edge.IsOccupied && edge.Road.Owner == owner)
+                {
+                    success = true;
+                    break;
+                }
+            }
+        }
 
         if (success)
         {
@@ -152,6 +167,11 @@ public class HexEdge
 
                     TryAddNeighborVertex(new VertexCoord(q, r - 1, VertexOrientation.North), boardManager);
                     TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.South), boardManager);
+
+                    TryAddNeighborEdge(new EdgeCoord(q - 1, r, EdgeOrientation.NorthEast), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthWest), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r - 1, EdgeOrientation.NorthEast), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r - 1, EdgeOrientation.NorthWest), boardManager);
                     break;
                 }
             case EdgeOrientation.NorthWest:
@@ -161,6 +181,11 @@ public class HexEdge
 
                     TryAddNeighborVertex(new VertexCoord(q, r, VertexOrientation.North), boardManager);
                     TryAddNeighborVertex(new VertexCoord(q - 1, r + 1, VertexOrientation.South), boardManager);
+
+                    TryAddNeighborEdge(new EdgeCoord(q - 1, r, EdgeOrientation.NorthEast), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.West), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r + 1, EdgeOrientation.West), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthEast), boardManager);
                     break;
                 }
             case EdgeOrientation.NorthEast:
@@ -170,6 +195,12 @@ public class HexEdge
 
                     TryAddNeighborVertex(new VertexCoord(q, r, VertexOrientation.North), boardManager);
                     TryAddNeighborVertex(new VertexCoord(q, r + 1, VertexOrientation.South), boardManager);
+
+                    TryAddNeighborEdge(new EdgeCoord(q, r, EdgeOrientation.NorthWest), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q, r + 1, EdgeOrientation.West), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q + 1, r, EdgeOrientation.NorthWest), boardManager);
+                    TryAddNeighborEdge(new EdgeCoord(q + 1, r, EdgeOrientation.West), boardManager);
+                    
                     break;
                 }
             default:
