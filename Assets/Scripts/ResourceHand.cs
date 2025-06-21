@@ -61,4 +61,14 @@ public class ResourceHand
         }
         return true;
     }
+
+    public static bool HasEnoughResources(Dictionary<ResourceType, int> hand, Dictionary<ResourceType, int> costs)
+    {
+        foreach (var cost in costs)
+        {
+            if (!hand.TryGetValue(cost.Key, out int count) || count < cost.Value)
+                return false;
+        }
+        return true;
+    }
 } 
