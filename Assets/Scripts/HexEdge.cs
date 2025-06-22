@@ -102,7 +102,7 @@ public class HexEdge
         return false;
     }
 
-    public bool AvailableForBuilding(IPlayer player, HexVertex requiredNeighborVertex = null)
+    public bool AvailableForBuilding(IPlayer player, HexVertex requiredNeighborVertex)
     {
         if (!CanHaveRoads())
         {

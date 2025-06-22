@@ -56,6 +56,10 @@ public interface IBoardManager
 
     public int GetPlayerScore(IPlayer player);
 
+    public List<HexVertex> GetAvailableSettlementLocations(IPlayer player);
+
+    public List<HexEdge> GetAvailableRoadLocations(IPlayer player);
+
     public IReadOnlyDictionary<HexCoord, HexTile> HexMap { get; }
     public IReadOnlyDictionary<VertexCoord, HexVertex> VertexMap { get; }
     public IReadOnlyDictionary<EdgeCoord, HexEdge> EdgeMap { get; }

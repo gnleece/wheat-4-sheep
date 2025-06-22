@@ -110,6 +110,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
     private HexVertex manuallySelectedSettlementLocation = null;
     private HexEdge manuallySelectedRoadLocation = null;
 
+    // Track the last settlement placed by each player for second settlement placement phase
+    private Dictionary<IPlayer, HexVertex> lastSettlementPlaced = new Dictionary<IPlayer, HexVertex>();
+
     #endregion
 
     #region Public methods
@@ -125,6 +128,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         ClearBoard();
         InitializeBoard(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
+
+        // Clear settlement tracking for new game
+        lastSettlementPlaced.Clear();
 
         boardStateMachine = new StateMachine<BoardMode>("BoardMode");
 
@@ -144,20 +150,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return null;
         }
 
-        // Check if there are any valid settlement locations available
-        var mustConnectToRoad = gameManager.SettlementsMustConnectToRoad;
-        
-        var hasValidLocation = false;
-        foreach (var vertex in vertexMap.Values)
-        {
-            if (vertex.AvailableForBuilding(player, mustConnectToRoad))
-            {
-                hasValidLocation = true;
-                break;
-            }
-        }
-
-        if (!hasValidLocation)
+        var validLocations = GetAvailableSettlementLocations(player);
+        if (validLocations == null || validLocations.Count == 0)
         {
             Debug.LogWarning($"No valid settlement locations available for player {player.PlayerId}");
             return null;
@@ -178,7 +172,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
     }
 
 
-    
+
     public async Task<HexEdge> GetManualSelectionForRoadLocation(IPlayer player)
     {
         if (boardStateMachine.CurrentState != BoardMode.Idle)
@@ -187,18 +181,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return null;
         }
 
-        // Check if there are any valid road locations available
-        var hasValidLocation = false;
-        foreach (var edge in edgeMap.Values)
-        {
-            if (edge.AvailableForBuilding(player))
-            {
-                hasValidLocation = true;
-                break;
-            }
-        }
-
-        if (!hasValidLocation)
+        var validLocations = GetAvailableRoadLocations(player);
+        if (validLocations == null || validLocations.Count == 0)
         {
             Debug.LogWarning($"No valid road locations available for player {player.PlayerId}");
             return null;
@@ -216,6 +200,15 @@ public class BoardManager : MonoBehaviour, IBoardManager
         boardStateMachine.GoToState(BoardMode.Idle);
 
         return manuallySelectedRoadLocation;
+    }
+
+    private HexVertex GetLastSettlementPlaced(IPlayer player)
+    {
+        if (lastSettlementPlaced.TryGetValue(player, out var hexVertex))
+        {
+            return hexVertex;
+        }
+        return null;
     }
 
     public bool BuildSettlement(IPlayer player, HexVertex hexVertex)
@@ -252,6 +245,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
         var success = hexVertex.TryPlaceBuilding(Building.BuildingType.Settlement, player);
         if (success)
         {
+            // Track the last settlement placed by this player
+            lastSettlementPlaced[player] = hexVertex;
+
             if (!isBuildingFree)
             {
                 // Deduct resources from the player's hand
@@ -391,6 +387,41 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return score;
     }
 
+    public List<HexVertex> GetAvailableSettlementLocations(IPlayer player)
+    {
+        var mustConnectToRoad = gameManager.SettlementsMustConnectToRoad;
+
+        var locations = new List<HexVertex>();
+        foreach (var vertex in vertexMap.Values)
+        {
+            if (vertex.AvailableForBuilding(player, mustConnectToRoad))
+            {
+                locations.Add(vertex);
+            }
+        }
+        return locations;
+    }
+
+    public List<HexEdge> GetAvailableRoadLocations(IPlayer player)
+    {
+        // Check if we're in second settlement placement phase and need to connect to the last settlement
+        HexVertex requiredSettlement = null;
+        if (gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement)
+        {
+            requiredSettlement = GetLastSettlementPlaced(currentPlayerTurn.Player);
+        }
+
+        var locations = new List<HexEdge>();
+        foreach (var edge in edgeMap.Values)
+        {
+            if (edge.AvailableForBuilding(player, requiredSettlement))
+            {
+                locations.Add(edge);
+            }
+        }
+        return locations;
+    }
+
     public bool BeginPlayerTurn(IPlayer player, PlayerTurnType turnType)
     {
         if (player == null || !playerResourceHands.ContainsKey(player))
@@ -523,11 +554,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
     {
         var playerColor = currentPlayerTurn.Player.PlayerColor;
 
-        var mustConnectToRoad = gameManager.SettlementsMustConnectToRoad;
+        var settlementLocationList = GetAvailableSettlementLocations(currentPlayerTurn.Player);
+        var settlementLocationsSet = new HashSet<HexVertex>(settlementLocationList);
 
         foreach (var hexVertex in vertexMap.Values)
         {
-            var selectionEnabled = hexVertex.AvailableForBuilding(currentPlayerTurn.Player, mustConnectToRoad);
+            var selectionEnabled = settlementLocationsSet.Contains(hexVertex);
             hexVertex.EnableSelection(selectionEnabled, playerColor);
         }
     }
@@ -549,10 +581,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
     {
         var playerColor = currentPlayerTurn.Player.PlayerColor;
 
+        var roadLocationList = GetAvailableRoadLocations(currentPlayerTurn.Player);
+        var roadLocationSet = new HashSet<HexEdge>(roadLocationList);
+
         foreach (var hexEdge in edgeMap.Values)
         {
-            // TODO: During initial placement, the second road must connect to the second settlement, not the first
-            var selectionEnabled = hexEdge.AvailableForBuilding(currentPlayerTurn.Player);
+            var selectionEnabled = roadLocationSet.Contains(hexEdge);
             hexEdge.EnableSelection(selectionEnabled, playerColor);
         }
     }

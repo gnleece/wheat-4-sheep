@@ -5,6 +5,7 @@ using UnityEngine;
 public class AIPlayer : IPlayer
 {
     private const int MAX_ACTIONS_PER_TURN = 10;
+    private const int THINKING_DELAY_TIME_MS = 500;
 
     public int PlayerId => playerId;
 
@@ -23,25 +24,31 @@ public class AIPlayer : IPlayer
     public async Task PlaceFirstSettlementAndRoadAsync()
     {
         boardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
-        await PlaceRandomSettlementAsync(mustConnectToRoad: false);
-        await PlaceRoadAsync();
+
+        await PlaceRandomSettlementAsync();
+        await PlaceRandomRoadAsync();
+
         boardManager.EndPlayerTurn(this);
     }
 
     public async Task PlaceSecondSettlementAndRoadAsync()
     {
         boardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
-        await PlaceRandomSettlementAsync(mustConnectToRoad: false);
-        await PlaceRoadAsync();
+
+        await PlaceRandomSettlementAsync();
+        await PlaceRandomRoadAsync();
+
         boardManager.EndPlayerTurn(this);
     }
 
     public async Task PlayTurnAsync()
     {
         boardManager.BeginPlayerTurn(this, PlayerTurnType.RegularTurn);
-        await Task.Delay(500);
+
+        await Task.Delay(THINKING_DELAY_TIME_MS);
         await boardManager.RollDice(this);
-        await Task.Delay(500);
+
+        await Task.Delay(THINKING_DELAY_TIME_MS);
 
         var actionCount = 0;
         while (actionCount < MAX_ACTIONS_PER_TURN)  // Prevent infinite loops
@@ -59,8 +66,8 @@ public class AIPlayer : IPlayer
             }
 
             // Try to build something (priority: settlement > road)
-            var settlementLocations = GetAvailableSettlementLocations(mustConnectToRoad: true);
-            var roadLocations = GetAvailableRoadLocations();
+            var settlementLocations = boardManager.GetAvailableSettlementLocations(this);
+            var roadLocations = boardManager.GetAvailableRoadLocations(this);
             if (settlementLocations.Count > 0 && canAffordSettlement)
             {
                 var success = boardManager.BuildSettlement(this, settlementLocations[0]);
@@ -81,42 +88,16 @@ public class AIPlayer : IPlayer
             }
 
             actionCount++;
-            await Task.Delay(500);
+            await Task.Delay(THINKING_DELAY_TIME_MS);
         }
 
         boardManager.EndPlayerTurn(this);
     }
 
-    private List<HexVertex> GetAvailableSettlementLocations(bool mustConnectToRoad)
+    private async Task PlaceRandomSettlementAsync()
     {
-        var locations = new List<HexVertex>();
-        foreach (var vertex in boardManager.VertexMap.Values)
-        {
-            if (vertex.AvailableForBuilding(this, mustConnectToRoad))
-            {
-                locations.Add(vertex);
-            }
-        }
-        return locations;
-    }
+        var locations = boardManager.GetAvailableSettlementLocations(this);
 
-    private List<HexEdge> GetAvailableRoadLocations()
-    {
-        var locations = new List<HexEdge>();
-        foreach (var edge in boardManager.EdgeMap.Values)
-        {
-            if (edge.AvailableForBuilding(this))
-            {
-                locations.Add(edge);
-            }
-        }
-        return locations;
-    }
-
-    private async Task PlaceRandomSettlementAsync(bool mustConnectToRoad)
-    {
-        // Find all selectable settlements
-        var locations = GetAvailableSettlementLocations(mustConnectToRoad);
         if (locations.Count > 0)
         {
             var choice = locations[random.Next(locations.Count)];
@@ -130,16 +111,17 @@ public class AIPlayer : IPlayer
         {
             Debug.LogWarning($"AI Player {playerId} could not find a valid settlement location. This should not happen if the game is set up correctly.");
         }
-        await Task.Delay(500); // Simulate thinking
+
+        await Task.Delay(THINKING_DELAY_TIME_MS);
     }
 
-    private async Task PlaceRoadAsync()
+    private async Task PlaceRandomRoadAsync()
     {
-        // Find all selectable roads
-        var selectable = GetAvailableRoadLocations();
-        if (selectable.Count > 0)
+        var locations = boardManager.GetAvailableRoadLocations(this);
+
+        if (locations.Count > 0)
         {
-            var choice = selectable[random.Next(selectable.Count)];
+            var choice = locations[random.Next(locations.Count)];
             var success = boardManager.BuildRoad(this, choice);
             if (!success)
             {
@@ -150,6 +132,7 @@ public class AIPlayer : IPlayer
         {
             Debug.LogWarning($"AI Player {playerId} could not find a valid road location. This should not happen if the game is set up correctly.");
         }
-        await Task.Delay(500); // Simulate thinking
+
+        await Task.Delay(THINKING_DELAY_TIME_MS);
     }
 }
