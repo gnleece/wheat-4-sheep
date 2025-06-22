@@ -42,6 +42,9 @@ public class GameManager : MonoBehaviour, IGameManager
 
     public GameState CurrentGameState => gameStateMachine != null ? gameStateMachine.CurrentState : GameState.None;
 
+    public bool SettlementsMustConnectToRoad => CurrentGameState != GameState.FirstSettlementPlacement && 
+                                                CurrentGameState != GameState.SecondSettlementPlacement;
+
     private void Start()
     {
         Reset();

@@ -144,6 +144,25 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return null;
         }
 
+        // Check if there are any valid settlement locations available
+        var mustConnectToRoad = gameManager.SettlementsMustConnectToRoad;
+        
+        var hasValidLocation = false;
+        foreach (var vertex in vertexMap.Values)
+        {
+            if (vertex.AvailableForBuilding(player, mustConnectToRoad))
+            {
+                hasValidLocation = true;
+                break;
+            }
+        }
+
+        if (!hasValidLocation)
+        {
+            Debug.LogWarning($"No valid settlement locations available for player {player.PlayerId}");
+            return null;
+        }
+
         manuallySelectedSettlementLocation = null;
 
         boardStateMachine.GoToState(BoardMode.ChooseSettlementLocation);
@@ -165,6 +184,23 @@ public class BoardManager : MonoBehaviour, IBoardManager
         if (boardStateMachine.CurrentState != BoardMode.Idle)
         {
             Debug.LogError($"Cannot get manual selection for road location: board is not in idle mode, current state is {boardStateMachine.CurrentState}");
+            return null;
+        }
+
+        // Check if there are any valid road locations available
+        var hasValidLocation = false;
+        foreach (var edge in edgeMap.Values)
+        {
+            if (edge.AvailableForBuilding(player))
+            {
+                hasValidLocation = true;
+                break;
+            }
+        }
+
+        if (!hasValidLocation)
+        {
+            Debug.LogWarning($"No valid road locations available for player {player.PlayerId}");
             return null;
         }
 
@@ -487,8 +523,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
     {
         var playerColor = currentPlayerTurn.Player.PlayerColor;
 
-        var mustConnectToRoad = gameManager.CurrentGameState != GameManager.GameState.FirstSettlementPlacement &&
-                                gameManager.CurrentGameState != GameManager.GameState.SecondSettlementPlacement;
+        var mustConnectToRoad = gameManager.SettlementsMustConnectToRoad;
 
         foreach (var hexVertex in vertexMap.Values)
         {
