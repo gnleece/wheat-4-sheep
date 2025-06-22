@@ -85,5 +85,33 @@ public class DebugSettingsWindow : EditorWindow
                 Debug.LogWarning("BoardManager not found in scene.");
             }
         }
+
+        EditorGUILayout.Space(10);
+        if (GUILayout.Button("Print Player Scores"))
+        {
+            var boardManager = Object.FindFirstObjectByType<BoardManager>();
+            if (boardManager != null)
+            {
+                var gameManager = Object.FindFirstObjectByType<GameManager>();
+                if (gameManager != null && gameManager.PlayerList != null)
+                {
+                    var scoreString = "Player Scores:\n";
+                    foreach (var player in gameManager.PlayerList)
+                    {
+                        var score = boardManager.GetPlayerScore(player);
+                        scoreString += $"Player {player.PlayerId}: {score} points\n";
+                    }
+                    Debug.Log(scoreString);
+                }
+                else
+                {
+                    Debug.LogWarning("GameManager or player list not found in scene.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("BoardManager not found in scene.");
+            }
+        }
     }
 } 

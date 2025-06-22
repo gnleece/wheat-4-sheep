@@ -38,6 +38,8 @@ public class GameManager : MonoBehaviour, IGameManager
     private int playerCount = 0;
     private List<IPlayer> playerList = new List<IPlayer>();
 
+    public IReadOnlyList<IPlayer> PlayerList => playerList.AsReadOnly();
+
     public GameState CurrentGameState => gameStateMachine != null ? gameStateMachine.CurrentState : GameState.None;
 
     private void Start()

@@ -331,6 +331,30 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return null;
     }
 
+    public int GetPlayerScore(IPlayer player)
+    {
+        var score = 0;
+
+        // 1 point for each settlement
+        foreach (var vertex in vertexMap.Values)
+        {
+            if (vertex.Building != null && vertex.Building.Owner == player)
+            {
+                if (vertex.Building.Type == Building.BuildingType.Settlement)
+                {
+                    score += 1;
+                }
+            }
+        }
+
+        // TODO: 2 points for each city
+        // TODO: 1 point for each victory card
+        // TODO: 2 points for longest road
+        // TODO: 2 points for largest army
+
+        return score;
+    }
+
     public bool BeginPlayerTurn(IPlayer player, PlayerTurnType turnType)
     {
         if (player == null || !playerResourceHands.ContainsKey(player))

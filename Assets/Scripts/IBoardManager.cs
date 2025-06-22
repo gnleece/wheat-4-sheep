@@ -54,6 +54,8 @@ public interface IBoardManager
 
     public Dictionary<ResourceType, int> GetResourceHandForPlayer(IPlayer player);
 
+    public int GetPlayerScore(IPlayer player);
+
     public IReadOnlyDictionary<HexCoord, HexTile> HexMap { get; }
     public IReadOnlyDictionary<VertexCoord, HexVertex> VertexMap { get; }
     public IReadOnlyDictionary<EdgeCoord, HexEdge> EdgeMap { get; }
