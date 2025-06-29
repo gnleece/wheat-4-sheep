@@ -1,0 +1,35 @@
+Current local player
+- Resource hand (wood, clay, wheat, sheep, ore)
+- Development card hand
+- Victory points (all)
+- Longest road length (leader yes/no?)
+- Army size (leader yes/no?)
+
+All players
+- Number of resources in hand
+- Number of development cards in hand
+- Victory points (public)
+- Longest road length (leader yes/no?)
+- Army size (leader yes/no?)
+
+Actions
+- Roll dice
+- Build
+    - Road
+    - Settlment
+    - City
+    - Development card
+- Trade
+    - Port
+    - Other player
+- Play development card
+    - Victory point
+    - Soldier
+    - Road building
+    - Year of plenty
+    - Monopoly
+- End turn
+
+Action log
+- Scrollable list of all game actions
+
