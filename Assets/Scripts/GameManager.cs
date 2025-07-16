@@ -37,6 +37,7 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private int playerCount = 0;
     private List<IPlayer> playerList = new List<IPlayer>();
+    private UIManager uiManager;
 
     public IReadOnlyList<IPlayer> PlayerList => playerList.AsReadOnly();
 
@@ -47,7 +48,21 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void Start()
     {
+        // UIManager will be found when needed since it's created dynamically
         Reset();
+    }
+    
+    private UIManager GetUIManager()
+    {
+        if (uiManager == null)
+        {
+            uiManager = FindObjectOfType<UIManager>();
+            if (uiManager == null)
+            {
+                Debug.LogWarning("GameManager: UIManager not found! UI features will not work.");
+            }
+        }
+        return uiManager;
     }
 
     private void Update()
@@ -111,6 +126,13 @@ public class GameManager : MonoBehaviour, IGameManager
         }
 
         boardManager.InitializePlayerResourceHands(playerList);
+
+        var ui = GetUIManager();
+        if (ui != null)
+        {
+            Debug.Log("GameManager: Initializing UI player panels");
+            ui.InitializePlayerPanels(playerList);
+        }
 
         ClearHudText();
     }
@@ -243,6 +265,14 @@ public class GameManager : MonoBehaviour, IGameManager
             foreach (var player in playerList)
             {
                 SetHudText($"Player {player.PlayerId} turn");
+                
+                var ui = GetUIManager();
+                if (ui != null)
+                {
+                    ui.SetActivePlayer(player.PlayerId);
+                    ui.UpdatePlayerPanels();
+                }
+                
                 await player.PlayTurnAsync();
             }
         }
