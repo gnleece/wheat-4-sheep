@@ -296,6 +296,12 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void OnEnterPlaying()
     {
+        var ui = GetUIManager();
+        if (ui != null)
+        {
+            ui.ShowGameplayUI();
+        }
+        
         playingTask = RunPlaying();
     }
 

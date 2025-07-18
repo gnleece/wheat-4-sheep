@@ -153,11 +153,14 @@ public class UIManager : MonoBehaviour
             CreatePlayerPanel(player);
         }
         
-        // Show action panel now that players are set up
+        // Keep UI panels hidden until game actually starts (after initial placement)
         if (actionPanel != null)
-            actionPanel.SetActive(true);
+            actionPanel.SetActive(false);
             
-        Debug.Log($"UIManager: Created {playerUIPanels.Count} player panels");
+        if (playerPanelsContainer != null)
+            playerPanelsContainer.SetActive(false);
+            
+        Debug.Log($"UIManager: Created {playerUIPanels.Count} player panels (hidden until game starts)");
     }
     
     private void CreatePlayerPanel(IPlayer player)
@@ -246,5 +249,16 @@ public class UIManager : MonoBehaviour
     {
         if (boardConfirmationScreen != null)
             boardConfirmationScreen.SetActive(false);
+    }
+    
+    public void ShowGameplayUI()
+    {
+        if (actionPanel != null)
+            actionPanel.SetActive(true);
+            
+        if (playerPanelsContainer != null)
+            playerPanelsContainer.SetActive(true);
+            
+        Debug.Log("UIManager: Gameplay UI panels are now visible");
     }
 }

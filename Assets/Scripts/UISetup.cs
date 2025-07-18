@@ -599,8 +599,9 @@ public class UISetup : MonoBehaviour
         
         AssignActionButtons();
         
-        // Hide action panel initially since no players are set up yet
+        // Hide UI panels initially - they'll be shown when the game enters Playing state
         uiManager.actionPanel.SetActive(false);
+        uiManager.playerPanelsContainer.SetActive(false);
         
         Debug.Log("UIManager setup completed successfully");
     }
