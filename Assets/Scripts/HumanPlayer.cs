@@ -55,9 +55,11 @@ public class HumanPlayer : IPlayer
     {
         boardManager.BeginPlayerTurn(this, PlayerTurnType.RegularTurn);
 
+        // For human players, the turn is managed by UI button clicks
+        // The turn will continue until EndPlayerTurn is successfully called via UI
         while (true)
         {
-            // TODO: replace this with in-game UI
+            // Keep legacy keyboard input as backup for development
             if (Input.GetKeyDown(KeyCode.Alpha1))
             {
                 // Roll Dice
@@ -87,7 +89,5 @@ public class HumanPlayer : IPlayer
 
             await Task.Yield();
         }
-
-        
     }
 }

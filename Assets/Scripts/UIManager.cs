@@ -7,11 +7,14 @@ public class UIManager : MonoBehaviour
 {
     [Header("UI References")]
     public Canvas mainCanvas;
+    public GameObject setupScreen;
+    public GameObject boardConfirmationScreen;
     public GameObject actionPanel;
     public GameObject playerPanelsContainer;
     public GameObject playerPanelPrefab;
     
     [Header("Action Buttons")]
+    public Button rollDiceButton;
     public Button buildRoadButton;
     public Button buildSettlementButton;
     public Button buildCityButton;
@@ -21,32 +24,123 @@ public class UIManager : MonoBehaviour
     
     private GameManager gameManager;
     private List<PlayerUIPanel> playerUIPanels = new List<PlayerUIPanel>();
+    private IPlayer currentPlayer;
+    private IBoardManager boardManager;
     
     private void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
+        boardManager = FindObjectOfType<BoardManager>();
         SetupActionButtons();
     }
     
     private void SetupActionButtons()
     {
+        if (rollDiceButton != null)
+            rollDiceButton.onClick.AddListener(OnRollDiceClicked);
+            
         if (buildRoadButton != null)
-            buildRoadButton.onClick.AddListener(() => Debug.Log("Build Road clicked"));
+            buildRoadButton.onClick.AddListener(OnBuildRoadClicked);
             
         if (buildSettlementButton != null)
-            buildSettlementButton.onClick.AddListener(() => Debug.Log("Build Settlement clicked"));
+            buildSettlementButton.onClick.AddListener(OnBuildSettlementClicked);
             
         if (buildCityButton != null)
-            buildCityButton.onClick.AddListener(() => Debug.Log("Build City clicked"));
+            buildCityButton.onClick.AddListener(OnBuildCityClicked);
             
         if (buyDevelopmentCardButton != null)
-            buyDevelopmentCardButton.onClick.AddListener(() => Debug.Log("Buy Development Card clicked"));
+            buyDevelopmentCardButton.onClick.AddListener(OnBuyDevelopmentCardClicked);
             
         if (tradeButton != null)
-            tradeButton.onClick.AddListener(() => Debug.Log("Trade clicked"));
+            tradeButton.onClick.AddListener(OnTradeClicked);
             
         if (endTurnButton != null)
-            endTurnButton.onClick.AddListener(() => Debug.Log("End Turn clicked"));
+            endTurnButton.onClick.AddListener(OnEndTurnClicked);
+    }
+    
+    private async void OnRollDiceClicked()
+    {
+        if (currentPlayer == null || boardManager == null) return;
+        
+        var diceRoll = await boardManager.RollDice(currentPlayer);
+        Debug.Log($"Player {currentPlayer.PlayerId} rolled: {diceRoll}");
+        UpdatePlayerPanels();
+    }
+    
+    private async void OnBuildRoadClicked()
+    {
+        if (currentPlayer == null || boardManager == null) return;
+        
+        var chosenRoadLocation = await boardManager.GetManualSelectionForRoadLocation(currentPlayer);
+        bool success = boardManager.BuildRoad(currentPlayer, chosenRoadLocation);
+        
+        if (success)
+        {
+            Debug.Log($"Player {currentPlayer.PlayerId} built a road");
+            UpdatePlayerPanels();
+        }
+        else
+        {
+            Debug.Log($"Player {currentPlayer.PlayerId} failed to build road");
+        }
+    }
+    
+    private async void OnBuildSettlementClicked()
+    {
+        if (currentPlayer == null || boardManager == null) return;
+        
+        var chosenSettlementLocation = await boardManager.GetManualSelectionForSettlementLocation(currentPlayer);
+        bool success = boardManager.BuildSettlement(currentPlayer, chosenSettlementLocation);
+        
+        if (success)
+        {
+            Debug.Log($"Player {currentPlayer.PlayerId} built a settlement");
+            UpdatePlayerPanels();
+        }
+        else
+        {
+            Debug.Log($"Player {currentPlayer.PlayerId} failed to build settlement");
+        }
+    }
+    
+    private void OnBuildCityClicked()
+    {
+        if (currentPlayer == null) return;
+        
+        Debug.Log("Build City - Not yet implemented");
+        // TODO: Implement city building when available in IBoardManager
+    }
+    
+    private void OnBuyDevelopmentCardClicked()
+    {
+        if (currentPlayer == null) return;
+        
+        Debug.Log("Buy Development Card - Not yet implemented");
+        // TODO: Implement development card purchase when available in IBoardManager
+    }
+    
+    private void OnTradeClicked()
+    {
+        if (currentPlayer == null) return;
+        
+        Debug.Log("Trade - Not yet implemented");
+        // TODO: Implement trading when available in IBoardManager
+    }
+    
+    private void OnEndTurnClicked()
+    {
+        if (currentPlayer == null || boardManager == null) return;
+        
+        bool success = boardManager.EndPlayerTurn(currentPlayer);
+        if (success)
+        {
+            Debug.Log($"Player {currentPlayer.PlayerId} ended their turn");
+            UpdatePlayerPanels();
+        }
+        else
+        {
+            Debug.Log($"Player {currentPlayer.PlayerId} cannot end turn yet");
+        }
     }
     
     public void InitializePlayerPanels(IReadOnlyList<IPlayer> players)
@@ -113,10 +207,44 @@ public class UIManager : MonoBehaviour
     
     public void SetActivePlayer(int playerId)
     {
+        // Find and store the current player reference
+        currentPlayer = null;
         foreach (var panel in playerUIPanels)
         {
             if (panel != null)
-                panel.SetAsActivePlayer(panel.Player.PlayerId == playerId);
+            {
+                bool isActive = panel.Player.PlayerId == playerId;
+                panel.SetAsActivePlayer(isActive);
+                
+                if (isActive)
+                {
+                    currentPlayer = panel.Player;
+                }
+            }
         }
+    }
+    
+    public void ShowSetupScreen()
+    {
+        if (setupScreen != null)
+            setupScreen.SetActive(true);
+    }
+    
+    public void HideSetupScreen()
+    {
+        if (setupScreen != null)
+            setupScreen.SetActive(false);
+    }
+    
+    public void ShowBoardConfirmationScreen()
+    {
+        if (boardConfirmationScreen != null)
+            boardConfirmationScreen.SetActive(true);
+    }
+    
+    public void HideBoardConfirmationScreen()
+    {
+        if (boardConfirmationScreen != null)
+            boardConfirmationScreen.SetActive(false);
     }
 }

@@ -22,6 +22,8 @@ public class UISetup : MonoBehaviour
     {
         Debug.Log("Creating main UI...");
         CreateCanvas();
+        CreateSetupScreen();
+        CreateBoardConfirmationScreen();
         CreateActionPanel();
         CreatePlayerPanelsArea();
         SetupUIManager();
@@ -46,6 +48,187 @@ public class UISetup : MonoBehaviour
         canvasObject.AddComponent<GraphicRaycaster>();
     }
     
+    private void CreateSetupScreen()
+    {
+        Debug.Log("Creating setup screen...");
+        GameObject setupScreen = CreatePanel("Setup Screen", mainCanvas.transform);
+        RectTransform setupRect = setupScreen.GetComponent<RectTransform>();
+        
+        // Full screen setup panel
+        setupRect.anchorMin = Vector2.zero;
+        setupRect.anchorMax = Vector2.one;
+        setupRect.anchoredPosition = Vector2.zero;
+        setupRect.sizeDelta = Vector2.zero;
+        
+        // Semi-transparent background
+        Image setupImage = setupScreen.GetComponent<Image>();
+        setupImage.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
+        
+        // Create main container for content
+        GameObject contentContainer = new GameObject("Setup Content");
+        contentContainer.transform.SetParent(setupScreen.transform);
+        RectTransform contentRect = contentContainer.AddComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.25f, 0.25f);
+        contentRect.anchorMax = new Vector2(0.75f, 0.75f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = Vector2.zero;
+        
+        // Title
+        GameObject titleText = CreateText("Game Setup Title", contentContainer.transform, "Select Number of Players");
+        TextMeshProUGUI titleComponent = titleText.GetComponent<TextMeshProUGUI>();
+        titleComponent.fontSize = 36;
+        titleComponent.fontStyle = FontStyles.Bold;
+        titleComponent.alignment = TextAlignmentOptions.Center;
+        RectTransform titleRect = titleText.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0, 0.7f);
+        titleRect.anchorMax = new Vector2(1, 0.9f);
+        titleRect.anchoredPosition = Vector2.zero;
+        titleRect.sizeDelta = Vector2.zero;
+        
+        // Button container
+        GameObject buttonContainer = new GameObject("Button Container");
+        buttonContainer.transform.SetParent(contentContainer.transform);
+        RectTransform buttonContainerRect = buttonContainer.AddComponent<RectTransform>();
+        buttonContainerRect.anchorMin = new Vector2(0.2f, 0.3f);
+        buttonContainerRect.anchorMax = new Vector2(0.8f, 0.6f);
+        buttonContainerRect.anchoredPosition = Vector2.zero;
+        buttonContainerRect.sizeDelta = Vector2.zero;
+        
+        // Add layout group for buttons
+        HorizontalLayoutGroup layoutGroup = buttonContainer.AddComponent<HorizontalLayoutGroup>();
+        layoutGroup.spacing = 50f;
+        layoutGroup.childControlWidth = true;
+        layoutGroup.childControlHeight = true;
+        layoutGroup.childForceExpandWidth = true;
+        layoutGroup.childForceExpandHeight = true;
+        layoutGroup.childAlignment = TextAnchor.MiddleCenter;
+        
+        // Create 3 Player button
+        GameObject threePlayerButton = CreateSetupButton("3 Players", buttonContainer.transform);
+        Button threePlayerButtonComponent = threePlayerButton.GetComponent<Button>();
+        threePlayerButtonComponent.onClick.AddListener(() => {
+            Debug.Log("3 Players selected");
+            GameManager gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.SelectPlayerCount(3);
+                setupScreen.SetActive(false);
+            }
+        });
+        
+        // Create 4 Player button
+        GameObject fourPlayerButton = CreateSetupButton("4 Players", buttonContainer.transform);
+        Button fourPlayerButtonComponent = fourPlayerButton.GetComponent<Button>();
+        fourPlayerButtonComponent.onClick.AddListener(() => {
+            Debug.Log("4 Players selected");
+            GameManager gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.SelectPlayerCount(4);
+                setupScreen.SetActive(false);
+            }
+        });
+        
+        Debug.Log("Setup screen created successfully");
+    }
+    
+    private void CreateBoardConfirmationScreen()
+    {
+        Debug.Log("Creating board confirmation screen...");
+        GameObject boardConfirmScreen = CreatePanel("Board Confirmation Screen", mainCanvas.transform);
+        RectTransform boardConfirmRect = boardConfirmScreen.GetComponent<RectTransform>();
+        
+        // Full screen confirmation panel
+        boardConfirmRect.anchorMin = Vector2.zero;
+        boardConfirmRect.anchorMax = Vector2.one;
+        boardConfirmRect.anchoredPosition = Vector2.zero;
+        boardConfirmRect.sizeDelta = Vector2.zero;
+        
+        // Semi-transparent background
+        Image boardConfirmImage = boardConfirmScreen.GetComponent<Image>();
+        boardConfirmImage.color = new Color(0.1f, 0.1f, 0.1f, 0.7f);
+        
+        // Create main container for content
+        GameObject contentContainer = new GameObject("Board Confirmation Content");
+        contentContainer.transform.SetParent(boardConfirmScreen.transform);
+        RectTransform contentRect = contentContainer.AddComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.25f, 0.25f);
+        contentRect.anchorMax = new Vector2(0.75f, 0.75f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = Vector2.zero;
+        
+        // Title
+        GameObject titleText = CreateText("Board Confirmation Title", contentContainer.transform, "Board Layout");
+        TextMeshProUGUI titleComponent = titleText.GetComponent<TextMeshProUGUI>();
+        titleComponent.fontSize = 32;
+        titleComponent.fontStyle = FontStyles.Bold;
+        titleComponent.alignment = TextAlignmentOptions.Center;
+        RectTransform titleRect = titleText.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0, 0.7f);
+        titleRect.anchorMax = new Vector2(1, 0.85f);
+        titleRect.anchoredPosition = Vector2.zero;
+        titleRect.sizeDelta = Vector2.zero;
+        
+        // Description text
+        GameObject descText = CreateText("Board Confirmation Description", contentContainer.transform, "Are you satisfied with this board layout?");
+        TextMeshProUGUI descComponent = descText.GetComponent<TextMeshProUGUI>();
+        descComponent.fontSize = 18;
+        descComponent.alignment = TextAlignmentOptions.Center;
+        descComponent.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+        RectTransform descRect = descText.GetComponent<RectTransform>();
+        descRect.anchorMin = new Vector2(0, 0.55f);
+        descRect.anchorMax = new Vector2(1, 0.7f);
+        descRect.anchoredPosition = Vector2.zero;
+        descRect.sizeDelta = Vector2.zero;
+        
+        // Button container
+        GameObject buttonContainer = new GameObject("Board Button Container");
+        buttonContainer.transform.SetParent(contentContainer.transform);
+        RectTransform buttonContainerRect = buttonContainer.AddComponent<RectTransform>();
+        buttonContainerRect.anchorMin = new Vector2(0.15f, 0.3f);
+        buttonContainerRect.anchorMax = new Vector2(0.85f, 0.5f);
+        buttonContainerRect.anchoredPosition = Vector2.zero;
+        buttonContainerRect.sizeDelta = Vector2.zero;
+        
+        // Add layout group for buttons
+        HorizontalLayoutGroup layoutGroup = buttonContainer.AddComponent<HorizontalLayoutGroup>();
+        layoutGroup.spacing = 40f;
+        layoutGroup.childControlWidth = true;
+        layoutGroup.childControlHeight = true;
+        layoutGroup.childForceExpandWidth = true;
+        layoutGroup.childForceExpandHeight = true;
+        layoutGroup.childAlignment = TextAnchor.MiddleCenter;
+        
+        // Create Accept Board button
+        GameObject acceptButton = CreateBoardConfirmButton("Accept Board", buttonContainer.transform, new Color(0.2f, 0.6f, 0.2f, 1f));
+        Button acceptButtonComponent = acceptButton.GetComponent<Button>();
+        acceptButtonComponent.onClick.AddListener(() => {
+            Debug.Log("Board accepted");
+            GameManager gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.ConfirmBoard();
+            }
+        });
+        
+        // Create Regenerate Board button
+        GameObject regenerateButton = CreateBoardConfirmButton("Regenerate Board", buttonContainer.transform, new Color(0.6f, 0.3f, 0.2f, 1f));
+        Button regenerateButtonComponent = regenerateButton.GetComponent<Button>();
+        regenerateButtonComponent.onClick.AddListener(() => {
+            Debug.Log("Board regeneration requested");
+            GameManager gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.RegenerateBoard();
+            }
+        });
+        
+        // Hide the screen initially
+        boardConfirmScreen.SetActive(false);
+        
+        Debug.Log("Board confirmation screen created successfully");
+    }
+    
     private void CreateActionPanel()
     {
         GameObject actionPanel = CreatePanel("Action Panel", mainCanvas.transform);
@@ -63,7 +246,7 @@ public class UISetup : MonoBehaviour
     
     private void CreateActionButtons(GameObject parent)
     {
-        string[] buttonNames = { "Build Road", "Build Settlement", "Build City", "Buy Dev Card", "Trade", "End Turn" };
+        string[] buttonNames = { "Roll Dice", "Build Road", "Build Settlement", "Build City", "Buy Dev Card", "Trade", "End Turn" };
         float buttonHeight = 60f;
         float spacing = 10f;
         
@@ -408,6 +591,8 @@ public class UISetup : MonoBehaviour
         uiManager = uiManagerObject.AddComponent<UIManager>();
         
         uiManager.mainCanvas = mainCanvas;
+        uiManager.setupScreen = mainCanvas.transform.Find("Setup Screen").gameObject;
+        uiManager.boardConfirmationScreen = mainCanvas.transform.Find("Board Confirmation Screen").gameObject;
         uiManager.actionPanel = mainCanvas.transform.Find("Action Panel").gameObject;
         uiManager.playerPanelsContainer = mainCanvas.transform.Find("Player Panels Container").gameObject;
         uiManager.playerPanelPrefab = uiManager.playerPanelsContainer.transform.Find("Player Panel Prefab").gameObject;
@@ -424,6 +609,7 @@ public class UISetup : MonoBehaviour
     {
         Transform actionPanel = mainCanvas.transform.Find("Action Panel");
         
+        uiManager.rollDiceButton = actionPanel.Find("Roll Dice")?.GetComponent<Button>();
         uiManager.buildRoadButton = actionPanel.Find("Build Road")?.GetComponent<Button>();
         uiManager.buildSettlementButton = actionPanel.Find("Build Settlement")?.GetComponent<Button>();
         uiManager.buildCityButton = actionPanel.Find("Build City")?.GetComponent<Button>();
@@ -487,5 +673,79 @@ public class UISetup : MonoBehaviour
         rect.localScale = Vector3.one;
         
         return textObject;
+    }
+    
+    private GameObject CreateSetupButton(string text, Transform parent)
+    {
+        GameObject button = new GameObject($"Setup Button - {text}");
+        button.transform.SetParent(parent);
+        
+        Image image = button.AddComponent<Image>();
+        image.color = new Color(0.2f, 0.4f, 0.6f, 1f); // Blue button color
+        
+        Button buttonComponent = button.AddComponent<Button>();
+        
+        // Enhanced button color transitions
+        ColorBlock colors = buttonComponent.colors;
+        colors.normalColor = new Color(0.2f, 0.4f, 0.6f, 1f);
+        colors.highlightedColor = new Color(0.3f, 0.5f, 0.7f, 1f);
+        colors.pressedColor = new Color(0.1f, 0.3f, 0.5f, 1f);
+        colors.selectedColor = new Color(0.25f, 0.45f, 0.65f, 1f);
+        buttonComponent.colors = colors;
+        
+        GameObject textObject = CreateText($"{text} Text", button.transform, text);
+        TextMeshProUGUI textComponent = textObject.GetComponent<TextMeshProUGUI>();
+        textComponent.alignment = TextAlignmentOptions.Center;
+        textComponent.fontSize = 24;
+        textComponent.fontStyle = FontStyles.Bold;
+        textComponent.color = Color.white;
+        
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.anchoredPosition = Vector2.zero;
+        textRect.sizeDelta = Vector2.zero;
+        
+        RectTransform rect = button.GetComponent<RectTransform>();
+        rect.localScale = Vector3.one;
+        
+        return button;
+    }
+    
+    private GameObject CreateBoardConfirmButton(string text, Transform parent, Color buttonColor)
+    {
+        GameObject button = new GameObject($"Board Confirm Button - {text}");
+        button.transform.SetParent(parent);
+        
+        Image image = button.AddComponent<Image>();
+        image.color = buttonColor;
+        
+        Button buttonComponent = button.AddComponent<Button>();
+        
+        // Enhanced button color transitions
+        ColorBlock colors = buttonComponent.colors;
+        colors.normalColor = buttonColor;
+        colors.highlightedColor = new Color(buttonColor.r + 0.1f, buttonColor.g + 0.1f, buttonColor.b + 0.1f, 1f);
+        colors.pressedColor = new Color(buttonColor.r - 0.1f, buttonColor.g - 0.1f, buttonColor.b - 0.1f, 1f);
+        colors.selectedColor = new Color(buttonColor.r + 0.05f, buttonColor.g + 0.05f, buttonColor.b + 0.05f, 1f);
+        buttonComponent.colors = colors;
+        
+        GameObject textObject = CreateText($"{text} Text", button.transform, text);
+        TextMeshProUGUI textComponent = textObject.GetComponent<TextMeshProUGUI>();
+        textComponent.alignment = TextAlignmentOptions.Center;
+        textComponent.fontSize = 20;
+        textComponent.fontStyle = FontStyles.Bold;
+        textComponent.color = Color.white;
+        
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.anchoredPosition = Vector2.zero;
+        textRect.sizeDelta = Vector2.zero;
+        
+        RectTransform rect = button.GetComponent<RectTransform>();
+        rect.localScale = Vector3.one;
+        
+        return button;
     }
 }

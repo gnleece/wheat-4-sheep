@@ -28,9 +28,6 @@ public class GameManager : MonoBehaviour, IGameManager
     [SerializeField]
     private BoardManager boardManager;
 
-    [SerializeField]
-    private TextMesh hudDebugText;
-
     #endregion
 
     private StateMachine<GameState> gameStateMachine = null;
@@ -38,6 +35,8 @@ public class GameManager : MonoBehaviour, IGameManager
     private int playerCount = 0;
     private List<IPlayer> playerList = new List<IPlayer>();
     private UIManager uiManager;
+    private bool playerCountSelected = false;
+    private bool boardConfirmed = false;
 
     public IReadOnlyList<IPlayer> PlayerList => playerList.AsReadOnly();
 
@@ -77,7 +76,7 @@ public class GameManager : MonoBehaviour, IGameManager
     {
         if (boardManager == null)
         {
-            SetHudText("Board manager cannot be null");
+            Debug.LogError("Board manager cannot be null");
             return;
         }
         
@@ -97,21 +96,64 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void OnEnterPlayerSetup()
     {
-        SetHudText("Select number of players (3 or 4)");
+        var ui = GetUIManager();
+        if (ui != null)
+        {
+            ui.ShowSetupScreen();
+        }
     }
 
     private void OnUpdatePlayerSetup()
     {
+        // Check if player count has been selected via UI buttons
+        if (playerCountSelected)
+        {
+            gameStateMachine.GoToState(GameState.BoardSetup);
+        }
+        
+        // Keep legacy keyboard support as backup
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            playerCount = 3;
-            gameStateMachine.GoToState(GameState.BoardSetup);
+            SelectPlayerCount(3);
         }
         else if (Input.GetKeyDown(KeyCode.Alpha4))
         {
-            playerCount = 4;
-            gameStateMachine.GoToState(GameState.BoardSetup);
+            SelectPlayerCount(4);
         }
+    }
+    
+    public void SelectPlayerCount(int count)
+    {
+        if (count >= 3 && count <= 4)
+        {
+            playerCount = count;
+            playerCountSelected = true;
+            Debug.Log($"Player count selected: {playerCount}");
+            
+            var ui = GetUIManager();
+            if (ui != null)
+            {
+                ui.HideSetupScreen();
+            }
+        }
+    }
+    
+    public void ConfirmBoard()
+    {
+        boardConfirmed = true;
+        Debug.Log("Board layout confirmed");
+        
+        var ui = GetUIManager();
+        if (ui != null)
+        {
+            ui.HideBoardConfirmationScreen();
+        }
+    }
+    
+    public void RegenerateBoard()
+    {
+        Debug.Log("Regenerating board...");
+        boardManager.StartNewGame(this);
     }
 
     private void OnExitPlayerSetup()
@@ -135,6 +177,8 @@ public class GameManager : MonoBehaviour, IGameManager
         }
 
         ClearHudText();
+        playerCountSelected = false; // Reset for next game
+        boardConfirmed = false; // Reset for next game
     }
 
     #endregion
@@ -144,18 +188,29 @@ public class GameManager : MonoBehaviour, IGameManager
     private void OnEnterBoardSetup()
     {
         boardManager.StartNewGame(this);
-        SetHudText("Press 1 to accept board, press 2 to reset");
+        var ui = GetUIManager();
+        if (ui != null)
+        {
+            ui.ShowBoardConfirmationScreen();
+        }
     }
 
     private void OnUpdateBoardSetup()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1))
+        // Check if board has been confirmed via UI buttons
+        if (boardConfirmed)
         {
             gameStateMachine.GoToState(GameState.FirstSettlementPlacement);
         }
+        
+        // Keep legacy keyboard support as backup
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            ConfirmBoard();
+        }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            boardManager.StartNewGame(this);
+            RegenerateBoard();
         }
     }
 
@@ -193,7 +248,7 @@ public class GameManager : MonoBehaviour, IGameManager
     {
         foreach (var player in playerList)
         {
-            SetHudText($"Player {player.PlayerId} placing first settlement and road");
+            Debug.Log($"Player {player.PlayerId} placing first settlement and road");
             await player.PlaceFirstSettlementAndRoadAsync();
         }
     }
@@ -227,7 +282,7 @@ public class GameManager : MonoBehaviour, IGameManager
         {
             var player = playerList[i];
 
-            SetHudText($"Player {player.PlayerId} placing second settlement and road");
+            Debug.Log($"Player {player.PlayerId} placing second settlement and road");
 
             await player.PlaceSecondSettlementAndRoadAsync();
         }
@@ -264,7 +319,7 @@ public class GameManager : MonoBehaviour, IGameManager
         {
             foreach (var player in playerList)
             {
-                SetHudText($"Player {player.PlayerId} turn");
+                Debug.Log($"Player {player.PlayerId} turn");
                 
                 var ui = GetUIManager();
                 if (ui != null)
@@ -282,21 +337,9 @@ public class GameManager : MonoBehaviour, IGameManager
 
     #region Helpers
 
-    private void SetHudText(string text)
-    {
-        if (hudDebugText != null)
-        {
-            hudDebugText.text = text;
-        }
-        Debug.Log(text);
-    }
-
     private void ClearHudText()
     {
-        if (hudDebugText != null)
-        {
-            hudDebugText.text = string.Empty;
-        }
+        // Legacy method kept for compatibility - now does nothing
     }
 
     #endregion
