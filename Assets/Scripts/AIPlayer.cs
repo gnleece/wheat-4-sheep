@@ -5,7 +5,7 @@ using UnityEngine;
 public class AIPlayer : IPlayer
 {
     private const int MAX_ACTIONS_PER_TURN = 10;
-    private const int THINKING_DELAY_TIME_MS = 500;
+    private const int THINKING_DELAY_TIME_MS = 100;
 
     public int PlayerId => playerId;
 

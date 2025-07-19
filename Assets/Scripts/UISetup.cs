@@ -234,13 +234,23 @@ public class UISetup : MonoBehaviour
         GameObject actionPanel = CreatePanel("Action Panel", mainCanvas.transform);
         RectTransform actionRect = actionPanel.GetComponent<RectTransform>();
         
-        // Anchor the panel higher up so buttons aren't cut off at the bottom
-        actionRect.anchorMin = new Vector2(0, 0.1f);
-        actionRect.anchorMax = new Vector2(0.3f, 0.8f);
-        actionRect.anchoredPosition = Vector2.zero;
-        actionRect.sizeDelta = Vector2.zero;
-        actionRect.offsetMin = new Vector2(20, 20);
-        actionRect.offsetMax = new Vector2(-20, -20);
+        // Anchor the panel to the left side with proper spacing
+        actionRect.anchorMin = new Vector2(0, 0.5f);
+        actionRect.anchorMax = new Vector2(0, 0.5f);
+        actionRect.anchoredPosition = new Vector2(130, 0); // Move it further right to be fully visible
+        
+        // Add layout components to auto-size the panel
+        VerticalLayoutGroup layoutGroup = actionPanel.AddComponent<VerticalLayoutGroup>();
+        layoutGroup.spacing = 10f;
+        layoutGroup.padding = new RectOffset(15, 15, 15, 15);
+        layoutGroup.childControlWidth = true;
+        layoutGroup.childControlHeight = false;
+        layoutGroup.childForceExpandWidth = false;
+        layoutGroup.childAlignment = TextAnchor.MiddleCenter;
+        
+        ContentSizeFitter sizeFitter = actionPanel.AddComponent<ContentSizeFitter>();
+        sizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         
         CreateActionButtons(actionPanel);
     }
@@ -248,18 +258,21 @@ public class UISetup : MonoBehaviour
     private void CreateActionButtons(GameObject parent)
     {
         string[] buttonNames = { "Roll Dice", "Build Road", "Build Settlement", "Build City", "Buy Dev Card", "Trade", "End Turn" };
-        float buttonHeight = 60f;
-        float spacing = 10f;
+        float buttonHeight = 50f;
+        int fontSize = 30;
+        float buttonWidth = 200f;
         
         for (int i = 0; i < buttonNames.Length; i++)
         {
-            GameObject button = CreateButton(buttonNames[i], parent.transform);
+            GameObject button = CreateButton(buttonNames[i], parent.transform, fontSize);
             RectTransform buttonRect = button.GetComponent<RectTransform>();
             
-            buttonRect.anchorMin = new Vector2(0, 1);
-            buttonRect.anchorMax = new Vector2(1, 1);
-            buttonRect.sizeDelta = new Vector2(0, buttonHeight);
-            buttonRect.anchoredPosition = new Vector2(0, -(i * (buttonHeight + spacing) + buttonHeight / 2 + 20));
+            // Set a fixed size for each button
+            LayoutElement layoutElement = button.AddComponent<LayoutElement>();
+            layoutElement.preferredHeight = buttonHeight;
+            layoutElement.preferredWidth = buttonWidth;
+            layoutElement.flexibleWidth = 0;
+            layoutElement.flexibleHeight = 0;
         }
     }
     
@@ -332,7 +345,7 @@ public class UISetup : MonoBehaviour
         // Player name
         GameObject playerNameText = CreateText("Player Name", headerContainer.transform, "Player 1");
         panelScript.playerNameText = playerNameText.GetComponent<TextMeshProUGUI>();
-        panelScript.playerNameText.fontSize = 18;
+        panelScript.playerNameText.fontSize = 22;
         panelScript.playerNameText.fontStyle = FontStyles.Bold;
         RectTransform nameRect = playerNameText.GetComponent<RectTransform>();
         nameRect.anchorMin = new Vector2(0, 0);
@@ -343,7 +356,7 @@ public class UISetup : MonoBehaviour
         // Victory points
         GameObject vpText = CreateText("Victory Points", headerContainer.transform, "VP: 0");
         panelScript.victoryPointsText = vpText.GetComponent<TextMeshProUGUI>();
-        panelScript.victoryPointsText.fontSize = 16;
+        panelScript.victoryPointsText.fontSize = 20;
         panelScript.victoryPointsText.fontStyle = FontStyles.Bold;
         panelScript.victoryPointsText.alignment = TextAlignmentOptions.MidlineRight;
         RectTransform vpRect = vpText.GetComponent<RectTransform>();
@@ -491,7 +504,7 @@ public class UISetup : MonoBehaviour
             // Create resource count text
             GameObject countText = CreateText($"{resources[i]} Count", resourceItem.transform, "0");
             TextMeshProUGUI textComponent = countText.GetComponent<TextMeshProUGUI>();
-            textComponent.fontSize = 12;
+            textComponent.fontSize = 16;
             textComponent.alignment = TextAlignmentOptions.Center;
             textComponent.fontStyle = FontStyles.Bold;
             RectTransform textRect = countText.GetComponent<RectTransform>();
@@ -514,7 +527,7 @@ public class UISetup : MonoBehaviour
         // Create total resources text
         GameObject totalText = CreateText("Total Resources", parent.transform, "Total: 0");
         panelScript.totalResourcesText = totalText.GetComponent<TextMeshProUGUI>();
-        panelScript.totalResourcesText.fontSize = 11;
+        panelScript.totalResourcesText.fontSize = 14;
         panelScript.totalResourcesText.alignment = TextAlignmentOptions.MidlineRight;
         panelScript.totalResourcesText.fontStyle = FontStyles.Italic;
         RectTransform totalRect = totalText.GetComponent<RectTransform>();
@@ -539,7 +552,7 @@ public class UISetup : MonoBehaviour
         // Development cards
         GameObject devCardsText = CreateText("Development Cards", infoContainer.transform, "Dev Cards: 0");
         panelScript.developmentCardsText = devCardsText.GetComponent<TextMeshProUGUI>();
-        panelScript.developmentCardsText.fontSize = 10;
+        panelScript.developmentCardsText.fontSize = 14;
         panelScript.developmentCardsText.alignment = TextAlignmentOptions.MidlineLeft;
         RectTransform devRect = devCardsText.GetComponent<RectTransform>();
         devRect.anchorMin = new Vector2(0, 0.7f);
@@ -550,7 +563,7 @@ public class UISetup : MonoBehaviour
         // Longest road indicator
         GameObject longestRoadText = CreateText("Longest Road", infoContainer.transform, "");
         panelScript.longestRoadText = longestRoadText.GetComponent<TextMeshProUGUI>();
-        panelScript.longestRoadText.fontSize = 10;
+        panelScript.longestRoadText.fontSize = 12;
         panelScript.longestRoadText.alignment = TextAlignmentOptions.MidlineLeft;
         panelScript.longestRoadText.color = Color.yellow;
         RectTransform roadRect = longestRoadText.GetComponent<RectTransform>();
@@ -562,7 +575,7 @@ public class UISetup : MonoBehaviour
         // Largest army indicator
         GameObject largestArmyText = CreateText("Largest Army", infoContainer.transform, "");
         panelScript.largestArmyText = largestArmyText.GetComponent<TextMeshProUGUI>();
-        panelScript.largestArmyText.fontSize = 10;
+        panelScript.largestArmyText.fontSize = 12;
         panelScript.largestArmyText.alignment = TextAlignmentOptions.MidlineRight;
         panelScript.largestArmyText.color = Color.red;
         RectTransform armyRect = largestArmyText.GetComponent<RectTransform>();
@@ -634,7 +647,7 @@ public class UISetup : MonoBehaviour
         return panel;
     }
     
-    private GameObject CreateButton(string name, Transform parent)
+    private GameObject CreateButton(string name, Transform parent, int fontSize)
     {
         GameObject button = new GameObject(name);
         button.transform.SetParent(parent);
@@ -644,7 +657,7 @@ public class UISetup : MonoBehaviour
         
         Button buttonComponent = button.AddComponent<Button>();
         
-        GameObject textObject = CreateText($"{name} Text", button.transform, name);
+        GameObject textObject = CreateText($"{name} Text", button.transform, name, fontSize);
         TextMeshProUGUI textComponent = textObject.GetComponent<TextMeshProUGUI>();
         textComponent.alignment = TextAlignmentOptions.Center;
         textComponent.color = Color.white;
@@ -661,14 +674,14 @@ public class UISetup : MonoBehaviour
         return button;
     }
     
-    private GameObject CreateText(string name, Transform parent, string text)
+    private GameObject CreateText(string name, Transform parent, string text, int fontSize = 20)
     {
         GameObject textObject = new GameObject(name);
         textObject.transform.SetParent(parent);
         
         TextMeshProUGUI textComponent = textObject.AddComponent<TextMeshProUGUI>();
         textComponent.text = text;
-        textComponent.fontSize = 16;
+        textComponent.fontSize = fontSize;
         textComponent.color = Color.white;
         
         RectTransform rect = textObject.GetComponent<RectTransform>();
