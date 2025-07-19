@@ -114,7 +114,9 @@ public class PlayerUIPanel : MonoBehaviour
     
     private int CalculateVictoryPoints()
     {
-        return 0;
+        if (player == null || boardManager == null) return 0;
+        
+        return boardManager.GetPlayerScore(player);
     }
     
     public void SetAsActivePlayer(bool isActive)
