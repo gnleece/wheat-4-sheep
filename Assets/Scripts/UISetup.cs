@@ -234,8 +234,9 @@ public class UISetup : MonoBehaviour
         GameObject actionPanel = CreatePanel("Action Panel", mainCanvas.transform);
         RectTransform actionRect = actionPanel.GetComponent<RectTransform>();
         
-        actionRect.anchorMin = new Vector2(0, 0);
-        actionRect.anchorMax = new Vector2(0.3f, 0.4f);
+        // Anchor the panel higher up so buttons aren't cut off at the bottom
+        actionRect.anchorMin = new Vector2(0, 0.1f);
+        actionRect.anchorMax = new Vector2(0.3f, 0.8f);
         actionRect.anchoredPosition = Vector2.zero;
         actionRect.sizeDelta = Vector2.zero;
         actionRect.offsetMin = new Vector2(20, 20);
