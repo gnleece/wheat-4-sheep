@@ -55,9 +55,7 @@ public class HumanPlayer : IPlayer
     {
         boardManager.BeginPlayerTurn(this, PlayerTurnType.RegularTurn);
 
-        // For human players, the turn is managed by UI button clicks
-        // The turn will continue until EndPlayerTurn is successfully called via UI
-        while (true)
+        while (boardManager.IsPlayerTurn(this))
         {
             // Keep legacy keyboard input as backup for development
             if (Input.GetKeyDown(KeyCode.Alpha1))
@@ -80,11 +78,7 @@ public class HumanPlayer : IPlayer
             else if (Input.GetKeyDown(KeyCode.Alpha0))
             {
                 // End Turn
-                var endTurnSuccess = boardManager.EndPlayerTurn(this);
-                if (endTurnSuccess)
-                {
-                    break;
-                }
+                boardManager.EndPlayerTurn(this);
             }
 
             await Task.Yield();

@@ -1,4 +1,5 @@
 using Grid;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -37,6 +38,8 @@ public interface IBoardManager
     public bool BeginPlayerTurn(IPlayer player, PlayerTurnType turnType);
 
     public bool EndPlayerTurn(IPlayer player);
+    public bool IsPlayerTurn(IPlayer player);
+    public bool CanEndTurn(IPlayer player);
 
     public Task<HexVertex> GetManualSelectionForSettlementLocation(IPlayer player);
 
@@ -60,7 +63,13 @@ public interface IBoardManager
 
     public List<HexEdge> GetAvailableRoadLocations(IPlayer player);
 
+    public bool CanBuildSettlement(IPlayer player);
+    public bool CanBuildRoad(IPlayer player);
+    public bool CanRollDice(IPlayer player);
+
     public IReadOnlyDictionary<HexCoord, HexTile> HexMap { get; }
     public IReadOnlyDictionary<VertexCoord, HexVertex> VertexMap { get; }
     public IReadOnlyDictionary<EdgeCoord, HexEdge> EdgeMap { get; }
+
+    public Action BoardStateChanged { get; set; }
 }

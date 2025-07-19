@@ -89,6 +89,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
     public IReadOnlyDictionary<VertexCoord, HexVertex> VertexMap => vertexMap;
     public IReadOnlyDictionary<EdgeCoord, HexEdge> EdgeMap => edgeMap;
 
+    public Action BoardStateChanged { get; set; } = null;
+
     #endregion
 
     #region Private members
@@ -267,6 +269,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             Debug.Log("Invalid settlement position. Try again.");
         }
 
+        BoardStateChanged?.Invoke();
         return success;
     }
 
@@ -336,6 +339,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             Debug.Log("Invalid road position. Try again.");
         }
 
+        BoardStateChanged?.Invoke();
         return success;
     }
 
@@ -422,6 +426,85 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return locations;
     }
 
+    public bool CanBuildSettlement(IPlayer player)
+    {
+        // Is it this player's turn?
+        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        {
+            return false;
+        }
+
+        // Have they already rolled the dice?
+        if (!currentPlayerTurn.HasRolledDice)
+        {
+            return false;
+        }
+
+        // Can they afford the building cost?
+        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
+        if (!currentPlayerHand.HasEnoughResources(BuildingCosts.SettlementCost))
+        {
+            return false;
+        }
+
+        // Are there any valid settlement locations available?
+        var availableLocations = GetAvailableSettlementLocations(player);
+        if (availableLocations == null || availableLocations.Count == 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool CanBuildRoad(IPlayer player)
+    {
+        // Is it this player's turn?
+        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        {
+            return false;
+        }
+
+        // Have they already rolled the dice?
+        if (!currentPlayerTurn.HasRolledDice)
+        {
+            return false;
+        }
+
+        // Can they afford the building cost?
+        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
+        if (!currentPlayerHand.HasEnoughResources(BuildingCosts.RoadCost))
+        {
+            return false;
+        }
+
+        // Are there any valid road locations available?
+        var availableLocations = GetAvailableRoadLocations(player);
+        if (availableLocations == null || availableLocations.Count == 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool CanRollDice(IPlayer player)
+    {
+        // Is it this player's turn?
+        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        {
+            return false;
+        }
+
+        // Have they already rolled the dice?
+        if (currentPlayerTurn.HasRolledDice)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     public bool BeginPlayerTurn(IPlayer player, PlayerTurnType turnType)
     {
         if (player == null || !playerResourceHands.ContainsKey(player))
@@ -441,6 +524,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         currentPlayerTurn = new PlayerTurn { Player = player, TurnType = turnType };
 
         Debug.Log($"Player {player.PlayerId} turn started");
+        BoardStateChanged?.Invoke();
         return true;
     }
 
@@ -460,7 +544,22 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         Debug.Log($"Player {player.PlayerId} turn ended");
         currentPlayerTurn = null;
+        BoardStateChanged?.Invoke();
         return true;
+    }
+
+    public bool IsPlayerTurn(IPlayer player)
+    {
+        return currentPlayerTurn != null && currentPlayerTurn.Player == player;
+    }
+
+    public bool CanEndTurn(IPlayer player)
+    {
+        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        {
+            return false;
+        }
+        return currentPlayerTurn.CanEndTurn;
     }
 
     public async Task<int?> RollDice(IPlayer player)
@@ -499,6 +598,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         currentPlayerTurn.HasRolledDice = true;
 
+        BoardStateChanged?.Invoke();
         return diceRoll;
     }
 

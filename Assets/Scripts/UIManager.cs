@@ -31,9 +31,38 @@ public class UIManager : MonoBehaviour
     {
         gameManager = FindObjectOfType<GameManager>();
         boardManager = FindObjectOfType<BoardManager>();
+        boardManager.BoardStateChanged += RefreshUI;
         SetupActionButtons();
     }
-    
+
+    private void OnDestroy()
+    {
+        if (boardManager != null)
+            boardManager.BoardStateChanged -= RefreshUI;
+
+        // Clean up action button listeners
+        if (rollDiceButton != null)
+            rollDiceButton.onClick.RemoveAllListeners();
+        if (buildRoadButton != null)
+            buildRoadButton.onClick.RemoveAllListeners();
+        if (buildSettlementButton != null)
+            buildSettlementButton.onClick.RemoveAllListeners();
+        if (buildCityButton != null)
+            buildCityButton.onClick.RemoveAllListeners();
+        if (buyDevelopmentCardButton != null)
+            buyDevelopmentCardButton.onClick.RemoveAllListeners();
+        if (tradeButton != null)
+            tradeButton.onClick.RemoveAllListeners();
+        if (endTurnButton != null)
+            endTurnButton.onClick.RemoveAllListeners();
+    }
+
+    private void RefreshUI()
+    {
+        UpdatePlayerPanels();
+        UpdateActionButtonStates();
+    }
+
     private void SetupActionButtons()
     {
         if (rollDiceButton != null)
@@ -64,7 +93,6 @@ public class UIManager : MonoBehaviour
         
         var diceRoll = await boardManager.RollDice(currentPlayer);
         Debug.Log($"Player {currentPlayer.PlayerId} rolled: {diceRoll}");
-        UpdatePlayerPanels();
     }
     
     private async void OnBuildRoadClicked()
@@ -77,7 +105,6 @@ public class UIManager : MonoBehaviour
         if (success)
         {
             Debug.Log($"Player {currentPlayer.PlayerId} built a road");
-            UpdatePlayerPanels();
         }
         else
         {
@@ -95,7 +122,6 @@ public class UIManager : MonoBehaviour
         if (success)
         {
             Debug.Log($"Player {currentPlayer.PlayerId} built a settlement");
-            UpdatePlayerPanels();
         }
         else
         {
@@ -206,6 +232,9 @@ public class UIManager : MonoBehaviour
             if (panel != null)
                 panel.UpdateDisplay();
         }
+        
+        // Update button states when player data changes
+        UpdateActionButtonStates();
     }
     
     public void SetActivePlayer(int playerId)
@@ -225,6 +254,9 @@ public class UIManager : MonoBehaviour
                 }
             }
         }
+        
+        // Update button states when active player changes
+        UpdateActionButtonStates();
     }
     
     public void ShowSetupScreen()
@@ -260,5 +292,54 @@ public class UIManager : MonoBehaviour
             playerPanelsContainer.SetActive(true);
             
         Debug.Log("UIManager: Gameplay UI panels are now visible");
+        
+        // Update button states when UI becomes visible
+        UpdateActionButtonStates();
+    }
+    
+    private void UpdateActionButtonStates()
+    {
+        if (currentPlayer == null || boardManager == null)
+        {
+            // Disable all buttons if no current player or board manager
+            SetButtonInteractable(rollDiceButton, false);
+            SetButtonInteractable(buildRoadButton, false);
+            SetButtonInteractable(buildSettlementButton, false);
+            SetButtonInteractable(buildCityButton, false);
+            SetButtonInteractable(buyDevelopmentCardButton, false);
+            SetButtonInteractable(tradeButton, false);
+            SetButtonInteractable(endTurnButton, false);
+            return;
+        }
+        
+        SetButtonInteractable(rollDiceButton, boardManager.CanRollDice(currentPlayer));
+        SetButtonInteractable(buildRoadButton, boardManager.CanBuildRoad(currentPlayer));
+        SetButtonInteractable(buildSettlementButton, boardManager.CanBuildSettlement(currentPlayer));
+        
+        SetButtonInteractable(buildCityButton, false);          // Disabled until city upgrade is implemented
+        SetButtonInteractable(buyDevelopmentCardButton, false); // Disabled until dev cards are implemented
+        SetButtonInteractable(tradeButton, false);              // Disabled until trade is implemented
+        
+        SetButtonInteractable(endTurnButton, boardManager.CanEndTurn(currentPlayer));
+    }
+    
+    private void SetButtonInteractable(Button button, bool interactable)
+    {
+        if (button != null)
+        {
+            button.interactable = interactable;
+            
+            // Visual feedback - dim disabled buttons
+            var colors = button.colors;
+            if (interactable)
+            {
+                colors.disabledColor = new Color(0.4f, 0.4f, 0.4f, 0.5f);
+            }
+            else
+            {
+                colors.disabledColor = new Color(0.2f, 0.2f, 0.2f, 0.3f);
+            }
+            button.colors = colors;
+        }
     }
 }
