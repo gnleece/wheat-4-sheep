@@ -345,7 +345,7 @@ public class UISetup : MonoBehaviour
         // Player name
         GameObject playerNameText = CreateText("Player Name", headerContainer.transform, "Player 1");
         panelScript.playerNameText = playerNameText.GetComponent<TextMeshProUGUI>();
-        panelScript.playerNameText.fontSize = 22;
+        panelScript.playerNameText.fontSize = 30;
         panelScript.playerNameText.fontStyle = FontStyles.Bold;
         RectTransform nameRect = playerNameText.GetComponent<RectTransform>();
         nameRect.anchorMin = new Vector2(0, 0);
@@ -356,7 +356,7 @@ public class UISetup : MonoBehaviour
         // Victory points
         GameObject vpText = CreateText("Victory Points", headerContainer.transform, "VP: 0");
         panelScript.victoryPointsText = vpText.GetComponent<TextMeshProUGUI>();
-        panelScript.victoryPointsText.fontSize = 20;
+        panelScript.victoryPointsText.fontSize = 30;
         panelScript.victoryPointsText.fontStyle = FontStyles.Bold;
         panelScript.victoryPointsText.alignment = TextAlignmentOptions.MidlineRight;
         RectTransform vpRect = vpText.GetComponent<RectTransform>();
@@ -504,7 +504,7 @@ public class UISetup : MonoBehaviour
             // Create resource count text
             GameObject countText = CreateText($"{resources[i]} Count", resourceItem.transform, "0");
             TextMeshProUGUI textComponent = countText.GetComponent<TextMeshProUGUI>();
-            textComponent.fontSize = 16;
+            textComponent.fontSize = 25;
             textComponent.alignment = TextAlignmentOptions.Center;
             textComponent.fontStyle = FontStyles.Bold;
             RectTransform textRect = countText.GetComponent<RectTransform>();
@@ -527,7 +527,7 @@ public class UISetup : MonoBehaviour
         // Create total resources text
         GameObject totalText = CreateText("Total Resources", parent.transform, "Total: 0");
         panelScript.totalResourcesText = totalText.GetComponent<TextMeshProUGUI>();
-        panelScript.totalResourcesText.fontSize = 14;
+        panelScript.totalResourcesText.fontSize = 25;
         panelScript.totalResourcesText.alignment = TextAlignmentOptions.MidlineRight;
         panelScript.totalResourcesText.fontStyle = FontStyles.Italic;
         RectTransform totalRect = totalText.GetComponent<RectTransform>();
@@ -552,7 +552,7 @@ public class UISetup : MonoBehaviour
         // Development cards
         GameObject devCardsText = CreateText("Development Cards", infoContainer.transform, "Dev Cards: 0");
         panelScript.developmentCardsText = devCardsText.GetComponent<TextMeshProUGUI>();
-        panelScript.developmentCardsText.fontSize = 14;
+        panelScript.developmentCardsText.fontSize = 25;
         panelScript.developmentCardsText.alignment = TextAlignmentOptions.MidlineLeft;
         RectTransform devRect = devCardsText.GetComponent<RectTransform>();
         devRect.anchorMin = new Vector2(0, 0.7f);
