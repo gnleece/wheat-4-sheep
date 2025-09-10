@@ -235,6 +235,22 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return manuallySelectedSettlementToUpgrade;
     }
 
+    public async Task GetManualDiscardOnSevenRoll(IPlayer player, ResourceHand hand, int cardsToDiscard)
+    {
+        Debug.Log($"Showing manual discard UI for Player {player.PlayerId} to discard {cardsToDiscard} cards...");
+        
+        // Show discard UI for human player
+        var uiManager = FindAnyObjectByType<UIManager>();
+        if (uiManager != null)
+        {
+            await uiManager.ShowDiscardUI(player, hand, cardsToDiscard);
+        }
+        else
+        {
+            Debug.LogError("UIManager not found! Cannot show discard UI for human player.");
+        }
+    }
+
     private HexVertex GetLastSettlementPlaced(IPlayer player)
     {
         if (lastSettlementPlaced.TryGetValue(player, out var hexVertex))
@@ -765,64 +781,10 @@ public class BoardManager : MonoBehaviour, IBoardManager
             
             Debug.Log($"Player {player.PlayerId} must discard {cardsToDiscard} cards");
             
-            if (player is AIPlayer)
-            {
-                await HandleAIPlayerDiscard(player, hand, cardsToDiscard);
-            }
-            else if (player is HumanPlayer)
-            {
-                await HandleHumanPlayerDiscard(player, hand, cardsToDiscard);
-            }
+            await player.DiscardOnSevenRoll(hand, cardsToDiscard);
         }
     }
 
-    private async Task HandleAIPlayerDiscard(IPlayer player, ResourceHand hand, int cardsToDiscard)
-    {
-        Debug.Log($"AI Player {player.PlayerId} discarding {cardsToDiscard} cards randomly...");
-        
-        var allResources = hand.GetAll();
-        var resourcesList = new List<ResourceType>();
-        
-        // Create a list of all resources (including duplicates)
-        foreach (var kvp in allResources)
-        {
-            for (int i = 0; i < kvp.Value; i++)
-            {
-                resourcesList.Add(kvp.Key);
-            }
-        }
-        
-        // Randomly select cards to discard
-        var random = new System.Random();
-        for (int i = 0; i < cardsToDiscard && resourcesList.Count > 0; i++)
-        {
-            var randomIndex = random.Next(resourcesList.Count);
-            var resourceToDiscard = resourcesList[randomIndex];
-            hand.Remove(resourceToDiscard, 1);
-            resourcesList.RemoveAt(randomIndex);
-            Debug.Log($"AI Player {player.PlayerId} discarded 1 {resourceToDiscard}");
-        }
-        
-        await Task.Delay(500); // Small delay for visual feedback
-    }
-
-    private async Task HandleHumanPlayerDiscard(IPlayer player, ResourceHand hand, int cardsToDiscard)
-    {
-        Debug.Log($"Human Player {player.PlayerId} must discard {cardsToDiscard} cards...");
-        
-        // Show discard UI for human player
-        var uiManager = FindAnyObjectByType<UIManager>();
-        if (uiManager != null)
-        {
-            await uiManager.ShowDiscardUI(player, hand, cardsToDiscard);
-        }
-        else
-        {
-            Debug.LogError("UIManager not found! Cannot show discard UI for human player.");
-            // Fallback to random discard if UI is not available
-            await HandleAIPlayerDiscard(player, hand, cardsToDiscard);
-        }
-    }
 
     private void GiveAllPlayersResourcesForHexTile(HexTile hexTile)
     {

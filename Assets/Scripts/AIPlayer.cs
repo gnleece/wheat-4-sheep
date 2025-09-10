@@ -94,6 +94,35 @@ public class AIPlayer : IPlayer
         boardManager.EndPlayerTurn(this);
     }
 
+    public async Task DiscardOnSevenRoll(ResourceHand hand, int cardsToDiscard)
+    {
+        Debug.Log($"AI Player {playerId} discarding {cardsToDiscard} cards randomly...");
+        
+        var allResources = hand.GetAll();
+        var resourcesList = new List<ResourceType>();
+        
+        // Create a list of all resources (including duplicates)
+        foreach (var kvp in allResources)
+        {
+            for (int i = 0; i < kvp.Value; i++)
+            {
+                resourcesList.Add(kvp.Key);
+            }
+        }
+        
+        // Randomly select cards to discard
+        for (int i = 0; i < cardsToDiscard && resourcesList.Count > 0; i++)
+        {
+            var randomIndex = random.Next(resourcesList.Count);
+            var resourceToDiscard = resourcesList[randomIndex];
+            hand.Remove(resourceToDiscard, 1);
+            resourcesList.RemoveAt(randomIndex);
+            Debug.Log($"AI Player {playerId} discarded 1 {resourceToDiscard}");
+        }
+        
+        await Task.Delay(500); // Small delay for visual feedback
+    }
+
     private async Task PlaceRandomSettlementAsync()
     {
         var locations = boardManager.GetAvailableSettlementLocations(this);

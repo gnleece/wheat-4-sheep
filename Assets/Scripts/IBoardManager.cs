@@ -47,6 +47,8 @@ public interface IBoardManager
 
     public Task<HexVertex> GetManualSelectionForSettlementUpgrade(IPlayer player);
 
+    public Task GetManualDiscardOnSevenRoll(IPlayer player, ResourceHand hand, int cardsToDiscard);
+
     public void ManualSettlementLocationSelected(HexVertex hexVertex);
 
     public void ManualRoadLocationSelected(HexEdge hexEdge);

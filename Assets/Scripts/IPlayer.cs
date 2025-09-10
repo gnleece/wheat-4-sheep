@@ -17,4 +17,6 @@ public interface IPlayer
     public Task PlaceSecondSettlementAndRoadAsync();
 
     public Task PlayTurnAsync();
+    
+    public Task DiscardOnSevenRoll(ResourceHand hand, int cardsToDiscard);
 }

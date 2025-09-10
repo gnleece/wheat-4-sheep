@@ -90,4 +90,12 @@ public class HumanPlayer : IPlayer
             await Task.Yield();
         }
     }
+
+    public async Task DiscardOnSevenRoll(ResourceHand hand, int cardsToDiscard)
+    {
+        Debug.Log($"Human Player {playerId} must discard {cardsToDiscard} cards...");
+        
+        // Use BoardManager to show discard UI
+        await boardManager.GetManualDiscardOnSevenRoll(this, hand, cardsToDiscard);
+    }
 }
