@@ -25,6 +25,7 @@ public class UISetup : MonoBehaviour
         CreateSetupScreen();
         CreateBoardConfirmationScreen();
         CreateGameOverScreen();
+        CreateDiscardScreen();
         CreateActionPanel();
         CreatePlayerPanelsArea();
         SetupUIManager();
@@ -335,6 +336,286 @@ public class UISetup : MonoBehaviour
         gameOverScreen.SetActive(false);
         
         Debug.Log("Game over screen created successfully");
+    }
+    
+    private void CreateDiscardScreen()
+    {
+        Debug.Log("Creating discard screen...");
+        GameObject discardScreen = CreatePanel("Discard Screen", mainCanvas.transform);
+        RectTransform discardRect = discardScreen.GetComponent<RectTransform>();
+        
+        // Full screen discard panel
+        discardRect.anchorMin = Vector2.zero;
+        discardRect.anchorMax = Vector2.one;
+        discardRect.anchoredPosition = Vector2.zero;
+        discardRect.sizeDelta = Vector2.zero;
+        
+        // Semi-transparent background
+        Image discardImage = discardScreen.GetComponent<Image>();
+        discardImage.color = new Color(0.1f, 0.1f, 0.1f, 0.9f);
+        
+        // Create main container for content
+        GameObject contentContainer = new GameObject("Discard Content");
+        contentContainer.transform.SetParent(discardScreen.transform);
+        RectTransform contentRect = contentContainer.AddComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.15f, 0.15f);
+        contentRect.anchorMax = new Vector2(0.85f, 0.85f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = Vector2.zero;
+        
+        // Title
+        GameObject titleText = CreateText("Discard Title", contentContainer.transform, "Discard Cards");
+        TextMeshProUGUI titleComponent = titleText.GetComponent<TextMeshProUGUI>();
+        titleComponent.fontSize = 36;
+        titleComponent.fontStyle = FontStyles.Bold;
+        titleComponent.alignment = TextAlignmentOptions.Center;
+        titleComponent.color = new Color(1f, 0.8f, 0.2f, 1f); // Gold color
+        RectTransform titleRect = titleText.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0, 0.85f);
+        titleRect.anchorMax = new Vector2(1, 0.95f);
+        titleRect.anchoredPosition = Vector2.zero;
+        titleRect.sizeDelta = Vector2.zero;
+        
+        // Player name
+        GameObject playerNameText = CreateText("Player Name", contentContainer.transform, "Player 1");
+        TextMeshProUGUI playerNameComponent = playerNameText.GetComponent<TextMeshProUGUI>();
+        playerNameComponent.fontSize = 28;
+        playerNameComponent.fontStyle = FontStyles.Bold;
+        playerNameComponent.alignment = TextAlignmentOptions.Center;
+        playerNameComponent.color = new Color(0.2f, 0.8f, 0.2f, 1f); // Green color
+        RectTransform playerNameRect = playerNameText.GetComponent<RectTransform>();
+        playerNameRect.anchorMin = new Vector2(0, 0.75f);
+        playerNameRect.anchorMax = new Vector2(1, 0.85f);
+        playerNameRect.anchoredPosition = Vector2.zero;
+        playerNameRect.sizeDelta = Vector2.zero;
+        
+        // Cards to discard text
+        GameObject cardsToDiscardText = CreateText("Cards To Discard", contentContainer.transform, "You must discard X cards");
+        TextMeshProUGUI cardsToDiscardComponent = cardsToDiscardText.GetComponent<TextMeshProUGUI>();
+        cardsToDiscardComponent.fontSize = 24;
+        cardsToDiscardComponent.alignment = TextAlignmentOptions.Center;
+        cardsToDiscardComponent.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+        RectTransform cardsToDiscardRect = cardsToDiscardText.GetComponent<RectTransform>();
+        cardsToDiscardRect.anchorMin = new Vector2(0, 0.65f);
+        cardsToDiscardRect.anchorMax = new Vector2(1, 0.75f);
+        cardsToDiscardRect.anchoredPosition = Vector2.zero;
+        cardsToDiscardRect.sizeDelta = Vector2.zero;
+        
+        // Progress text
+        GameObject progressText = CreateText("Progress Text", contentContainer.transform, "Discarded: 0/X");
+        TextMeshProUGUI progressComponent = progressText.GetComponent<TextMeshProUGUI>();
+        progressComponent.fontSize = 20;
+        progressComponent.alignment = TextAlignmentOptions.Center;
+        progressComponent.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+        RectTransform progressRect = progressText.GetComponent<RectTransform>();
+        progressRect.anchorMin = new Vector2(0, 0.55f);
+        progressRect.anchorMax = new Vector2(1, 0.65f);
+        progressRect.anchoredPosition = Vector2.zero;
+        progressRect.sizeDelta = Vector2.zero;
+        
+        // Resource container
+        CreateDiscardResourceContainer(contentContainer);
+        
+        // Confirm button
+        GameObject confirmButton = CreateDiscardButton("Confirm Discard", contentContainer.transform, new Color(0.2f, 0.6f, 0.2f, 1f));
+        // Note: Click listener will be added by DiscardUIController
+        RectTransform confirmRect = confirmButton.GetComponent<RectTransform>();
+        confirmRect.anchorMin = new Vector2(0.3f, 0.05f);
+        confirmRect.anchorMax = new Vector2(0.7f, 0.15f);
+        confirmRect.anchoredPosition = Vector2.zero;
+        confirmRect.sizeDelta = Vector2.zero;
+        
+        // Add DiscardUIController component
+        discardScreen.AddComponent<DiscardUIController>();
+        
+        // Hide the screen initially
+        discardScreen.SetActive(false);
+        
+        Debug.Log("Discard screen created successfully");
+    }
+    
+    private void CreateDiscardResourceContainer(GameObject parent)
+    {
+        GameObject resourceContainer = new GameObject("Resource Container");
+        resourceContainer.transform.SetParent(parent.transform);
+        RectTransform resourceRect = resourceContainer.AddComponent<RectTransform>();
+        resourceRect.anchorMin = new Vector2(0.05f, 0.2f);
+        resourceRect.anchorMax = new Vector2(0.95f, 0.5f);
+        resourceRect.anchoredPosition = Vector2.zero;
+        resourceRect.sizeDelta = Vector2.zero;
+        
+        string[] resources = { "Wood", "Clay", "Sheep", "Wheat", "Ore" };
+        Color[] resourceColors = { 
+            new Color(0.6f, 0.4f, 0.2f), // Brown for wood
+            new Color(0.8f, 0.4f, 0.2f), // Orange for clay  
+            new Color(0.9f, 0.9f, 0.9f), // Light gray for sheep
+            new Color(1f, 0.8f, 0.2f),   // Yellow for wheat
+            new Color(0.6f, 0.6f, 0.6f)  // Gray for ore
+        };
+        
+        for (int i = 0; i < resources.Length; i++)
+        {
+            float xPos = i / (float)resources.Length;
+            float width = 1f / resources.Length;
+            
+            // Create resource item container
+            GameObject resourceItem = new GameObject($"{resources[i]} Item");
+            resourceItem.transform.SetParent(resourceContainer.transform);
+            RectTransform itemRect = resourceItem.AddComponent<RectTransform>();
+            itemRect.anchorMin = new Vector2(xPos, 0);
+            itemRect.anchorMax = new Vector2(xPos + width, 1);
+            itemRect.anchoredPosition = Vector2.zero;
+            itemRect.sizeDelta = Vector2.zero;
+            itemRect.offsetMin = new Vector2(5, 5);
+            itemRect.offsetMax = new Vector2(-5, -5);
+            
+            // Create button container for increment/decrement buttons
+            GameObject buttonContainer = new GameObject($"{resources[i]} Button Container");
+            buttonContainer.transform.SetParent(resourceItem.transform);
+            RectTransform buttonContainerRect = buttonContainer.AddComponent<RectTransform>();
+            buttonContainerRect.anchorMin = new Vector2(0.1f, 0.6f);
+            buttonContainerRect.anchorMax = new Vector2(0.9f, 0.95f);
+            buttonContainerRect.anchoredPosition = Vector2.zero;
+            buttonContainerRect.sizeDelta = Vector2.zero;
+            
+            // Create increment button (+)
+            GameObject incrementButton = CreateDiscardResourceButton($"{resources[i]} Increment Button", buttonContainer.transform, new Color(0.2f, 0.6f, 0.2f, 1f));
+            RectTransform incrementRect = incrementButton.GetComponent<RectTransform>();
+            incrementRect.anchorMin = new Vector2(0.5f, 0);
+            incrementRect.anchorMax = new Vector2(1, 1);
+            incrementRect.anchoredPosition = Vector2.zero;
+            incrementRect.sizeDelta = Vector2.zero;
+            
+            // Add + text to increment button
+            GameObject incrementText = CreateText($"{resources[i]} Increment Text", incrementButton.transform, "+");
+            TextMeshProUGUI incrementTextComponent = incrementText.GetComponent<TextMeshProUGUI>();
+            incrementTextComponent.fontSize = 24;
+            incrementTextComponent.alignment = TextAlignmentOptions.Center;
+            incrementTextComponent.fontStyle = FontStyles.Bold;
+            incrementTextComponent.color = Color.white;
+            RectTransform incrementTextRect = incrementText.GetComponent<RectTransform>();
+            incrementTextRect.anchorMin = Vector2.zero;
+            incrementTextRect.anchorMax = Vector2.one;
+            incrementTextRect.anchoredPosition = Vector2.zero;
+            incrementTextRect.sizeDelta = Vector2.zero;
+            
+            // Create decrement button (-)
+            GameObject decrementButton = CreateDiscardResourceButton($"{resources[i]} Decrement Button", buttonContainer.transform, new Color(0.6f, 0.2f, 0.2f, 1f));
+            RectTransform decrementRect = decrementButton.GetComponent<RectTransform>();
+            decrementRect.anchorMin = new Vector2(0, 0);
+            decrementRect.anchorMax = new Vector2(0.5f, 1);
+            decrementRect.anchoredPosition = Vector2.zero;
+            decrementRect.sizeDelta = Vector2.zero;
+            
+            // Add - text to decrement button
+            GameObject decrementText = CreateText($"{resources[i]} Decrement Text", decrementButton.transform, "-");
+            TextMeshProUGUI decrementTextComponent = decrementText.GetComponent<TextMeshProUGUI>();
+            decrementTextComponent.fontSize = 24;
+            decrementTextComponent.alignment = TextAlignmentOptions.Center;
+            decrementTextComponent.fontStyle = FontStyles.Bold;
+            decrementTextComponent.color = Color.white;
+            RectTransform decrementTextRect = decrementText.GetComponent<RectTransform>();
+            decrementTextRect.anchorMin = Vector2.zero;
+            decrementTextRect.anchorMax = Vector2.one;
+            decrementTextRect.anchoredPosition = Vector2.zero;
+            decrementTextRect.sizeDelta = Vector2.zero;
+            
+            // Create resource icon (positioned above the buttons)
+            GameObject icon = new GameObject($"{resources[i]} Icon");
+            icon.transform.SetParent(resourceItem.transform);
+            Image iconImage = icon.AddComponent<Image>();
+            iconImage.color = resourceColors[i];
+            RectTransform iconRect = icon.GetComponent<RectTransform>();
+            iconRect.anchorMin = new Vector2(0.1f, 0.7f);
+            iconRect.anchorMax = new Vector2(0.9f, 0.95f);
+            iconRect.anchoredPosition = Vector2.zero;
+            iconRect.sizeDelta = Vector2.zero;
+            
+            // Create current count text
+            GameObject countText = CreateText($"{resources[i]} Count", resourceItem.transform, "0");
+            TextMeshProUGUI countComponent = countText.GetComponent<TextMeshProUGUI>();
+            countComponent.fontSize = 20;
+            countComponent.alignment = TextAlignmentOptions.Center;
+            countComponent.fontStyle = FontStyles.Bold;
+            RectTransform countRect = countText.GetComponent<RectTransform>();
+            countRect.anchorMin = new Vector2(0.1f, 0.3f);
+            countRect.anchorMax = new Vector2(0.9f, 0.55f);
+            countRect.anchoredPosition = Vector2.zero;
+            countRect.sizeDelta = Vector2.zero;
+            
+            // Create discard count text
+            GameObject discardCountText = CreateText($"{resources[i]} Discard Count", resourceItem.transform, "0");
+            TextMeshProUGUI discardCountComponent = discardCountText.GetComponent<TextMeshProUGUI>();
+            discardCountComponent.fontSize = 16;
+            discardCountComponent.alignment = TextAlignmentOptions.Center;
+            discardCountComponent.color = new Color(1f, 0.2f, 0.2f, 1f); // Red color
+            RectTransform discardCountRect = discardCountText.GetComponent<RectTransform>();
+            discardCountRect.anchorMin = new Vector2(0.1f, 0.1f);
+            discardCountRect.anchorMax = new Vector2(0.9f, 0.25f);
+            discardCountRect.anchoredPosition = Vector2.zero;
+            discardCountRect.sizeDelta = Vector2.zero;
+        }
+    }
+    
+    private GameObject CreateDiscardButton(string text, Transform parent, Color buttonColor)
+    {
+        GameObject button = new GameObject($"Discard Button - {text}");
+        button.transform.SetParent(parent);
+        
+        Image image = button.AddComponent<Image>();
+        image.color = buttonColor;
+        
+        Button buttonComponent = button.AddComponent<Button>();
+        
+        // Enhanced button color transitions
+        ColorBlock colors = buttonComponent.colors;
+        colors.normalColor = buttonColor;
+        colors.highlightedColor = new Color(buttonColor.r + 0.1f, buttonColor.g + 0.1f, buttonColor.b + 0.1f, 1f);
+        colors.pressedColor = new Color(buttonColor.r - 0.1f, buttonColor.g - 0.1f, buttonColor.b - 0.1f, 1f);
+        colors.selectedColor = new Color(buttonColor.r + 0.05f, buttonColor.g + 0.05f, buttonColor.b + 0.05f, 1f);
+        buttonComponent.colors = colors;
+        
+        GameObject textObject = CreateText($"{text} Text", button.transform, text);
+        TextMeshProUGUI textComponent = textObject.GetComponent<TextMeshProUGUI>();
+        textComponent.alignment = TextAlignmentOptions.Center;
+        textComponent.fontSize = 20;
+        textComponent.fontStyle = FontStyles.Bold;
+        textComponent.color = Color.white;
+        
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.anchoredPosition = Vector2.zero;
+        textRect.sizeDelta = Vector2.zero;
+        
+        RectTransform rect = button.GetComponent<RectTransform>();
+        rect.localScale = Vector3.one;
+        
+        return button;
+    }
+    
+    private GameObject CreateDiscardResourceButton(string name, Transform parent, Color buttonColor)
+    {
+        GameObject button = new GameObject(name);
+        button.transform.SetParent(parent);
+        
+        Image image = button.AddComponent<Image>();
+        image.color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
+        
+        Button buttonComponent = button.AddComponent<Button>();
+        
+        // Enhanced button color transitions
+        ColorBlock colors = buttonComponent.colors;
+        colors.normalColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
+        colors.highlightedColor = new Color(0.4f, 0.4f, 0.4f, 0.9f);
+        colors.pressedColor = new Color(0.2f, 0.2f, 0.2f, 0.7f);
+        colors.selectedColor = new Color(0.35f, 0.35f, 0.35f, 0.85f);
+        buttonComponent.colors = colors;
+        
+        RectTransform rect = button.GetComponent<RectTransform>();
+        rect.localScale = Vector3.one;
+        
+        return button;
     }
     
     private void CreateActionPanel()
@@ -716,6 +997,7 @@ public class UISetup : MonoBehaviour
         uiManager.setupScreen = mainCanvas.transform.Find("Setup Screen").gameObject;
         uiManager.boardConfirmationScreen = mainCanvas.transform.Find("Board Confirmation Screen").gameObject;
         uiManager.gameOverScreen = mainCanvas.transform.Find("Game Over Screen").gameObject;
+        uiManager.discardScreen = mainCanvas.transform.Find("Discard Screen").gameObject;
         uiManager.actionPanel = mainCanvas.transform.Find("Action Panel").gameObject;
         uiManager.playerPanelsContainer = mainCanvas.transform.Find("Player Panels Container").gameObject;
         uiManager.playerPanelPrefab = uiManager.playerPanelsContainer.transform.Find("Player Panel Prefab").gameObject;

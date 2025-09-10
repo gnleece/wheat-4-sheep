@@ -10,6 +10,7 @@ public class UIManager : MonoBehaviour
     public GameObject setupScreen;
     public GameObject boardConfirmationScreen;
     public GameObject gameOverScreen;
+    public GameObject discardScreen;
     public GameObject actionPanel;
     public GameObject playerPanelsContainer;
     public GameObject playerPanelPrefab;
@@ -307,6 +308,84 @@ public class UIManager : MonoBehaviour
     {
         if (gameOverScreen != null)
             gameOverScreen.SetActive(false);
+    }
+    
+    public async System.Threading.Tasks.Task ShowDiscardUI(IPlayer player, ResourceHand hand, int cardsToDiscard)
+    {
+        if (discardScreen == null)
+        {
+            Debug.LogError("Discard screen not found! Cannot show discard UI.");
+            return;
+        }
+        
+        // Update the discard UI with current player's resources
+        UpdateDiscardUI(player, hand, cardsToDiscard);
+        
+        // Show the discard screen
+        discardScreen.SetActive(true);
+        
+        // Wait for the player to complete discarding
+        var discardController = discardScreen.GetComponent<DiscardUIController>();
+        if (discardController != null)
+        {
+            await discardController.WaitForDiscardCompletion();
+        }
+        
+        // Hide the discard screen
+        discardScreen.SetActive(false);
+    }
+    
+    private void UpdateDiscardUI(IPlayer player, ResourceHand hand, int cardsToDiscard)
+    {
+        if (discardScreen == null) return;
+        
+        // Update player name
+        Transform playerNameTransform = discardScreen.transform.Find("Discard Content/Player Name");
+        if (playerNameTransform != null)
+        {
+            TextMeshProUGUI playerNameText = playerNameTransform.GetComponent<TextMeshProUGUI>();
+            if (playerNameText != null)
+            {
+                playerNameText.text = $"Player {player.PlayerId + 1}";
+            }
+        }
+        
+        // Update cards to discard count
+        Transform cardsToDiscardTransform = discardScreen.transform.Find("Discard Content/Cards To Discard");
+        if (cardsToDiscardTransform != null)
+        {
+            TextMeshProUGUI cardsToDiscardText = cardsToDiscardTransform.GetComponent<TextMeshProUGUI>();
+            if (cardsToDiscardText != null)
+            {
+                cardsToDiscardText.text = $"You must discard {cardsToDiscard} cards";
+            }
+        }
+        
+        // Update resource counts
+        var allResources = hand.GetAll();
+        string[] resourceNames = { "Wood", "Clay", "Sheep", "Wheat", "Ore" };
+        ResourceType[] resourceTypes = { ResourceType.Wood, ResourceType.Clay, ResourceType.Sheep, ResourceType.Wheat, ResourceType.Ore };
+        
+        for (int i = 0; i < resourceNames.Length; i++)
+        {
+            Transform resourceTransform = discardScreen.transform.Find($"Discard Content/Resource Container/{resourceNames[i]} Item/{resourceNames[i]} Count");
+            if (resourceTransform != null)
+            {
+                TextMeshProUGUI resourceText = resourceTransform.GetComponent<TextMeshProUGUI>();
+                if (resourceText != null)
+                {
+                    int count = allResources.ContainsKey(resourceTypes[i]) ? allResources[resourceTypes[i]] : 0;
+                    resourceText.text = count.ToString();
+                }
+            }
+        }
+        
+        // Initialize the discard controller
+        var discardController = discardScreen.GetComponent<DiscardUIController>();
+        if (discardController != null)
+        {
+            discardController.Initialize(player, hand, cardsToDiscard);
+        }
     }
     
     private void UpdateGameOverText(IPlayer winner, int score)

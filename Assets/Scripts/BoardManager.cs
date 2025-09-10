@@ -709,7 +709,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         var dieA = random.Next(1, 7);
         var dieB = random.Next(1, 7);
-        var diceRoll = dieA + dieB;
+        var diceRoll = 7;// dieA + dieB;
 
         Debug.Log($"Player {player.PlayerId} rolled a {diceRoll} ({dieA} + {dieB})");
 
@@ -722,7 +722,11 @@ public class BoardManager : MonoBehaviour, IBoardManager
             }
         }
 
-        // TODO: if the roll is 7, force players with more than 7 cards to discard
+        // Handle 7 roll - force players with more than 7 cards to discard
+        if (diceRoll == 7)
+        {
+            await HandleSevenRollDiscard();
+        }
         // TODO: if the roll is 7, have the current player move the robber
 
         await Task.Delay(10); // Simulate some delay as stub for missing todos above
@@ -731,6 +735,93 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         BoardStateChanged?.Invoke();
         return diceRoll;
+    }
+
+    private async Task HandleSevenRollDiscard()
+    {
+        Debug.Log("Seven rolled! Checking for players with more than 7 cards...");
+        
+        // Find all players with more than 7 cards
+        var playersToDiscard = new List<IPlayer>();
+        foreach (var kvp in playerResourceHands)
+        {
+            var player = kvp.Key;
+            var hand = kvp.Value;
+            var totalCards = hand.GetAll().Values.Sum();
+            
+            if (totalCards > 7)
+            {
+                playersToDiscard.Add(player);
+                Debug.Log($"Player {player.PlayerId} has {totalCards} cards and must discard {totalCards / 2}");
+            }
+        }
+        
+        // Handle discard for each player
+        foreach (var player in playersToDiscard)
+        {
+            var hand = playerResourceHands[player];
+            var totalCards = hand.GetAll().Values.Sum();
+            var cardsToDiscard = totalCards / 2;
+            
+            Debug.Log($"Player {player.PlayerId} must discard {cardsToDiscard} cards");
+            
+            if (player is AIPlayer)
+            {
+                await HandleAIPlayerDiscard(player, hand, cardsToDiscard);
+            }
+            else if (player is HumanPlayer)
+            {
+                await HandleHumanPlayerDiscard(player, hand, cardsToDiscard);
+            }
+        }
+    }
+
+    private async Task HandleAIPlayerDiscard(IPlayer player, ResourceHand hand, int cardsToDiscard)
+    {
+        Debug.Log($"AI Player {player.PlayerId} discarding {cardsToDiscard} cards randomly...");
+        
+        var allResources = hand.GetAll();
+        var resourcesList = new List<ResourceType>();
+        
+        // Create a list of all resources (including duplicates)
+        foreach (var kvp in allResources)
+        {
+            for (int i = 0; i < kvp.Value; i++)
+            {
+                resourcesList.Add(kvp.Key);
+            }
+        }
+        
+        // Randomly select cards to discard
+        var random = new System.Random();
+        for (int i = 0; i < cardsToDiscard && resourcesList.Count > 0; i++)
+        {
+            var randomIndex = random.Next(resourcesList.Count);
+            var resourceToDiscard = resourcesList[randomIndex];
+            hand.Remove(resourceToDiscard, 1);
+            resourcesList.RemoveAt(randomIndex);
+            Debug.Log($"AI Player {player.PlayerId} discarded 1 {resourceToDiscard}");
+        }
+        
+        await Task.Delay(500); // Small delay for visual feedback
+    }
+
+    private async Task HandleHumanPlayerDiscard(IPlayer player, ResourceHand hand, int cardsToDiscard)
+    {
+        Debug.Log($"Human Player {player.PlayerId} must discard {cardsToDiscard} cards...");
+        
+        // Show discard UI for human player
+        var uiManager = FindAnyObjectByType<UIManager>();
+        if (uiManager != null)
+        {
+            await uiManager.ShowDiscardUI(player, hand, cardsToDiscard);
+        }
+        else
+        {
+            Debug.LogError("UIManager not found! Cannot show discard UI for human player.");
+            // Fallback to random discard if UI is not available
+            await HandleAIPlayerDiscard(player, hand, cardsToDiscard);
+        }
     }
 
     private void GiveAllPlayersResourcesForHexTile(HexTile hexTile)
