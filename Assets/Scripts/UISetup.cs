@@ -24,6 +24,7 @@ public class UISetup : MonoBehaviour
         CreateCanvas();
         CreateSetupScreen();
         CreateBoardConfirmationScreen();
+        CreateGameOverScreen();
         CreateActionPanel();
         CreatePlayerPanelsArea();
         SetupUIManager();
@@ -227,6 +228,113 @@ public class UISetup : MonoBehaviour
         boardConfirmScreen.SetActive(false);
         
         Debug.Log("Board confirmation screen created successfully");
+    }
+    
+    private void CreateGameOverScreen()
+    {
+        Debug.Log("Creating game over screen...");
+        GameObject gameOverScreen = CreatePanel("Game Over Screen", mainCanvas.transform);
+        RectTransform gameOverRect = gameOverScreen.GetComponent<RectTransform>();
+        
+        // Full screen game over panel
+        gameOverRect.anchorMin = Vector2.zero;
+        gameOverRect.anchorMax = Vector2.one;
+        gameOverRect.anchoredPosition = Vector2.zero;
+        gameOverRect.sizeDelta = Vector2.zero;
+        
+        // Semi-transparent background
+        Image gameOverImage = gameOverScreen.GetComponent<Image>();
+        gameOverImage.color = new Color(0.1f, 0.1f, 0.1f, 0.9f);
+        
+        // Create main container for content
+        GameObject contentContainer = new GameObject("Game Over Content");
+        contentContainer.transform.SetParent(gameOverScreen.transform);
+        RectTransform contentRect = contentContainer.AddComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.2f, 0.2f);
+        contentRect.anchorMax = new Vector2(0.8f, 0.8f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = Vector2.zero;
+        
+        // Title
+        GameObject titleText = CreateText("Game Over Title", contentContainer.transform, "Game Over!");
+        TextMeshProUGUI titleComponent = titleText.GetComponent<TextMeshProUGUI>();
+        titleComponent.fontSize = 48;
+        titleComponent.fontStyle = FontStyles.Bold;
+        titleComponent.alignment = TextAlignmentOptions.Center;
+        titleComponent.color = new Color(1f, 0.8f, 0.2f, 1f); // Gold color
+        RectTransform titleRect = titleText.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0, 0.7f);
+        titleRect.anchorMax = new Vector2(1, 0.9f);
+        titleRect.anchoredPosition = Vector2.zero;
+        titleRect.sizeDelta = Vector2.zero;
+        
+        // Winner text
+        GameObject winnerText = CreateText("Winner Text", contentContainer.transform, "Winner: Player 1");
+        TextMeshProUGUI winnerComponent = winnerText.GetComponent<TextMeshProUGUI>();
+        winnerComponent.fontSize = 36;
+        winnerComponent.fontStyle = FontStyles.Bold;
+        winnerComponent.alignment = TextAlignmentOptions.Center;
+        winnerComponent.color = new Color(0.2f, 0.8f, 0.2f, 1f); // Green color
+        RectTransform winnerRect = winnerText.GetComponent<RectTransform>();
+        winnerRect.anchorMin = new Vector2(0, 0.5f);
+        winnerRect.anchorMax = new Vector2(1, 0.65f);
+        winnerRect.anchoredPosition = Vector2.zero;
+        winnerRect.sizeDelta = Vector2.zero;
+        
+        // Score text
+        GameObject scoreText = CreateText("Score Text", contentContainer.transform, "Victory Points: 5");
+        TextMeshProUGUI scoreComponent = scoreText.GetComponent<TextMeshProUGUI>();
+        scoreComponent.fontSize = 28;
+        scoreComponent.alignment = TextAlignmentOptions.Center;
+        scoreComponent.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+        RectTransform scoreRect = scoreText.GetComponent<RectTransform>();
+        scoreRect.anchorMin = new Vector2(0, 0.4f);
+        scoreRect.anchorMax = new Vector2(1, 0.5f);
+        scoreRect.anchoredPosition = Vector2.zero;
+        scoreRect.sizeDelta = Vector2.zero;
+        
+        // Button container
+        GameObject buttonContainer = new GameObject("Game Over Button Container");
+        buttonContainer.transform.SetParent(contentContainer.transform);
+        RectTransform buttonContainerRect = buttonContainer.AddComponent<RectTransform>();
+        buttonContainerRect.anchorMin = new Vector2(0.2f, 0.1f);
+        buttonContainerRect.anchorMax = new Vector2(0.8f, 0.3f);
+        buttonContainerRect.anchoredPosition = Vector2.zero;
+        buttonContainerRect.sizeDelta = Vector2.zero;
+        
+        // Add layout group for buttons
+        HorizontalLayoutGroup layoutGroup = buttonContainer.AddComponent<HorizontalLayoutGroup>();
+        layoutGroup.spacing = 40f;
+        layoutGroup.childControlWidth = true;
+        layoutGroup.childControlHeight = true;
+        layoutGroup.childForceExpandWidth = true;
+        layoutGroup.childForceExpandHeight = true;
+        layoutGroup.childAlignment = TextAnchor.MiddleCenter;
+        
+        // Create Play Again button
+        GameObject playAgainButton = CreateGameOverButton("Play Again", buttonContainer.transform, new Color(0.2f, 0.6f, 0.2f, 1f));
+        Button playAgainButtonComponent = playAgainButton.GetComponent<Button>();
+        playAgainButtonComponent.onClick.AddListener(() => {
+            Debug.Log("Play Again clicked");
+            GameManager gameManager = FindAnyObjectByType<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.RestartGame();
+            }
+        });
+        
+        // Create Quit button
+        GameObject quitButton = CreateGameOverButton("Quit", buttonContainer.transform, new Color(0.6f, 0.2f, 0.2f, 1f));
+        Button quitButtonComponent = quitButton.GetComponent<Button>();
+        quitButtonComponent.onClick.AddListener(() => {
+            Debug.Log("Quit clicked");
+            Application.Quit();
+        });
+        
+        // Hide the screen initially
+        gameOverScreen.SetActive(false);
+        
+        Debug.Log("Game over screen created successfully");
     }
     
     private void CreateActionPanel()
@@ -607,6 +715,7 @@ public class UISetup : MonoBehaviour
         uiManager.mainCanvas = mainCanvas;
         uiManager.setupScreen = mainCanvas.transform.Find("Setup Screen").gameObject;
         uiManager.boardConfirmationScreen = mainCanvas.transform.Find("Board Confirmation Screen").gameObject;
+        uiManager.gameOverScreen = mainCanvas.transform.Find("Game Over Screen").gameObject;
         uiManager.actionPanel = mainCanvas.transform.Find("Action Panel").gameObject;
         uiManager.playerPanelsContainer = mainCanvas.transform.Find("Player Panels Container").gameObject;
         uiManager.playerPanelPrefab = uiManager.playerPanelsContainer.transform.Find("Player Panel Prefab").gameObject;
@@ -749,6 +858,43 @@ public class UISetup : MonoBehaviour
         TextMeshProUGUI textComponent = textObject.GetComponent<TextMeshProUGUI>();
         textComponent.alignment = TextAlignmentOptions.Center;
         textComponent.fontSize = 20;
+        textComponent.fontStyle = FontStyles.Bold;
+        textComponent.color = Color.white;
+        
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.anchoredPosition = Vector2.zero;
+        textRect.sizeDelta = Vector2.zero;
+        
+        RectTransform rect = button.GetComponent<RectTransform>();
+        rect.localScale = Vector3.one;
+        
+        return button;
+    }
+    
+    private GameObject CreateGameOverButton(string text, Transform parent, Color buttonColor)
+    {
+        GameObject button = new GameObject($"Game Over Button - {text}");
+        button.transform.SetParent(parent);
+        
+        Image image = button.AddComponent<Image>();
+        image.color = buttonColor;
+        
+        Button buttonComponent = button.AddComponent<Button>();
+        
+        // Enhanced button color transitions
+        ColorBlock colors = buttonComponent.colors;
+        colors.normalColor = buttonColor;
+        colors.highlightedColor = new Color(buttonColor.r + 0.1f, buttonColor.g + 0.1f, buttonColor.b + 0.1f, 1f);
+        colors.pressedColor = new Color(buttonColor.r - 0.1f, buttonColor.g - 0.1f, buttonColor.b - 0.1f, 1f);
+        colors.selectedColor = new Color(buttonColor.r + 0.05f, buttonColor.g + 0.05f, buttonColor.b + 0.05f, 1f);
+        buttonComponent.colors = colors;
+        
+        GameObject textObject = CreateText($"{text} Text", button.transform, text);
+        TextMeshProUGUI textComponent = textObject.GetComponent<TextMeshProUGUI>();
+        textComponent.alignment = TextAlignmentOptions.Center;
+        textComponent.fontSize = 24;
         textComponent.fontStyle = FontStyles.Bold;
         textComponent.color = Color.white;
         

@@ -87,7 +87,7 @@ public class GameManager : MonoBehaviour, IGameManager
         gameStateMachine.AddState(GameState.FirstSettlementPlacement, OnEnterFirstSettlementPlacement, OnUpdateFirstSettlementPlacement, OnExitFirstSettlementPlacement);
         gameStateMachine.AddState(GameState.SecondSettlementPlacement, OnEnterSecondSettlementPlacement, OnUpdateSecondSettlementPlacement, OnExitSecondSettlementPlacement);
         gameStateMachine.AddState(GameState.Playing, OnEnterPlaying, OnUpdatePlaying, OnExitPlaying);
-        gameStateMachine.AddState(GameState.GameOver, null, null, null);
+        gameStateMachine.AddState(GameState.GameOver, OnEnterGameOver, null, null);
 
         gameStateMachine.GoToState(GameState.PlayerSetup);
     }
@@ -321,7 +321,7 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private async Task RunPlaying()
     {
-        while (true)
+        while (!IsGameOver())
         {
             foreach (var player in playerList)
             {
@@ -337,6 +337,71 @@ public class GameManager : MonoBehaviour, IGameManager
                 await player.PlayTurnAsync();
             }
         }
+    }
+
+    private bool IsGameOver()
+    {
+        foreach (var player in playerList)
+        {
+            if (boardManager.GetPlayerScore(player) >= 5)  // TODO: make this configurable
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    #endregion
+
+    #region Game Over
+
+    private void OnEnterGameOver()
+    {
+        Debug.Log("Game over!");
+        
+        // Determine the winning player
+        IPlayer winner = GetWinningPlayer();
+        int winningScore = winner != null ? boardManager.GetPlayerScore(winner) : 0;
+        
+        // Show the game over screen
+        var ui = GetUIManager();
+        if (ui != null && winner != null)
+        {
+            ui.ShowGameOverScreen(winner, winningScore);
+        }
+    }
+    
+    private IPlayer GetWinningPlayer()
+    {
+        IPlayer winner = null;
+        int highestScore = 0;
+        
+        foreach (var player in playerList)
+        {
+            int score = boardManager.GetPlayerScore(player);
+            if (score > highestScore)
+            {
+                highestScore = score;
+                winner = player;
+            }
+        }
+        
+        return winner;
+    }
+    
+    public void RestartGame()
+    {
+        Debug.Log("Restarting game...");
+        
+        // Hide game over screen
+        var ui = GetUIManager();
+        if (ui != null)
+        {
+            ui.HideGameOverScreen();
+        }
+        
+        // Reset the game state
+        Reset();
     }
 
     #endregion

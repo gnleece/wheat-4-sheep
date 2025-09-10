@@ -9,6 +9,7 @@ public class UIManager : MonoBehaviour
     public Canvas mainCanvas;
     public GameObject setupScreen;
     public GameObject boardConfirmationScreen;
+    public GameObject gameOverScreen;
     public GameObject actionPanel;
     public GameObject playerPanelsContainer;
     public GameObject playerPanelPrefab;
@@ -281,6 +282,49 @@ public class UIManager : MonoBehaviour
     {
         if (boardConfirmationScreen != null)
             boardConfirmationScreen.SetActive(false);
+    }
+    
+    public void ShowGameOverScreen(IPlayer winner, int score)
+    {
+        if (gameOverScreen != null)
+        {
+            // Update the winner and score text
+            UpdateGameOverText(winner, score);
+            gameOverScreen.SetActive(true);
+        }
+    }
+    
+    public void HideGameOverScreen()
+    {
+        if (gameOverScreen != null)
+            gameOverScreen.SetActive(false);
+    }
+    
+    private void UpdateGameOverText(IPlayer winner, int score)
+    {
+        if (gameOverScreen == null) return;
+        
+        // Find and update winner text
+        Transform winnerTextTransform = gameOverScreen.transform.Find("Game Over Content/Winner Text");
+        if (winnerTextTransform != null)
+        {
+            TextMeshProUGUI winnerText = winnerTextTransform.GetComponent<TextMeshProUGUI>();
+            if (winnerText != null)
+            {
+                winnerText.text = $"Winner: Player {winner.PlayerId + 1}";
+            }
+        }
+        
+        // Find and update score text
+        Transform scoreTextTransform = gameOverScreen.transform.Find("Game Over Content/Score Text");
+        if (scoreTextTransform != null)
+        {
+            TextMeshProUGUI scoreText = scoreTextTransform.GetComponent<TextMeshProUGUI>();
+            if (scoreText != null)
+            {
+                scoreText.text = $"Victory Points: {score}";
+            }
+        }
     }
     
     public void ShowGameplayUI()
