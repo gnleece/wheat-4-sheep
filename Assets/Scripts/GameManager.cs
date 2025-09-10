@@ -321,7 +321,8 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private async Task RunPlaying()
     {
-        while (!IsGameOver())
+        var isGameOver = false;
+        while (!isGameOver)
         {
             foreach (var player in playerList)
             {
@@ -335,6 +336,12 @@ public class GameManager : MonoBehaviour, IGameManager
                 }
                 
                 await player.PlayTurnAsync();
+
+                isGameOver = IsGameOver();
+                if (isGameOver)
+                {
+                    break;
+                }
             }
         }
     }
@@ -343,7 +350,7 @@ public class GameManager : MonoBehaviour, IGameManager
     {
         foreach (var player in playerList)
         {
-            if (boardManager.GetPlayerScore(player) >= 5)  // TODO: make this configurable
+            if (boardManager.GetPlayerScore(player) >= 4)  // TODO: make this configurable
             {
                 return true;
             }
