@@ -53,6 +53,8 @@ public interface IBoardManager
 
     public void ManualSettlementUpgradeLocationSelected(HexVertex hexVertex);
 
+    public void ManualVertexSelected(HexVertex hexVertex);
+
     public bool BuildSettlement(IPlayer player, HexVertex hexVertex);
 
     public bool BuildRoad(IPlayer player, HexEdge hexEdge);

@@ -45,29 +45,7 @@ public class HexVertexObject : MonoBehaviour
 
     private void HandleBuildingLocationSelected()
     {
-        // Check the current board mode to determine which selection method to call
-        if (boardManager is BoardManager bm)
-        {
-            var currentMode = bm.GetCurrentBoardMode();
-            switch (currentMode)
-            {
-                case BoardMode.ChooseSettlementLocation:
-                    boardManager.ManualSettlementLocationSelected(hexVertex);
-                    break;
-                case BoardMode.ChooseSettlementToUpgrade:
-                    boardManager.ManualSettlementUpgradeLocationSelected(hexVertex);
-                    break;
-                default:
-                    // Fallback to settlement selection for backward compatibility
-                    boardManager.ManualSettlementLocationSelected(hexVertex);
-                    break;
-            }
-        }
-        else
-        {
-            // Fallback for interface compatibility
-            boardManager.ManualSettlementLocationSelected(hexVertex);
-        }
+        boardManager.ManualVertexSelected(hexVertex);
     }
 
     public void EnableSelection(bool enable, Color? hoverColor = null)

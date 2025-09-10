@@ -91,11 +91,6 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public Action BoardStateChanged { get; set; } = null;
 
-    public BoardMode GetCurrentBoardMode()
-    {
-        return boardStateMachine?.CurrentState ?? BoardMode.Idle;
-    }
-
     #endregion
 
     #region Private members
@@ -797,6 +792,24 @@ public class BoardManager : MonoBehaviour, IBoardManager
     public void ManualSettlementLocationSelected(HexVertex hexVertex)
     {
         manuallySelectedSettlementLocation = hexVertex;
+    }
+
+    public void ManualVertexSelected(HexVertex hexVertex)
+    {
+        // Route the selection based on current board mode
+        switch (boardStateMachine.CurrentState)
+        {
+            case BoardMode.ChooseSettlementLocation:
+                ManualSettlementLocationSelected(hexVertex);
+                break;
+            case BoardMode.ChooseSettlementToUpgrade:
+                ManualSettlementUpgradeLocationSelected(hexVertex);
+                break;
+            default:
+                // Fallback to settlement selection for backward compatibility
+                ManualSettlementLocationSelected(hexVertex);
+                break;
+        }
     }
 
     private void OnExitSettlementLocationSelectionMode()
