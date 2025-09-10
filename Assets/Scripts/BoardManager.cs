@@ -414,6 +414,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
             // Deduct resources from the player's hand
             currentPlayerHand.Remove(BuildingCosts.CityCost);
 
+            // Refresh the visual representation        // TODO ideally this would be driven by BoardStateChanged instead
+            if (hexVertex.VertexObject != null)
+            {
+                hexVertex.VertexObject.Refresh();
+            }
+
             Debug.Log($"UPGRADED SETTLEMENT TO CITY: {hexVertex}");
         }
         else

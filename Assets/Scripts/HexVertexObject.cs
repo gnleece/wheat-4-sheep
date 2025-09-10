@@ -11,6 +11,9 @@ public class HexVertexObject : MonoBehaviour
     [SerializeField]
     private SettlementObject settlementObject;
 
+    [SerializeField]
+    private CityObject cityObject;
+
     #endregion
 
     #region Private fields
@@ -40,6 +43,11 @@ public class HexVertexObject : MonoBehaviour
         if (settlementObject != null)
         {
             settlementObject.Refresh(hexVertex.Building);
+        }
+
+        if (cityObject != null)
+        {
+            cityObject.Refresh(hexVertex.Building);
         }
     }
 
