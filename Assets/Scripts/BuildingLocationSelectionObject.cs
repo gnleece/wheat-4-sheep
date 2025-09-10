@@ -30,11 +30,6 @@ public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 
     public void HoverOn()
     {
-        if (hexVertex.IsOccupied)
-        {
-            return;
-        }
-
         if (renderer != null)
         {
             renderer.material.color = hoverColor;
@@ -43,11 +38,6 @@ public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 
     public void HoverOff()
     {
-        if (hexVertex.IsOccupied)
-        {
-            return;
-        }
-
         if (renderer != null)
         {
             renderer.material.color = Color.white;
