@@ -75,6 +75,12 @@ public class HumanPlayer : IPlayer
                 var chosenRoadLocation = await boardManager.GetManualSelectionForRoadLocation(this);
                 boardManager.BuildRoad(this, chosenRoadLocation);
             }
+            else if (Input.GetKeyDown(KeyCode.Alpha4))
+            {
+                // Upgrade Settlement to City
+                var chosenSettlementToUpgrade = await boardManager.GetManualSelectionForSettlementUpgrade(this);
+                boardManager.UpgradeSettlementToCity(this, chosenSettlementToUpgrade);
+            }
             else if (Input.GetKeyDown(KeyCode.Alpha0))
             {
                 // End Turn

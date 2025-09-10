@@ -91,6 +91,11 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public Action BoardStateChanged { get; set; } = null;
 
+    public BoardMode GetCurrentBoardMode()
+    {
+        return boardStateMachine?.CurrentState ?? BoardMode.Idle;
+    }
+
     #endregion
 
     #region Private members
@@ -111,6 +116,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private HexVertex manuallySelectedSettlementLocation = null;
     private HexEdge manuallySelectedRoadLocation = null;
+    private HexVertex manuallySelectedSettlementToUpgrade = null;
 
     // Track the last settlement placed by each player for second settlement placement phase
     private Dictionary<IPlayer, HexVertex> lastSettlementPlaced = new Dictionary<IPlayer, HexVertex>();
@@ -139,6 +145,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         boardStateMachine.AddState(BoardMode.Idle, OnEnterIdleMode, null, null);
         boardStateMachine.AddState(BoardMode.ChooseSettlementLocation, OnEnterSettlementLocationSelectionMode, null, OnExitSettlementLocationSelectionMode);
         boardStateMachine.AddState(BoardMode.ChooseRoadLocation, OnEnterRoadLocationSelectionMode, null, OnExitRoadLocationSelectionMode);
+        boardStateMachine.AddState(BoardMode.ChooseSettlementToUpgrade, OnEnterSettlementUpgradeSelectionMode, null, OnExitSettlementUpgradeSelectionMode);
 
         boardStateMachine.GoToState(BoardMode.Idle);
     }
@@ -202,6 +209,35 @@ public class BoardManager : MonoBehaviour, IBoardManager
         boardStateMachine.GoToState(BoardMode.Idle);
 
         return manuallySelectedRoadLocation;
+    }
+
+    public async Task<HexVertex> GetManualSelectionForSettlementUpgrade(IPlayer player)
+    {
+        if (boardStateMachine.CurrentState != BoardMode.Idle)
+        {
+            Debug.LogError($"Cannot get manual selection for settlement upgrade: board is not in idle mode, current state is {boardStateMachine.CurrentState}");
+            return null;
+        }
+
+        var validLocations = GetAvailableSettlementsToUpgrade(player);
+        if (validLocations == null || validLocations.Count == 0)
+        {
+            Debug.LogWarning($"No valid settlements available for upgrade for player {player.PlayerId}");
+            return null;
+        }
+
+        manuallySelectedSettlementToUpgrade = null;
+
+        boardStateMachine.GoToState(BoardMode.ChooseSettlementToUpgrade);
+
+        while (manuallySelectedSettlementToUpgrade == null)
+        {
+            await Task.Yield();
+        }
+
+        boardStateMachine.GoToState(BoardMode.Idle);
+
+        return manuallySelectedSettlementToUpgrade;
     }
 
     private HexVertex GetLastSettlementPlaced(IPlayer player)
@@ -343,6 +379,57 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return success;
     }
 
+    public bool UpgradeSettlementToCity(IPlayer player, HexVertex hexVertex)
+    {
+        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        {
+            Debug.LogError($"Board manager UpgradeSettlementToCity: turn is not active for {player}");
+            return false;
+        }
+
+        if (currentPlayerTurn.TurnType == PlayerTurnType.RegularTurn && !currentPlayerTurn.HasRolledDice)
+        {
+            Debug.LogError($"Player {player.PlayerId} must roll dice before upgrading settlements");
+            return false;
+        }
+
+        if (hexVertex == null)
+        {
+            Debug.LogError("Board manager UpgradeSettlementToCity: hex vertex is null");
+            return false;
+        }
+
+        if (hexVertex.Building == null || hexVertex.Building.Owner != player || hexVertex.Building.Type != Building.BuildingType.Settlement)
+        {
+            Debug.LogError($"Board manager UpgradeSettlementToCity: hex vertex does not contain a settlement owned by player {player.PlayerId}");
+            return false;
+        }
+
+        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
+
+        if (!currentPlayerHand.HasEnoughResources(BuildingCosts.CityCost))
+        {
+            Debug.LogError($"Player {player.PlayerId} does not have enough resources to upgrade settlement to city");
+            return false;
+        }
+
+        var success = hexVertex.Building.Upgrade();
+        if (success)
+        {
+            // Deduct resources from the player's hand
+            currentPlayerHand.Remove(BuildingCosts.CityCost);
+
+            Debug.Log($"UPGRADED SETTLEMENT TO CITY: {hexVertex}");
+        }
+        else
+        {
+            Debug.Log("Failed to upgrade settlement to city. Try again.");
+        }
+
+        BoardStateChanged?.Invoke();
+        return success;
+    }
+
     // Call this before StartNewGame to set up player resource hands
     public void InitializePlayerResourceHands(IEnumerable<IPlayer> players)
     {
@@ -354,6 +441,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             playerResourceHands[player].Add(ResourceType.Clay, 10);
             playerResourceHands[player].Add(ResourceType.Sheep, 10);
             playerResourceHands[player].Add(ResourceType.Wheat, 10);
+            playerResourceHands[player].Add(ResourceType.Ore, 10);
         }
     }
 
@@ -371,19 +459,15 @@ public class BoardManager : MonoBehaviour, IBoardManager
     {
         var score = 0;
 
-        // 1 point for each settlement
+        // 1 point for each settlement, 2 points for each city
         foreach (var vertex in vertexMap.Values)
         {
             if (vertex.Building != null && vertex.Building.Owner == player)
             {
-                if (vertex.Building.Type == Building.BuildingType.Settlement)
-                {
-                    score += 1;
-                }
+                score += vertex.Building.VictoryPoints;
             }
         }
 
-        // TODO: 2 points for each city
         // TODO: 1 point for each victory card
         // TODO: 2 points for longest road
         // TODO: 2 points for largest army
@@ -421,6 +505,21 @@ public class BoardManager : MonoBehaviour, IBoardManager
             if (edge.AvailableForBuilding(player, requiredSettlement))
             {
                 locations.Add(edge);
+            }
+        }
+        return locations;
+    }
+
+    public List<HexVertex> GetAvailableSettlementsToUpgrade(IPlayer player)
+    {
+        var locations = new List<HexVertex>();
+        foreach (var vertex in vertexMap.Values)
+        {
+            if (vertex.Building != null && 
+                vertex.Building.Owner == player && 
+                vertex.Building.Type == Building.BuildingType.Settlement)
+            {
+                locations.Add(vertex);
             }
         }
         return locations;
@@ -481,6 +580,37 @@ public class BoardManager : MonoBehaviour, IBoardManager
         // Are there any valid road locations available?
         var availableLocations = GetAvailableRoadLocations(player);
         if (availableLocations == null || availableLocations.Count == 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool CanUpgradeSettlement(IPlayer player)
+    {
+        // Is it this player's turn?
+        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        {
+            return false;
+        }
+
+        // Have they already rolled the dice?
+        if (!currentPlayerTurn.HasRolledDice)
+        {
+            return false;
+        }
+
+        // Can they afford the upgrade cost?
+        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
+        if (!currentPlayerHand.HasEnoughResources(BuildingCosts.CityCost))
+        {
+            return false;
+        }
+
+        // Are there any settlements available for upgrade?
+        var availableSettlements = GetAvailableSettlementsToUpgrade(player);
+        if (availableSettlements == null || availableSettlements.Count == 0)
         {
             return false;
         }
@@ -701,6 +831,33 @@ public class BoardManager : MonoBehaviour, IBoardManager
         foreach (var hexEdge in edgeMap.Values)
         {
             hexEdge.EnableSelection(false);
+        }
+    }
+
+    private void OnEnterSettlementUpgradeSelectionMode()
+    {
+        var playerColor = currentPlayerTurn.Player.PlayerColor;
+
+        var settlementUpgradeList = GetAvailableSettlementsToUpgrade(currentPlayerTurn.Player);
+        var settlementUpgradeSet = new HashSet<HexVertex>(settlementUpgradeList);
+
+        foreach (var hexVertex in vertexMap.Values)
+        {
+            var selectionEnabled = settlementUpgradeSet.Contains(hexVertex);
+            hexVertex.EnableSelection(selectionEnabled, playerColor);
+        }
+    }
+
+    public void ManualSettlementUpgradeLocationSelected(HexVertex hexVertex)
+    {
+        manuallySelectedSettlementToUpgrade = hexVertex;
+    }
+
+    private void OnExitSettlementUpgradeSelectionMode()
+    {
+        foreach (var hexVertex in vertexMap.Values)
+        {
+            hexVertex.EnableSelection(false);
         }
     }
 

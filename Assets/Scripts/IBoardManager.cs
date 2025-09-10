@@ -45,13 +45,19 @@ public interface IBoardManager
 
     public Task<HexEdge> GetManualSelectionForRoadLocation(IPlayer player);
 
+    public Task<HexVertex> GetManualSelectionForSettlementUpgrade(IPlayer player);
+
     public void ManualSettlementLocationSelected(HexVertex hexVertex);
 
     public void ManualRoadLocationSelected(HexEdge hexEdge);
 
+    public void ManualSettlementUpgradeLocationSelected(HexVertex hexVertex);
+
     public bool BuildSettlement(IPlayer player, HexVertex hexVertex);
 
     public bool BuildRoad(IPlayer player, HexEdge hexEdge);
+
+    public bool UpgradeSettlementToCity(IPlayer player, HexVertex hexVertex);
 
     public Task<int?> RollDice(IPlayer player);
 
@@ -65,6 +71,7 @@ public interface IBoardManager
 
     public bool CanBuildSettlement(IPlayer player);
     public bool CanBuildRoad(IPlayer player);
+    public bool CanUpgradeSettlement(IPlayer player);
     public bool CanRollDice(IPlayer player);
 
     public IReadOnlyDictionary<HexCoord, HexTile> HexMap { get; }

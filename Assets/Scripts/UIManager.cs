@@ -130,12 +130,21 @@ public class UIManager : MonoBehaviour
         }
     }
     
-    private void OnBuildCityClicked()
+    private async void OnBuildCityClicked()
     {
-        if (currentPlayer == null) return;
+        if (currentPlayer == null || boardManager == null) return;
         
-        Debug.Log("Build City - Not yet implemented");
-        // TODO: Implement city building when available in IBoardManager
+        var chosenSettlementToUpgrade = await boardManager.GetManualSelectionForSettlementUpgrade(currentPlayer);
+        bool success = boardManager.UpgradeSettlementToCity(currentPlayer, chosenSettlementToUpgrade);
+        
+        if (success)
+        {
+            Debug.Log($"Player {currentPlayer.PlayerId} upgraded settlement to city");
+        }
+        else
+        {
+            Debug.Log($"Player {currentPlayer.PlayerId} failed to upgrade settlement to city");
+        }
     }
     
     private void OnBuyDevelopmentCardClicked()
@@ -359,8 +368,7 @@ public class UIManager : MonoBehaviour
         SetButtonInteractable(rollDiceButton, boardManager.CanRollDice(currentPlayer));
         SetButtonInteractable(buildRoadButton, boardManager.CanBuildRoad(currentPlayer));
         SetButtonInteractable(buildSettlementButton, boardManager.CanBuildSettlement(currentPlayer));
-        
-        SetButtonInteractable(buildCityButton, false);          // Disabled until city upgrade is implemented
+        SetButtonInteractable(buildCityButton, boardManager.CanUpgradeSettlement(currentPlayer));
         SetButtonInteractable(buyDevelopmentCardButton, false); // Disabled until dev cards are implemented
         SetButtonInteractable(tradeButton, false);              // Disabled until trade is implemented
         
