@@ -29,8 +29,8 @@ public class UIManager : MonoBehaviour
     
     private void Start()
     {
-        gameManager = FindObjectOfType<GameManager>();
-        boardManager = FindObjectOfType<BoardManager>();
+        gameManager = FindAnyObjectByType<GameManager>();
+        boardManager = FindAnyObjectByType<BoardManager>();
         boardManager.BoardStateChanged += RefreshUI;
         SetupActionButtons();
     }

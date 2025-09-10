@@ -55,7 +55,7 @@ public class GameManager : MonoBehaviour, IGameManager
     {
         if (uiManager == null)
         {
-            uiManager = FindObjectOfType<UIManager>();
+            uiManager = FindAnyObjectByType<UIManager>();
             if (uiManager == null)
             {
                 Debug.LogWarning("GameManager: UIManager not found! UI features will not work.");

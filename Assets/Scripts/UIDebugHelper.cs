@@ -7,7 +7,7 @@ public class UIDebugHelper : MonoBehaviour
         Debug.Log("UIDebugHelper: Start() called");
         
         // Try to find GameUIController and force UI creation
-        GameUIController gameUI = FindObjectOfType<GameUIController>();
+        GameUIController gameUI = FindAnyObjectByType<GameUIController>();
         if (gameUI != null)
         {
             Debug.Log("UIDebugHelper: Found GameUIController, forcing UI creation");
@@ -23,7 +23,7 @@ public class UIDebugHelper : MonoBehaviour
     public void ForceCreateUI()
     {
         Debug.Log("UIDebugHelper: Force Create UI called");
-        GameUIController gameUI = FindObjectOfType<GameUIController>();
+        GameUIController gameUI = FindAnyObjectByType<GameUIController>();
         if (gameUI != null)
         {
             gameUI.CreateGameUI();

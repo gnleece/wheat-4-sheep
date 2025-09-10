@@ -108,7 +108,7 @@ public class UISetup : MonoBehaviour
         Button threePlayerButtonComponent = threePlayerButton.GetComponent<Button>();
         threePlayerButtonComponent.onClick.AddListener(() => {
             Debug.Log("3 Players selected");
-            GameManager gameManager = FindObjectOfType<GameManager>();
+            GameManager gameManager = FindAnyObjectByType<GameManager>();
             if (gameManager != null)
             {
                 gameManager.SelectPlayerCount(3);
@@ -121,7 +121,7 @@ public class UISetup : MonoBehaviour
         Button fourPlayerButtonComponent = fourPlayerButton.GetComponent<Button>();
         fourPlayerButtonComponent.onClick.AddListener(() => {
             Debug.Log("4 Players selected");
-            GameManager gameManager = FindObjectOfType<GameManager>();
+            GameManager gameManager = FindAnyObjectByType<GameManager>();
             if (gameManager != null)
             {
                 gameManager.SelectPlayerCount(4);
@@ -204,7 +204,7 @@ public class UISetup : MonoBehaviour
         Button acceptButtonComponent = acceptButton.GetComponent<Button>();
         acceptButtonComponent.onClick.AddListener(() => {
             Debug.Log("Board accepted");
-            GameManager gameManager = FindObjectOfType<GameManager>();
+            GameManager gameManager = FindAnyObjectByType<GameManager>();
             if (gameManager != null)
             {
                 gameManager.ConfirmBoard();
@@ -216,7 +216,7 @@ public class UISetup : MonoBehaviour
         Button regenerateButtonComponent = regenerateButton.GetComponent<Button>();
         regenerateButtonComponent.onClick.AddListener(() => {
             Debug.Log("Board regeneration requested");
-            GameManager gameManager = FindObjectOfType<GameManager>();
+            GameManager gameManager = FindAnyObjectByType<GameManager>();
             if (gameManager != null)
             {
                 gameManager.RegenerateBoard();

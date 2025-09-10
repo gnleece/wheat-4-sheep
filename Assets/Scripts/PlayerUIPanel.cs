@@ -40,7 +40,7 @@ public class PlayerUIPanel : MonoBehaviour
     {
         Debug.Log($"PlayerUIPanel: Initializing panel for Player {playerData?.PlayerId}");
         player = playerData;
-        boardManager = FindObjectOfType<BoardManager>();
+        boardManager = FindAnyObjectByType<BoardManager>();
         
         if (boardManager == null)
         {
