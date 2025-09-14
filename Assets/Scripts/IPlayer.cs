@@ -20,4 +20,5 @@ public interface IPlayer
     
     public Task DiscardOnSevenRoll(ResourceHand hand, int cardsToDiscard);
     public Task MoveRobber();
+    public Task<IPlayer> ChoosePlayerToStealFrom(List<IPlayer> availablePlayers);
 }

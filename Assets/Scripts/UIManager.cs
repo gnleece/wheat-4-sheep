@@ -334,6 +334,24 @@ public class UIManager : MonoBehaviour
         // Hide the discard screen
         discardScreen.SetActive(false);
     }
+
+    public async System.Threading.Tasks.Task<IPlayer> ShowPlayerSelectionUI(IPlayer currentPlayer, List<IPlayer> availablePlayers)
+    {
+        if (availablePlayers == null || availablePlayers.Count == 0)
+        {
+            Debug.LogError("No players available to steal from!");
+            return null;
+        }
+
+        // For now, we'll use a simple approach - show the first available player
+        // In a full implementation, you would create a proper UI for player selection
+        // similar to the discard UI but with player buttons instead of resource buttons
+        Debug.Log($"Player {currentPlayer.PlayerId} can steal from {availablePlayers.Count} players");
+        
+        // TODO: Implement proper player selection UI
+        // For now, return the first available player
+        return availablePlayers[0];
+    }
     
     private void UpdateDiscardUI(IPlayer player, ResourceHand hand, int cardsToDiscard)
     {

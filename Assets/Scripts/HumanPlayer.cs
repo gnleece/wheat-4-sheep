@@ -104,4 +104,16 @@ public class HumanPlayer : IPlayer
         var chosenRobberLocation = await boardManager.GetManualSelectionForRobberLocation(this);
         boardManager.MoveRobber(this, chosenRobberLocation);
     }
+
+    public async Task<IPlayer> ChoosePlayerToStealFrom(List<IPlayer> availablePlayers)
+    {
+        if (availablePlayers == null || availablePlayers.Count == 0)
+        {
+            Debug.Log($"Human Player {playerId} has no players to steal from");
+            return null;
+        }
+
+        // Use BoardManager to show player selection UI
+        return await boardManager.GetManualSelectionForPlayerToStealFrom(this, availablePlayers);
+    }
 }

@@ -285,6 +285,23 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
     }
 
+    public async Task<IPlayer> GetManualSelectionForPlayerToStealFrom(IPlayer currentPlayer, List<IPlayer> availablePlayers)
+    {
+        Debug.Log($"Showing player selection UI for Player {currentPlayer.PlayerId} to choose who to steal from...");
+        
+        // Show player selection UI for human player
+        var uiManager = FindAnyObjectByType<UIManager>();
+        if (uiManager != null)
+        {
+            return await uiManager.ShowPlayerSelectionUI(currentPlayer, availablePlayers);
+        }
+        else
+        {
+            Debug.LogError("UIManager not found! Cannot show player selection UI for human player.");
+            return null;
+        }
+    }
+
     private HexVertex GetLastSettlementPlaced(IPlayer player)
     {
         if (lastSettlementPlaced.TryGetValue(player, out var hexVertex))
@@ -622,6 +639,63 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return locations;
     }
 
+    public List<IPlayer> GetPlayersWithBuildingsOnHexTile(HexTile hexTile)
+    {
+        var players = new List<IPlayer>();
+        if (hexTile == null) return players;
+
+        foreach (var vertex in hexTile.NeighborVertices)
+        {
+            if (vertex.Building != null && vertex.Building.Owner != null)
+            {
+                // Only add each player once
+                if (!players.Contains(vertex.Building.Owner))
+                {
+                    players.Add(vertex.Building.Owner);
+                }
+            }
+        }
+        return players;
+    }
+
+    public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer)
+    {
+        if (fromPlayer == null || toPlayer == null) return null;
+        if (!playerResourceHands.TryGetValue(fromPlayer, out var fromHand)) return null;
+        if (!playerResourceHands.TryGetValue(toPlayer, out var toHand)) return null;
+
+        // Get all resources the player has
+        var allResources = fromHand.GetAll();
+        var resourcesList = new List<ResourceType>();
+        
+        // Create a list of all resources (including duplicates)
+        foreach (var kvp in allResources)
+        {
+            for (int i = 0; i < kvp.Value; i++)
+            {
+                resourcesList.Add(kvp.Key);
+            }
+        }
+        
+        if (resourcesList.Count == 0)
+        {
+            Debug.Log($"Player {fromPlayer.PlayerId} has no resources to steal");
+            return null;
+        }
+        
+        // Randomly select a resource to steal
+        var randomIndex = random.Next(resourcesList.Count);
+        var resourceToSteal = resourcesList[randomIndex];
+        
+        // Remove from the victim and add to the thief
+        fromHand.Remove(resourceToSteal, 1);
+        toHand.Add(resourceToSteal, 1);
+        
+        Debug.Log($"Player {toPlayer.PlayerId} stole 1 {resourceToSteal} from Player {fromPlayer.PlayerId}");
+        
+        return resourceToSteal;
+    }
+
     public bool CanBuildSettlement(IPlayer player)
     {
         // Is it this player's turn?
@@ -821,7 +895,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         // Handle 7 roll - force players with more than 7 cards to discard
         if (diceRoll == 7)
         {
-            await HandleSevenRollDiscard();         // TODO: check rules to confirm which order these two steps should occur in
+            //await HandleSevenRollDiscard();         // TODO: check rules to confirm which order these two steps should occur in
             await HandleSevenRollMoveRobber();
         }
 
@@ -867,7 +941,41 @@ public class BoardManager : MonoBehaviour, IBoardManager
     {
         await currentPlayerTurn.Player.MoveRobber();
 
-        // TODO: let the current player choose another player on the robber's hex to steal from
+        // After moving the robber, let the current player choose another player on the robber's hex to steal from
+        var playersOnRobberHex = GetPlayersWithBuildingsOnHexTile(currentRobberHexTile);
+        
+        // Remove the current player from the list (can't steal from yourself)
+        playersOnRobberHex.RemoveAll(p => p == currentPlayerTurn.Player);
+        
+        if (playersOnRobberHex.Count > 0)
+        {
+            Debug.Log($"Player {currentPlayerTurn.Player.PlayerId} can steal from {playersOnRobberHex.Count} players on the robber's hex");
+            
+            // Let the current player choose who to steal from
+            var playerToStealFrom = await currentPlayerTurn.Player.ChoosePlayerToStealFrom(playersOnRobberHex);
+            
+            if (playerToStealFrom != null)
+            {
+                // Steal a random resource from the chosen player
+                var stolenResource = StealRandomResourceFromPlayer(playerToStealFrom, currentPlayerTurn.Player);
+                if (stolenResource.HasValue)
+                {
+                    Debug.Log($"Player {currentPlayerTurn.Player.PlayerId} successfully stole 1 {stolenResource.Value} from Player {playerToStealFrom.PlayerId}");
+                }
+                else
+                {
+                    Debug.Log($"Player {playerToStealFrom.PlayerId} had no resources to steal");
+                }
+            }
+            else
+            {
+                Debug.Log("No player was chosen to steal from");
+            }
+        }
+        else
+        {
+            Debug.Log("No players have buildings on the robber's hex tile - nothing to steal");
+        }
     }
 
     private void GiveAllPlayersResourcesForHexTile(HexTile hexTile)

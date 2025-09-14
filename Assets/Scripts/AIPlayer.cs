@@ -144,6 +144,22 @@ public class AIPlayer : IPlayer
         await Task.Delay(THINKING_DELAY_TIME_MS);
     }
 
+    public async Task<IPlayer> ChoosePlayerToStealFrom(List<IPlayer> availablePlayers)
+    {
+        if (availablePlayers == null || availablePlayers.Count == 0)
+        {
+            Debug.Log($"AI Player {playerId} has no players to steal from");
+            return null;
+        }
+
+        // Choose a random player to steal from
+        var choice = availablePlayers[random.Next(availablePlayers.Count)];
+        Debug.Log($"AI Player {playerId} chose to steal from Player {choice.PlayerId}");
+        
+        await Task.Delay(THINKING_DELAY_TIME_MS);
+        return choice;
+    }
+
     private async Task PlaceRandomSettlementAsync()
     {
         var locations = boardManager.GetAvailableSettlementLocations(this);

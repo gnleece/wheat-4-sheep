@@ -51,6 +51,8 @@ public interface IBoardManager
 
     public Task GetManualDiscardOnSevenRoll(IPlayer player, ResourceHand hand, int cardsToDiscard);
 
+    public Task<IPlayer> GetManualSelectionForPlayerToStealFrom(IPlayer currentPlayer, List<IPlayer> availablePlayers);
+
     public void ManualSettlementLocationSelected(HexVertex hexVertex);
 
     public void ManualRoadLocationSelected(HexEdge hexEdge);
@@ -79,6 +81,10 @@ public interface IBoardManager
     public List<HexEdge> GetAvailableRoadLocations(IPlayer player);
 
     public List<HexTile> GetAvailableRobberLocations(IPlayer player);
+
+    public List<IPlayer> GetPlayersWithBuildingsOnHexTile(HexTile hexTile);
+
+    public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer);
 
     public bool CanBuildSettlement(IPlayer player);
     public bool CanBuildRoad(IPlayer player);
