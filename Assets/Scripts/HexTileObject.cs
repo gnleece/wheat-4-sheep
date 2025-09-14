@@ -24,6 +24,9 @@ public class HexTileObject : MonoBehaviour
     private Transform northEastEdgeTransform;
 
     [SerializeField]
+    private HexTileSelectionObject selectionObject;
+
+    [SerializeField]
     private TextMesh debugText;
 
     #endregion
@@ -45,14 +48,23 @@ public class HexTileObject : MonoBehaviour
 
     #region Private fields
 
+    private IBoardManager boardManager;
     private HexTile hexTile;
 
     #endregion
 
-    public void Initialize(HexTile hexTile, int? diceNumber)
+    public void Initialize(IBoardManager boardManager, HexTile hexTile, int? diceNumber)
     {
+        this.boardManager = boardManager;
         this.hexTile = hexTile;
         this.DiceNumber = diceNumber;
+
+        if (selectionObject != null)
+        {
+            selectionObject.Initialize(hexTile);
+            selectionObject.OnHexTileSelected += HexTileSelected;
+        }
+
         RefreshDebugText();
     }
 
@@ -69,6 +81,23 @@ public class HexTileObject : MonoBehaviour
         if (DebugSettings.Instance != null)
         {
             DebugSettings.Instance.OnSettingsChanged -= RefreshDebugText;
+        }
+    }
+
+    private void HexTileSelected()
+    {
+        boardManager.ManualHexTileSelected(hexTile);
+    }
+
+    public void EnableSelection(bool enable, Color? hoverColor = null)
+    {
+        if (selectionObject != null)
+        {
+            selectionObject.gameObject.SetActive(enable);
+            if (enable && hoverColor.HasValue)
+            {
+                selectionObject.SetHoverColor(hoverColor.Value);
+            }
         }
     }
 

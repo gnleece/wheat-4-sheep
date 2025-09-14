@@ -47,6 +47,8 @@ public interface IBoardManager
 
     public Task<HexVertex> GetManualSelectionForSettlementUpgrade(IPlayer player);
 
+    public Task<HexTile> GetManualSelectionForRobberLocation(IPlayer player);
+
     public Task GetManualDiscardOnSevenRoll(IPlayer player, ResourceHand hand, int cardsToDiscard);
 
     public void ManualSettlementLocationSelected(HexVertex hexVertex);
@@ -57,11 +59,14 @@ public interface IBoardManager
 
     public void ManualVertexSelected(HexVertex hexVertex);
 
+    public void ManualHexTileSelected(HexTile hexTile);
+
     public bool BuildSettlement(IPlayer player, HexVertex hexVertex);
 
     public bool BuildRoad(IPlayer player, HexEdge hexEdge);
 
     public bool UpgradeSettlementToCity(IPlayer player, HexVertex hexVertex);
+    public bool MoveRobber(IPlayer player, HexTile hexTile);
 
     public Task<int?> RollDice(IPlayer player);
 
@@ -72,6 +77,8 @@ public interface IBoardManager
     public List<HexVertex> GetAvailableSettlementLocations(IPlayer player);
 
     public List<HexEdge> GetAvailableRoadLocations(IPlayer player);
+
+    public List<HexTile> GetAvailableRobberLocations(IPlayer player);
 
     public bool CanBuildSettlement(IPlayer player);
     public bool CanBuildRoad(IPlayer player);

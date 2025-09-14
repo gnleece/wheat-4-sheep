@@ -37,6 +37,8 @@ public class HexTile
         }
     }
 
+    public TileType TileType => TileObject != null ? TileObject.TileType : TileType.None;
+
     public int? DiceNumber => TileObject?.DiceNumber;
 
     public void InitializeNeighbors(IBoardManager boardManager)
@@ -49,5 +51,20 @@ public class HexTile
                 neighborVertices.Add(vertex);
             }
         }
+    }
+
+    public void EnableSelection(bool enable, Color? hoverColor = null)
+    {
+        if (TileObject != null)
+        {
+            TileObject.EnableSelection(enable, hoverColor);
+        }
+    }
+
+    public void MoveRobberToTile(RobberObject robberObject)
+    {
+        robberObject.transform.parent = TileObject.transform;
+        robberObject.transform.localPosition = Vector3.zero;
+        robberObject.transform.localRotation = Quaternion.identity;
     }
 }

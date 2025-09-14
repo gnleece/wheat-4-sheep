@@ -663,6 +663,8 @@ MonoBehaviour:
     type: 3}
   HexEdgePrefab: {fileID: 6190589593697046225, guid: d4b4338e8d02712418528a0e5d9e1450,
     type: 3}
+  RobberPrefab: {fileID: 6566817388692851183, guid: 35d5b8e8bf259fb4b8e40bad0741b030,
+    type: 3}
 --- !u!4 &2069979700
 Transform:
   m_ObjectHideFlags: 0

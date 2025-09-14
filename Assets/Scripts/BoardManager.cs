@@ -81,6 +81,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
     [SerializeField]
     private GameObject HexEdgePrefab;
 
+    [SerializeField]
+    private GameObject RobberPrefab;
+
     #endregion
 
     #region Properties
@@ -105,6 +108,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
     private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
     private Dictionary<EdgeCoord, HexEdge> edgeMap = new Dictionary<EdgeCoord, HexEdge>();
 
+    private HexTile currentRobberHexTile = null;
+    private RobberObject robberObject = null;
+
     private Dictionary<IPlayer, ResourceHand> playerResourceHands = new Dictionary<IPlayer, ResourceHand>();
 
     private PlayerTurn currentPlayerTurn = null;
@@ -112,6 +118,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
     private HexVertex manuallySelectedSettlementLocation = null;
     private HexEdge manuallySelectedRoadLocation = null;
     private HexVertex manuallySelectedSettlementToUpgrade = null;
+    private HexTile manuallySelectedRobberLocation = null;
 
     // Track the last settlement placed by each player for second settlement placement phase
     private Dictionary<IPlayer, HexVertex> lastSettlementPlaced = new Dictionary<IPlayer, HexVertex>();
@@ -141,10 +148,10 @@ public class BoardManager : MonoBehaviour, IBoardManager
         boardStateMachine.AddState(BoardMode.ChooseSettlementLocation, OnEnterSettlementLocationSelectionMode, null, OnExitSettlementLocationSelectionMode);
         boardStateMachine.AddState(BoardMode.ChooseRoadLocation, OnEnterRoadLocationSelectionMode, null, OnExitRoadLocationSelectionMode);
         boardStateMachine.AddState(BoardMode.ChooseSettlementToUpgrade, OnEnterSettlementUpgradeSelectionMode, null, OnExitSettlementUpgradeSelectionMode);
+        boardStateMachine.AddState(BoardMode.ChooseRobberLocation, OnEnterRobberLocationSelectionMode, null, OnExitRobberLocationSelectionMode);
 
         boardStateMachine.GoToState(BoardMode.Idle);
     }
-
     
     public async Task<HexVertex> GetManualSelectionForSettlementLocation(IPlayer player)
     {
@@ -174,8 +181,6 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         return manuallySelectedSettlementLocation;
     }
-
-
 
     public async Task<HexEdge> GetManualSelectionForRoadLocation(IPlayer player)
     {
@@ -233,6 +238,35 @@ public class BoardManager : MonoBehaviour, IBoardManager
         boardStateMachine.GoToState(BoardMode.Idle);
 
         return manuallySelectedSettlementToUpgrade;
+    }
+
+    public async Task<HexTile> GetManualSelectionForRobberLocation(IPlayer player)
+    {
+        if (boardStateMachine.CurrentState != BoardMode.Idle)
+        {
+            Debug.LogError($"Cannot get manual selection for robber location: board is not in idle mode, current state is {boardStateMachine.CurrentState}");
+            return null;
+        }
+
+        var validLocations = GetAvailableRobberLocations(player);
+        if (validLocations == null || validLocations.Count == 0)
+        {
+            Debug.LogWarning($"No valid robber locations available for player {player.PlayerId}");
+            return null;
+        }
+
+        manuallySelectedRobberLocation = null;
+
+        boardStateMachine.GoToState(BoardMode.ChooseRobberLocation);
+
+        while (manuallySelectedRobberLocation == null)
+        {
+            await Task.Yield();
+        }
+
+        boardStateMachine.GoToState(BoardMode.Idle);
+
+        return manuallySelectedRobberLocation;
     }
 
     public async Task GetManualDiscardOnSevenRoll(IPlayer player, ResourceHand hand, int cardsToDiscard)
@@ -447,6 +481,39 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return success;
     }
 
+    public bool MoveRobber(IPlayer player, HexTile hexTile)
+    {
+        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        {
+            Debug.LogError($"Board manager MoveRobber: turn is not active for {player}");
+            return false;
+        }
+
+        if (hexTile == null)
+        {
+            Debug.LogError("Board manager MoveRobber: hex tile is null");
+            return false;
+        }
+
+        if (hexTile == currentRobberHexTile)
+        {
+            Debug.LogError("Board manager MoveRobber: robber cannot be moved to the same tile where it is already located");
+            return false;
+        }
+
+        if (hexTile.TileType == TileType.Water)
+        {
+            Debug.LogError("Board manager MoveRobber: robber cannot be placed on a water tile");
+            return false;
+        }
+
+        currentRobberHexTile = hexTile;
+        currentRobberHexTile.MoveRobberToTile(robberObject);
+
+        BoardStateChanged?.Invoke();
+        return true;
+    }
+
     // Call this before StartNewGame to set up player resource hands
     public void InitializePlayerResourceHands(IEnumerable<IPlayer> players)
     {
@@ -454,11 +521,11 @@ public class BoardManager : MonoBehaviour, IBoardManager
         foreach (var player in players)
         {
             playerResourceHands[player] = new ResourceHand();
-            playerResourceHands[player].Add(ResourceType.Wood, 10);
-            playerResourceHands[player].Add(ResourceType.Clay, 10);
-            playerResourceHands[player].Add(ResourceType.Sheep, 10);
-            playerResourceHands[player].Add(ResourceType.Wheat, 10);
-            playerResourceHands[player].Add(ResourceType.Ore, 10);
+            playerResourceHands[player].Add(ResourceType.Wood, 2);
+            playerResourceHands[player].Add(ResourceType.Clay, 2);
+            playerResourceHands[player].Add(ResourceType.Sheep, 2);
+            playerResourceHands[player].Add(ResourceType.Wheat, 2);
+            playerResourceHands[player].Add(ResourceType.Ore, 2);
         }
     }
 
@@ -537,6 +604,19 @@ public class BoardManager : MonoBehaviour, IBoardManager
                 vertex.Building.Type == Building.BuildingType.Settlement)
             {
                 locations.Add(vertex);
+            }
+        }
+        return locations;
+    }
+
+    public List<HexTile> GetAvailableRobberLocations(IPlayer player)
+    {
+        var locations = new List<HexTile>();
+        foreach (var tile in hexTileMap.Values)
+        {
+            if (tile.TileType != TileType.Water && tile != currentRobberHexTile)
+            {
+                locations.Add(tile);
             }
         }
         return locations;
@@ -741,11 +821,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
         // Handle 7 roll - force players with more than 7 cards to discard
         if (diceRoll == 7)
         {
-            await HandleSevenRollDiscard();
+            await HandleSevenRollDiscard();         // TODO: check rules to confirm which order these two steps should occur in
+            await HandleSevenRollMoveRobber();
         }
-        // TODO: if the roll is 7, have the current player move the robber
-
-        await Task.Delay(10); // Simulate some delay as stub for missing todos above
 
         currentPlayerTurn.HasRolledDice = true;
 
@@ -785,6 +863,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
     }
 
+    private async Task HandleSevenRollMoveRobber()
+    {
+        await currentPlayerTurn.Player.MoveRobber();
+
+        // TODO: let the current player choose another player on the robber's hex to steal from
+    }
 
     private void GiveAllPlayersResourcesForHexTile(HexTile hexTile)
     {
@@ -795,6 +879,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         foreach (var vertex in hexTile.NeighborVertices)
         {
             if (vertex == null || vertex.Building == null || vertex.Owner == null) continue;
+            if (hexTile == currentRobberHexTile) continue;
             if (!playerResourceHands.TryGetValue(vertex.Owner, out var hand)) continue;
 
             int amount = vertex.Building.Type == Building.BuildingType.City ? 2 : 1;
@@ -832,6 +917,10 @@ public class BoardManager : MonoBehaviour, IBoardManager
         {
             hexEdge.EnableSelection(false);
         }
+        foreach (var hexTile in hexTileMap.Values)
+        {
+            hexTile.EnableSelection(false);
+        }
     }
 
     private void OnEnterSettlementLocationSelectionMode()
@@ -859,7 +948,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         switch (boardStateMachine.CurrentState)
         {
             case BoardMode.ChooseSettlementLocation:
-                ManualSettlementLocationSelected(hexVertex);
+                ManualSettlementLocationSelected(hexVertex);    // TODO: these methods don't need to be public anymore
                 break;
             case BoardMode.ChooseSettlementToUpgrade:
                 ManualSettlementUpgradeLocationSelected(hexVertex);
@@ -869,6 +958,11 @@ public class BoardManager : MonoBehaviour, IBoardManager
                 ManualSettlementLocationSelected(hexVertex);
                 break;
         }
+    }
+
+    public void ManualHexTileSelected(HexTile hexTile)
+    {
+        manuallySelectedRobberLocation = hexTile;
     }
 
     private void OnExitSettlementLocationSelectionMode()
@@ -930,6 +1024,28 @@ public class BoardManager : MonoBehaviour, IBoardManager
         foreach (var hexVertex in vertexMap.Values)
         {
             hexVertex.EnableSelection(false);
+        }
+    }
+
+    private void OnEnterRobberLocationSelectionMode()
+    {
+        var playerColor = currentPlayerTurn.Player.PlayerColor;
+
+        var robberLocationList = GetAvailableRobberLocations(currentPlayerTurn.Player);
+        var robberLocationSet = new HashSet<HexTile>(robberLocationList);
+
+        foreach (var hexTile in hexTileMap.Values)
+        {
+            var selectionEnabled = robberLocationSet.Contains(hexTile);
+            hexTile.EnableSelection(selectionEnabled, playerColor);
+        }
+    }
+
+    private void OnExitRobberLocationSelectionMode()
+    {
+        foreach (var hexTile in hexTileMap.Values)
+        {
+            hexTile.EnableSelection(false);
         }
     }
 
@@ -1010,7 +1126,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             var tileObject = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
             var tileObjectComponent = tileObject.GetComponent<HexTileObject>();
             hex.TileObject = tileObjectComponent;
-            tileObjectComponent.Initialize(hex, diceNumber);
+            tileObjectComponent.Initialize(this, hex, diceNumber);
         }
 
         // Spawn vertex objects and initialize neighbors
@@ -1096,6 +1212,20 @@ public class BoardManager : MonoBehaviour, IBoardManager
             else
             {
                 Debug.LogError($"Could not find parent hex for {edge}");
+            }
+        }
+
+        // Spawn the robber object
+        var robberGO = Instantiate(RobberPrefab, Vector3.zero, Quaternion.identity);
+        robberObject = robberGO.GetComponent<RobberObject>();
+
+        foreach (var tile in hexTileMap.Values)
+        {
+            if (tile.TileObject.TileType == TileType.Desert)
+            {
+                tile.MoveRobberToTile(robberObject);
+                currentRobberHexTile = tile;
+                break;
             }
         }
     }

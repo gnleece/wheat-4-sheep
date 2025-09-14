@@ -98,4 +98,10 @@ public class HumanPlayer : IPlayer
         // Use BoardManager to show discard UI
         await boardManager.GetManualDiscardOnSevenRoll(this, hand, cardsToDiscard);
     }
+
+    public async Task MoveRobber()
+    {
+        var chosenRobberLocation = await boardManager.GetManualSelectionForRobberLocation(this);
+        boardManager.MoveRobber(this, chosenRobberLocation);
+    }
 }

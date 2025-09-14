@@ -19,4 +19,5 @@ public interface IPlayer
     public Task PlayTurnAsync();
     
     public Task DiscardOnSevenRoll(ResourceHand hand, int cardsToDiscard);
+    public Task MoveRobber();
 }

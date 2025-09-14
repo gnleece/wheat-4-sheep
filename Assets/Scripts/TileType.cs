@@ -10,5 +10,6 @@ public enum TileType
     Wheat,
     Ore,
     Desert,
-    Water
+    Water,
+    None
 }

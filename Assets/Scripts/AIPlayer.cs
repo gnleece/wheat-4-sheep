@@ -123,6 +123,27 @@ public class AIPlayer : IPlayer
         await Task.Delay(500); // Small delay for visual feedback
     }
 
+    public async Task MoveRobber()
+    {
+        var locations = boardManager.GetAvailableRobberLocations(this);
+
+        if (locations.Count > 0)
+        {
+            var choice = locations[random.Next(locations.Count)];
+            var success = boardManager.MoveRobber(this, choice);
+            if (!success)
+            {
+                Debug.LogWarning($"AI Player {playerId} failed to place robber at {choice}. This should not happen if the game is set up correctly.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"AI Player {playerId} could not find a valid robber location. This should not happen if the game is set up correctly.");
+        }
+
+        await Task.Delay(THINKING_DELAY_TIME_MS);
+    }
+
     private async Task PlaceRandomSettlementAsync()
     {
         var locations = boardManager.GetAvailableSettlementLocations(this);
