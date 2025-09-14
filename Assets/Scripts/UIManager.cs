@@ -11,6 +11,7 @@ public class UIManager : MonoBehaviour
     public GameObject boardConfirmationScreen;
     public GameObject gameOverScreen;
     public GameObject discardScreen;
+    public GameObject playerSelectionScreen;
     public GameObject actionPanel;
     public GameObject playerPanelsContainer;
     public GameObject playerPanelPrefab;
@@ -343,14 +344,42 @@ public class UIManager : MonoBehaviour
             return null;
         }
 
-        // For now, we'll use a simple approach - show the first available player
-        // In a full implementation, you would create a proper UI for player selection
-        // similar to the discard UI but with player buttons instead of resource buttons
-        Debug.Log($"Player {currentPlayer.PlayerId} can steal from {availablePlayers.Count} players");
+        if (playerSelectionScreen == null)
+        {
+            Debug.LogError("Player selection screen not found! Cannot show player selection UI.");
+            return null;
+        }
         
-        // TODO: Implement proper player selection UI
-        // For now, return the first available player
-        return availablePlayers[0];
+        // Update the player selection UI with current player and available players
+        UpdatePlayerSelectionUI(currentPlayer, availablePlayers);
+        
+        // Show the player selection screen
+        playerSelectionScreen.SetActive(true);
+        
+        // Wait for the player to make a selection
+        var selectionController = playerSelectionScreen.GetComponent<PlayerSelectionUIController>();
+        IPlayer selectedPlayer = null;
+        if (selectionController != null)
+        {
+            selectedPlayer = await selectionController.WaitForPlayerSelection();
+        }
+        
+        // Hide the player selection screen
+        playerSelectionScreen.SetActive(false);
+        
+        return selectedPlayer;
+    }
+    
+    private void UpdatePlayerSelectionUI(IPlayer currentPlayer, List<IPlayer> availablePlayers)
+    {
+        if (playerSelectionScreen == null) return;
+        
+        // Initialize the player selection controller
+        var selectionController = playerSelectionScreen.GetComponent<PlayerSelectionUIController>();
+        if (selectionController != null)
+        {
+            selectionController.Initialize(currentPlayer, availablePlayers);
+        }
     }
     
     private void UpdateDiscardUI(IPlayer player, ResourceHand hand, int cardsToDiscard)

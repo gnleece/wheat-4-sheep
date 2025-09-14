@@ -26,6 +26,7 @@ public class UISetup : MonoBehaviour
         CreateBoardConfirmationScreen();
         CreateGameOverScreen();
         CreateDiscardScreen();
+        CreatePlayerSelectionScreen();
         CreateActionPanel();
         CreatePlayerPanelsArea();
         SetupUIManager();
@@ -432,6 +433,125 @@ public class UISetup : MonoBehaviour
         discardScreen.SetActive(false);
         
         Debug.Log("Discard screen created successfully");
+    }
+    
+    private void CreatePlayerSelectionScreen()
+    {
+        Debug.Log("Creating player selection screen...");
+        
+        // Create the main screen object
+        GameObject playerSelectionScreen = new GameObject("Player Selection Screen");
+        playerSelectionScreen.transform.SetParent(mainCanvas.transform);
+        
+        // Add Image component for background
+        Image screenImage = playerSelectionScreen.AddComponent<Image>();
+        screenImage.color = new Color(0, 0, 0, 0.8f); // Semi-transparent black background
+        
+        // Set up RectTransform to fill the screen
+        RectTransform screenRect = playerSelectionScreen.GetComponent<RectTransform>();
+        screenRect.anchorMin = Vector2.zero;
+        screenRect.anchorMax = Vector2.one;
+        screenRect.anchoredPosition = Vector2.zero;
+        screenRect.sizeDelta = Vector2.zero;
+        
+        // Create content container
+        GameObject contentContainer = new GameObject("Player Selection Content");
+        contentContainer.transform.SetParent(playerSelectionScreen.transform);
+        RectTransform contentRect = contentContainer.AddComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.1f, 0.1f);
+        contentRect.anchorMax = new Vector2(0.9f, 0.9f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = Vector2.zero;
+        
+        // Add background to content
+        Image contentImage = contentContainer.AddComponent<Image>();
+        contentImage.color = new Color(0.2f, 0.2f, 0.2f, 0.95f);
+        
+        // Create instruction text
+        GameObject instructionText = CreateText("Instruction Text", contentContainer.transform, "Select a player to steal from:");
+        TextMeshProUGUI instructionComponent = instructionText.GetComponent<TextMeshProUGUI>();
+        instructionComponent.fontSize = 24;
+        instructionComponent.alignment = TextAlignmentOptions.Center;
+        instructionComponent.color = Color.white;
+        RectTransform instructionRect = instructionText.GetComponent<RectTransform>();
+        instructionRect.anchorMin = new Vector2(0, 0.8f);
+        instructionRect.anchorMax = new Vector2(1, 0.95f);
+        instructionRect.anchoredPosition = Vector2.zero;
+        instructionRect.sizeDelta = Vector2.zero;
+        
+        // Create player buttons container
+        GameObject playerButtonsContainer = new GameObject("Player Buttons Container");
+        playerButtonsContainer.transform.SetParent(contentContainer.transform);
+        RectTransform buttonsRect = playerButtonsContainer.AddComponent<RectTransform>();
+        buttonsRect.anchorMin = new Vector2(0.1f, 0.2f);
+        buttonsRect.anchorMax = new Vector2(0.9f, 0.7f);
+        buttonsRect.anchoredPosition = Vector2.zero;
+        buttonsRect.sizeDelta = Vector2.zero;
+        
+        // Create player buttons (up to 4 players)
+        for (int i = 0; i < 4; i++)
+        {
+            GameObject playerButton = CreatePlayerSelectionButton($"Player {i + 1} Button", playerButtonsContainer.transform, new Color(0.2f, 0.4f, 0.8f, 1f));
+            RectTransform buttonRect = playerButton.GetComponent<RectTransform>();
+            
+            // Position buttons in a 2x2 grid
+            float xPos = (i % 2) * 0.5f;
+            float yPos = (i < 2) ? 0.5f : 0f;
+            float width = 0.45f;
+            float height = 0.45f;
+            
+            buttonRect.anchorMin = new Vector2(xPos, yPos);
+            buttonRect.anchorMax = new Vector2(xPos + width, yPos + height);
+            buttonRect.anchoredPosition = Vector2.zero;
+            buttonRect.sizeDelta = Vector2.zero;
+            buttonRect.offsetMin = new Vector2(5, 5);
+            buttonRect.offsetMax = new Vector2(-5, -5);
+        }
+        
+        // Add PlayerSelectionUIController component
+        playerSelectionScreen.AddComponent<PlayerSelectionUIController>();
+        
+        // Hide the screen initially
+        playerSelectionScreen.SetActive(false);
+        
+        Debug.Log("Player selection screen created successfully");
+    }
+    
+    private GameObject CreatePlayerSelectionButton(string text, Transform parent, Color buttonColor)
+    {
+        GameObject button = new GameObject(text);
+        button.transform.SetParent(parent);
+        
+        Image image = button.AddComponent<Image>();
+        image.color = buttonColor;
+        
+        Button buttonComponent = button.AddComponent<Button>();
+        
+        // Enhanced button color transitions
+        ColorBlock colors = buttonComponent.colors;
+        colors.normalColor = buttonColor;
+        colors.highlightedColor = new Color(buttonColor.r + 0.1f, buttonColor.g + 0.1f, buttonColor.b + 0.1f, 1f);
+        colors.pressedColor = new Color(buttonColor.r - 0.1f, buttonColor.g - 0.1f, buttonColor.b - 0.1f, 1f);
+        colors.selectedColor = new Color(buttonColor.r + 0.05f, buttonColor.g + 0.05f, buttonColor.b + 0.05f, 1f);
+        buttonComponent.colors = colors;
+        
+        GameObject textObject = CreateText($"{text} Text", button.transform, text);
+        TextMeshProUGUI textComponent = textObject.GetComponent<TextMeshProUGUI>();
+        textComponent.alignment = TextAlignmentOptions.Center;
+        textComponent.fontSize = 18;
+        textComponent.fontStyle = FontStyles.Bold;
+        textComponent.color = Color.white;
+        
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.anchoredPosition = Vector2.zero;
+        textRect.sizeDelta = Vector2.zero;
+        
+        RectTransform rect = button.GetComponent<RectTransform>();
+        rect.localScale = Vector3.one;
+        
+        return button;
     }
     
     private void CreateDiscardResourceContainer(GameObject parent)
@@ -998,6 +1118,7 @@ public class UISetup : MonoBehaviour
         uiManager.boardConfirmationScreen = mainCanvas.transform.Find("Board Confirmation Screen").gameObject;
         uiManager.gameOverScreen = mainCanvas.transform.Find("Game Over Screen").gameObject;
         uiManager.discardScreen = mainCanvas.transform.Find("Discard Screen").gameObject;
+        uiManager.playerSelectionScreen = mainCanvas.transform.Find("Player Selection Screen").gameObject;
         uiManager.actionPanel = mainCanvas.transform.Find("Action Panel").gameObject;
         uiManager.playerPanelsContainer = mainCanvas.transform.Find("Player Panels Container").gameObject;
         uiManager.playerPanelPrefab = uiManager.playerPanelsContainer.transform.Find("Player Panel Prefab").gameObject;
