@@ -35,7 +35,7 @@ Fixed (uncommented by linter/user).
 
 ### `BoardManager` is a God Object
 
-> **Refactoring in progress** — Step 1 (`TurnManager`) ✅ complete. Steps 2 (`ResourceManager`) and 3 (`BuildingManager`) pending.
+> **Refactoring in progress** — Step 1 (`TurnManager`) ✅ complete. Step 2 (`ResourceManager`) ✅ complete. Step 3 (`BuildingManager`) pending.
 
 
 At ~1,430 lines, `BoardManager.cs` owns too many responsibilities:

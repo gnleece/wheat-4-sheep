@@ -69,7 +69,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     #region Private members
 
-    private System.Random random = new System.Random();   // TODO: use a single global random instance that can be seeded
+    private readonly System.Random random = new System.Random();    // TODO: use a single global random instance that can be seeded
 
     private IGameManager gameManager;
 
@@ -82,7 +82,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
     private HexTile currentRobberHexTile = null;
     private RobberObject robberObject = null;
 
-    private Dictionary<IPlayer, ResourceHand> playerResourceHands = new Dictionary<IPlayer, ResourceHand>();
+    private ResourceManager resourceManager = new ResourceManager();
 
     private TurnManager turnManager = new TurnManager();
 
@@ -302,12 +302,10 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return false;
         }
 
-        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
-
         var isBuildingFree = gameManager.CurrentGameState == GameManager.GameState.FirstSettlementPlacement ||
                              gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement;
 
-        if (!isBuildingFree && !currentPlayerHand.HasEnoughResources(BuildingCosts.SettlementCost))
+        if (!isBuildingFree && !resourceManager.HasEnoughResources(player, BuildingCosts.SettlementCost))
         {
             Debug.LogError($"Player {player.PlayerId} does not have enough resources to build a settlement");
             return false;
@@ -321,14 +319,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
             if (!isBuildingFree)
             {
-                // Deduct resources from the player's hand
-                currentPlayerHand.Remove(BuildingCosts.SettlementCost);
+                resourceManager.DeductResources(player, BuildingCosts.SettlementCost);
             }
 
             // If this is the second settlement during initial game setup, give the player resources from each of the adjacent hex tiles
             if (gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement)
             {
-                GivePlayerResourcesForNeighborHexTiles(player, hexVertex);
+                resourceManager.GivePlayerResourcesForNeighborHexTiles(player, hexVertex);
             }
 
             Debug.Log($"PLACED SETTLEMENT: {hexVertex}");
@@ -340,24 +337,6 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         BoardStateChanged?.Invoke();
         return success;
-    }
-
-    private void GivePlayerResourcesForNeighborHexTiles(IPlayer player, HexVertex hexVertex)
-    {
-        if (player == null || hexVertex == null) return;
-        if (!playerResourceHands.TryGetValue(player, out var hand)) return;
-        if (hexVertex.Building == null) return;
-
-        int amount = hexVertex.Building.Type == Building.BuildingType.City ? 2 : 1;
-
-        foreach (var hex in hexVertex.NeighborHexTiles)
-        {
-            var resourceType = hex.ResourceType;
-            if (resourceType != ResourceType.None)
-            {
-                hand.Add(resourceType, amount);
-            }
-        }
     }
 
     public bool BuildRoad(IPlayer player, HexEdge hexEdge)
@@ -380,12 +359,10 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return false;
         }
 
-        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
-
         var isBuildingFree = gameManager.CurrentGameState == GameManager.GameState.FirstSettlementPlacement ||
                              gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement;
 
-        if (!isBuildingFree && !currentPlayerHand.HasEnoughResources(BuildingCosts.RoadCost))
+        if (!isBuildingFree && !resourceManager.HasEnoughResources(player, BuildingCosts.RoadCost))
         {
             Debug.LogError($"Player {player.PlayerId} does not have enough resources to build a road");
             return false;
@@ -398,8 +375,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         {
             if (!isBuildingFree)
             {
-                // Deduct resources from the player's hand
-                currentPlayerHand.Remove(BuildingCosts.RoadCost);
+                resourceManager.DeductResources(player, BuildingCosts.RoadCost);
             }
             Debug.Log($"PLACED ROAD: {hexEdge}");
         }
@@ -438,9 +414,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return false;
         }
 
-        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
-
-        if (!currentPlayerHand.HasEnoughResources(BuildingCosts.CityCost))
+        if (!resourceManager.HasEnoughResources(player, BuildingCosts.CityCost))
         {
             Debug.LogError($"Player {player.PlayerId} does not have enough resources to upgrade settlement to city");
             return false;
@@ -449,8 +423,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         var success = hexVertex.Building.Upgrade();
         if (success)
         {
-            // Deduct resources from the player's hand
-            currentPlayerHand.Remove(BuildingCosts.CityCost);
+            resourceManager.DeductResources(player, BuildingCosts.CityCost);
 
             // Refresh the visual representation        // TODO ideally this would be driven by BoardStateChanged instead
             if (hexVertex.VertexObject != null)
@@ -505,26 +478,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
     // Call this before StartNewGame to set up player resource hands
     public void InitializePlayerResourceHands(IEnumerable<IPlayer> players)
     {
-        playerResourceHands.Clear();
-        foreach (var player in players)
-        {
-            playerResourceHands[player] = new ResourceHand();
-            playerResourceHands[player].Add(ResourceType.Wood, 2);
-            playerResourceHands[player].Add(ResourceType.Clay, 2);
-            playerResourceHands[player].Add(ResourceType.Sheep, 2);
-            playerResourceHands[player].Add(ResourceType.Wheat, 2);
-            playerResourceHands[player].Add(ResourceType.Ore, 2);
-        }
+        resourceManager.Initialize(players);
     }
 
     // Returns a copy of the resource hand for the given player, or null if not found
     public Dictionary<ResourceType, int> GetResourceHandForPlayer(IPlayer player)
     {
-        if (playerResourceHands.TryGetValue(player, out var hand))
-        {
-            return hand.GetAll(); // returns a copy
-        }
-        return null;
+        return resourceManager.GetResourceHandForPlayer(player);
     }
 
     public int GetPlayerScore(IPlayer player)
@@ -631,40 +591,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer)
     {
-        if (fromPlayer == null || toPlayer == null) return null;
-        if (!playerResourceHands.TryGetValue(fromPlayer, out var fromHand)) return null;
-        if (!playerResourceHands.TryGetValue(toPlayer, out var toHand)) return null;
-
-        // Get all resources the player has
-        var allResources = fromHand.GetAll();
-        var resourcesList = new List<ResourceType>();
-        
-        // Create a list of all resources (including duplicates)
-        foreach (var kvp in allResources)
-        {
-            for (int i = 0; i < kvp.Value; i++)
-            {
-                resourcesList.Add(kvp.Key);
-            }
-        }
-        
-        if (resourcesList.Count == 0)
-        {
-            Debug.Log($"Player {fromPlayer.PlayerId} has no resources to steal");
-            return null;
-        }
-        
-        // Randomly select a resource to steal
-        var randomIndex = random.Next(resourcesList.Count);
-        var resourceToSteal = resourcesList[randomIndex];
-        
-        // Remove from the victim and add to the thief
-        fromHand.Remove(resourceToSteal, 1);
-        toHand.Add(resourceToSteal, 1);
-        
-        Debug.Log($"Player {toPlayer.PlayerId} stole 1 {resourceToSteal} from Player {fromPlayer.PlayerId}");
-        
-        return resourceToSteal;
+        return resourceManager.StealRandomResourceFromPlayer(fromPlayer, toPlayer);
     }
 
     public bool CanBuildSettlement(IPlayer player)
@@ -682,8 +609,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
 
         // Can they afford the building cost?
-        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
-        if (!currentPlayerHand.HasEnoughResources(BuildingCosts.SettlementCost))
+        if (!resourceManager.HasEnoughResources(player, BuildingCosts.SettlementCost))
         {
             return false;
         }
@@ -713,8 +639,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
 
         // Can they afford the building cost?
-        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
-        if (!currentPlayerHand.HasEnoughResources(BuildingCosts.RoadCost))
+        if (!resourceManager.HasEnoughResources(player, BuildingCosts.RoadCost))
         {
             return false;
         }
@@ -744,8 +669,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
 
         // Can they afford the upgrade cost?
-        var currentPlayerHand = playerResourceHands.GetValueOrDefault(player);
-        if (!currentPlayerHand.HasEnoughResources(BuildingCosts.CityCost))
+        if (!resourceManager.HasEnoughResources(player, BuildingCosts.CityCost))
         {
             return false;
         }
@@ -779,7 +703,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool BeginPlayerTurn(IPlayer player, PlayerTurnType turnType)
     {
-        if (player == null || !playerResourceHands.ContainsKey(player))
+        if (player == null || !resourceManager.ContainsPlayer(player))
         {
             Debug.LogError("Cannot begin player turn: player is null or not initialized");
             return false;
@@ -853,34 +777,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private async Task HandleSevenRollDiscard()
     {
-        Debug.Log("Seven rolled! Checking for players with more than 7 cards...");
-        
-        // Find all players with more than 7 cards
-        var playersToDiscard = new List<IPlayer>();
-        foreach (var kvp in playerResourceHands)
-        {
-            var player = kvp.Key;
-            var hand = kvp.Value;
-            var totalCards = hand.GetAll().Values.Sum();
-            
-            if (totalCards > 7)
-            {
-                playersToDiscard.Add(player);
-                Debug.Log($"Player {player.PlayerId} has {totalCards} cards and must discard {totalCards / 2}");
-            }
-        }
-        
-        // Handle discard for each player
-        foreach (var player in playersToDiscard)
-        {
-            var hand = playerResourceHands[player];
-            var totalCards = hand.GetAll().Values.Sum();
-            var cardsToDiscard = totalCards / 2;
-            
-            Debug.Log($"Player {player.PlayerId} must discard {cardsToDiscard} cards");
-            
-            await player.DiscardOnSevenRoll(hand, cardsToDiscard);
-        }
+        await resourceManager.HandleSevenRollDiscard();
     }
 
     private async Task HandleSevenRollMoveRobber()
@@ -926,21 +823,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void GiveAllPlayersResourcesForHexTile(HexTile hexTile)
     {
-        if (hexTile == null) return;
-        var resourceType = hexTile.ResourceType;
-        if (resourceType == ResourceType.None) return;
-
-        foreach (var vertex in hexTile.NeighborVertices)
-        {
-            if (vertex == null || vertex.Building == null || vertex.Owner == null) continue;
-            if (hexTile == currentRobberHexTile) continue;
-            if (!playerResourceHands.TryGetValue(vertex.Owner, out var hand)) continue;
-
-            int amount = vertex.Building.Type == Building.BuildingType.City ? 2 : 1;
-            hand.Add(resourceType, amount);
-
-            Debug.Log($"Player {vertex.Owner.PlayerId} awarded {amount} {resourceType} from hex {hexTile.HexCoordinates}");
-        }
+        resourceManager.GiveAllPlayersResourcesForHexTile(hexTile, currentRobberHexTile);
     }
 
     #endregion
@@ -1358,18 +1241,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
     // Returns a string with the current resource hands of each player for debugging
     public string GetAllPlayerResourceHandsDebugString()
     {
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-        foreach (var kvp in playerResourceHands)
-        {
-            var player = kvp.Key;
-            var hand = kvp.Value;
-            sb.AppendLine($"Player {player.PlayerId}:");
-            foreach (var resourceKvp in hand.GetAll())
-            {
-                sb.AppendLine($"  {resourceKvp.Key}: {resourceKvp.Value}");
-            }
-        }
-        return sb.ToString();
+        return resourceManager.GetAllPlayerResourceHandsDebugString();
     }
 
     #endregion
