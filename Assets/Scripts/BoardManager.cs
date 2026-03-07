@@ -21,35 +21,6 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     #endregion
 
-    #region Classes and structs
-
-    private class PlayerTurn
-    {
-        public IPlayer Player;
-        public PlayerTurnType TurnType;
-        public bool HasRolledDice = false;
-
-        public bool CanEndTurn
-        {
-            get
-            {
-                switch (TurnType)
-                {
-                    case PlayerTurnType.InitialPlacement:
-                        // TODO: validate that player has successfully placed their settlement and road
-                        return true;
-                    case PlayerTurnType.RegularTurn:
-                        // In regular turns, players must roll the dice before they can end their turn
-                        return HasRolledDice;
-                    default:
-                        return false;
-                }
-            }
-        }
-    }
-
-    #endregion
-
     #region Serialized fields
 
     [SerializeField]
@@ -113,7 +84,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private Dictionary<IPlayer, ResourceHand> playerResourceHands = new Dictionary<IPlayer, ResourceHand>();
 
-    private PlayerTurn currentPlayerTurn = null;
+    private TurnManager turnManager = new TurnManager();
 
     private HexVertex manuallySelectedSettlementLocation = null;
     private HexEdge manuallySelectedRoadLocation = null;
@@ -313,13 +284,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool BuildSettlement(IPlayer player, HexVertex hexVertex)
     {
-        if (currentPlayerTurn == null ||  currentPlayerTurn.Player != player)
+        if (!turnManager.IsPlayerTurn(player))
         {
             Debug.LogError($"Board manager BuildSettlement: turn is not active for {player}");
             return false;
         }
 
-        if (currentPlayerTurn.TurnType == PlayerTurnType.RegularTurn && !currentPlayerTurn.HasRolledDice)
+        if (turnManager.CurrentTurnType == PlayerTurnType.RegularTurn && !turnManager.HasRolledDice)
         {
             Debug.LogError($"Player {player.PlayerId} must roll dice before building settlements");
             return false;
@@ -391,13 +362,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool BuildRoad(IPlayer player, HexEdge hexEdge)
     {
-        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        if (!turnManager.IsPlayerTurn(player))
         {
             Debug.LogError($"Board manager BuildRoad: turn is not active for {player}");
             return false;
         }
 
-        if (currentPlayerTurn.TurnType == PlayerTurnType.RegularTurn && !currentPlayerTurn.HasRolledDice)
+        if (turnManager.CurrentTurnType == PlayerTurnType.RegularTurn && !turnManager.HasRolledDice)
         {
             Debug.LogError($"Player {player.PlayerId} must roll dice before building roads");
             return false;
@@ -443,13 +414,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool UpgradeSettlementToCity(IPlayer player, HexVertex hexVertex)
     {
-        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        if (!turnManager.IsPlayerTurn(player))
         {
             Debug.LogError($"Board manager UpgradeSettlementToCity: turn is not active for {player}");
             return false;
         }
 
-        if (currentPlayerTurn.TurnType == PlayerTurnType.RegularTurn && !currentPlayerTurn.HasRolledDice)
+        if (turnManager.CurrentTurnType == PlayerTurnType.RegularTurn && !turnManager.HasRolledDice)
         {
             Debug.LogError($"Player {player.PlayerId} must roll dice before upgrading settlements");
             return false;
@@ -500,7 +471,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool MoveRobber(IPlayer player, HexTile hexTile)
     {
-        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        if (!turnManager.IsPlayerTurn(player))
         {
             Debug.LogError($"Board manager MoveRobber: turn is not active for {player}");
             return false;
@@ -597,7 +568,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         HexVertex requiredSettlement = null;
         if (gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement)
         {
-            requiredSettlement = GetLastSettlementPlaced(currentPlayerTurn.Player);
+            requiredSettlement = GetLastSettlementPlaced(turnManager.CurrentPlayer);
         }
 
         var locations = new List<HexEdge>();
@@ -699,13 +670,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
     public bool CanBuildSettlement(IPlayer player)
     {
         // Is it this player's turn?
-        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        if (!turnManager.IsPlayerTurn(player))
         {
             return false;
         }
 
         // Have they already rolled the dice?
-        if (!currentPlayerTurn.HasRolledDice)
+        if (!turnManager.HasRolledDice)
         {
             return false;
         }
@@ -730,13 +701,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
     public bool CanBuildRoad(IPlayer player)
     {
         // Is it this player's turn?
-        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        if (!turnManager.IsPlayerTurn(player))
         {
             return false;
         }
 
         // Have they already rolled the dice?
-        if (!currentPlayerTurn.HasRolledDice)
+        if (!turnManager.HasRolledDice)
         {
             return false;
         }
@@ -761,13 +732,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
     public bool CanUpgradeSettlement(IPlayer player)
     {
         // Is it this player's turn?
-        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        if (!turnManager.IsPlayerTurn(player))
         {
             return false;
         }
 
         // Have they already rolled the dice?
-        if (!currentPlayerTurn.HasRolledDice)
+        if (!turnManager.HasRolledDice)
         {
             return false;
         }
@@ -792,13 +763,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
     public bool CanRollDice(IPlayer player)
     {
         // Is it this player's turn?
-        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        if (!turnManager.IsPlayerTurn(player))
         {
             return false;
         }
 
         // Have they already rolled the dice?
-        if (currentPlayerTurn.HasRolledDice)
+        if (turnManager.HasRolledDice)
         {
             return false;
         }
@@ -814,64 +785,39 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return false;
         }
 
-        if (currentPlayerTurn != null)
-        {
-            Debug.LogError($"Cannot begin player turn: a player turn is already in progress for player {currentPlayerTurn.Player.PlayerId}");
-            return false;
-        }
-
         // TODO: confirm that the board is in a valid state for the turn to begin
 
-        currentPlayerTurn = new PlayerTurn { Player = player, TurnType = turnType };
-
-        Debug.Log($"Player {player.PlayerId} turn started");
-        BoardStateChanged?.Invoke();
-        return true;
+        var success = turnManager.BeginTurn(player, turnType);
+        if (success) BoardStateChanged?.Invoke();
+        return success;
     }
 
     public bool EndPlayerTurn(IPlayer player)
     {
-        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
-        {
-            Debug.LogError($"Cannot end player turn: no player turn in progress for player {player.PlayerId}");
-            return false;
-        }
-
-        if (!currentPlayerTurn.CanEndTurn)
-        {
-            Debug.LogError($"Cannot end player turn");
-            return false;
-        }
-
-        Debug.Log($"Player {player.PlayerId} turn ended");
-        currentPlayerTurn = null;
-        BoardStateChanged?.Invoke();
-        return true;
+        var success = turnManager.EndTurn(player);
+        if (success) BoardStateChanged?.Invoke();
+        return success;
     }
 
     public bool IsPlayerTurn(IPlayer player)
     {
-        return currentPlayerTurn != null && currentPlayerTurn.Player == player;
+        return turnManager.IsPlayerTurn(player);
     }
 
     public bool CanEndTurn(IPlayer player)
     {
-        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
-        {
-            return false;
-        }
-        return currentPlayerTurn.CanEndTurn;
+        return turnManager.CanEndTurn(player);
     }
 
     public async Task<int?> RollDice(IPlayer player)
     {
-        if (currentPlayerTurn == null || currentPlayerTurn.Player != player)
+        if (!turnManager.IsPlayerTurn(player))
         {
             Debug.LogError($"Cannot roll dice: no player turn in progress for player {player.PlayerId}");
             return null;
         }
 
-        if (currentPlayerTurn.HasRolledDice)
+        if (turnManager.HasRolledDice)
         {
             Debug.LogError($"Cannot roll dice: player {player.PlayerId} has already rolled this turn");
             return null;
@@ -899,7 +845,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             await HandleSevenRollMoveRobber();
         }
 
-        currentPlayerTurn.HasRolledDice = true;
+        turnManager.SetHasRolledDice();
 
         BoardStateChanged?.Invoke();
         return diceRoll;
@@ -939,28 +885,28 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private async Task HandleSevenRollMoveRobber()
     {
-        await currentPlayerTurn.Player.MoveRobber();
+        await turnManager.CurrentPlayer.MoveRobber();
 
         // After moving the robber, let the current player choose another player on the robber's hex to steal from
         var playersOnRobberHex = GetPlayersWithBuildingsOnHexTile(currentRobberHexTile);
         
         // Remove the current player from the list (can't steal from yourself)
-        playersOnRobberHex.RemoveAll(p => p == currentPlayerTurn.Player);
+        playersOnRobberHex.RemoveAll(p => p == turnManager.CurrentPlayer);
         
         if (playersOnRobberHex.Count > 0)
         {
-            Debug.Log($"Player {currentPlayerTurn.Player.PlayerId} can steal from {playersOnRobberHex.Count} players on the robber's hex");
+            Debug.Log($"Player {turnManager.CurrentPlayer.PlayerId} can steal from {playersOnRobberHex.Count} players on the robber's hex");
             
             // Let the current player choose who to steal from
-            var playerToStealFrom = await currentPlayerTurn.Player.ChoosePlayerToStealFrom(playersOnRobberHex);
+            var playerToStealFrom = await turnManager.CurrentPlayer.ChoosePlayerToStealFrom(playersOnRobberHex);
             
             if (playerToStealFrom != null)
             {
                 // Steal a random resource from the chosen player
-                var stolenResource = StealRandomResourceFromPlayer(playerToStealFrom, currentPlayerTurn.Player);
+                var stolenResource = StealRandomResourceFromPlayer(playerToStealFrom, turnManager.CurrentPlayer);
                 if (stolenResource.HasValue)
                 {
-                    Debug.Log($"Player {currentPlayerTurn.Player.PlayerId} successfully stole 1 {stolenResource.Value} from Player {playerToStealFrom.PlayerId}");
+                    Debug.Log($"Player {turnManager.CurrentPlayer.PlayerId} successfully stole 1 {stolenResource.Value} from Player {playerToStealFrom.PlayerId}");
                 }
                 else
                 {
@@ -1033,9 +979,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnEnterSettlementLocationSelectionMode()
     {
-        var playerColor = currentPlayerTurn.Player.PlayerColor;
+        var playerColor = turnManager.CurrentPlayer.PlayerColor;
 
-        var settlementLocationList = GetAvailableSettlementLocations(currentPlayerTurn.Player);
+        var settlementLocationList = GetAvailableSettlementLocations(turnManager.CurrentPlayer);
         var settlementLocationsSet = new HashSet<HexVertex>(settlementLocationList);
 
         foreach (var hexVertex in vertexMap.Values)
@@ -1083,9 +1029,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnEnterRoadLocationSelectionMode()
     {
-        var playerColor = currentPlayerTurn.Player.PlayerColor;
+        var playerColor = turnManager.CurrentPlayer.PlayerColor;
 
-        var roadLocationList = GetAvailableRoadLocations(currentPlayerTurn.Player);
+        var roadLocationList = GetAvailableRoadLocations(turnManager.CurrentPlayer);
         var roadLocationSet = new HashSet<HexEdge>(roadLocationList);
 
         foreach (var hexEdge in edgeMap.Values)
@@ -1110,9 +1056,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnEnterSettlementUpgradeSelectionMode()
     {
-        var playerColor = currentPlayerTurn.Player.PlayerColor;
+        var playerColor = turnManager.CurrentPlayer.PlayerColor;
 
-        var settlementUpgradeList = GetAvailableSettlementsToUpgrade(currentPlayerTurn.Player);
+        var settlementUpgradeList = GetAvailableSettlementsToUpgrade(turnManager.CurrentPlayer);
         var settlementUpgradeSet = new HashSet<HexVertex>(settlementUpgradeList);
 
         foreach (var hexVertex in vertexMap.Values)
@@ -1137,9 +1083,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnEnterRobberLocationSelectionMode()
     {
-        var playerColor = currentPlayerTurn.Player.PlayerColor;
+        var playerColor = turnManager.CurrentPlayer.PlayerColor;
 
-        var robberLocationList = GetAvailableRobberLocations(currentPlayerTurn.Player);
+        var robberLocationList = GetAvailableRobberLocations(turnManager.CurrentPlayer);
         var robberLocationSet = new HashSet<HexTile>(robberLocationList);
 
         foreach (var hexTile in hexTileMap.Values)
@@ -1340,7 +1286,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void ClearBoard()
     {
-        currentPlayerTurn = null;
+        turnManager.Clear();
 
         foreach (var tile in hexTileMap.Values)
         {
