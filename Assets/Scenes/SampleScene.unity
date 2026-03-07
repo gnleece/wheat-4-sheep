@@ -234,14 +234,14 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 705507993}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 12
   m_Type: 1
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
-  m_CookieSize: 10
+  m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
     m_Type: 2
     m_Resolution: -1
@@ -474,6 +474,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -495,9 +497,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &1305273446
 GameObject:
@@ -645,26 +649,7 @@ MonoBehaviour:
   gameConfig: {fileID: 11400000, guid: c6361d11a4172dd409595e50670966ce, type: 2}
   horizontalSpacing: 1.8
   verticalSpacing: 1.5
-  WoodTilePrefab: {fileID: 5174837544054087723, guid: fdef3154fbd8bd54abda613ad0b2deae,
-    type: 3}
-  ClayTilePrefab: {fileID: 4275895577202392747, guid: 65717b7ee22c15547814d5ecb9cbc187,
-    type: 3}
-  SheepTilePrefab: {fileID: 5799304943962764923, guid: 560246340d3b3b2438b69a7163b2816f,
-    type: 3}
-  WheatTilePrefab: {fileID: 4837849007097611830, guid: 6a1f041f36c3aef4a8ccbebbdce926f2,
-    type: 3}
-  OreTilePrefab: {fileID: 7355053520602925453, guid: 049ff4aca0d21534fbd7a182ff703a1d,
-    type: 3}
-  DesertTilePrefab: {fileID: 278714691926240667, guid: bebaf9202b61a4c469349909961e0e11,
-    type: 3}
-  WaterTilePrefab: {fileID: 7119111873892639185, guid: 5374bde773ce30b41988e076729e3ecb,
-    type: 3}
-  HexVertexPrefab: {fileID: 3049046381786106406, guid: 9d458d272332173479efcc68bfb0632e,
-    type: 3}
-  HexEdgePrefab: {fileID: 6190589593697046225, guid: d4b4338e8d02712418528a0e5d9e1450,
-    type: 3}
-  RobberPrefab: {fileID: 6566817388692851183, guid: 35d5b8e8bf259fb4b8e40bad0741b030,
-    type: 3}
+  boardPrefabConfig: {fileID: 11400000, guid: 6cb9d022e8930fa45b039225b7f81400, type: 2}
 --- !u!4 &2069979700
 Transform:
   m_ObjectHideFlags: 0

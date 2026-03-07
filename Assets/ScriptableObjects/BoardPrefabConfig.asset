@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7945ab5d31ba3f43ab13fee444d7bff, type: 3}
+  m_Name: BoardPrefabConfig
+  m_EditorClassIdentifier: Assembly-CSharp::BoardPrefabConfig
+  WoodTilePrefab: {fileID: 5174837544054087723, guid: fdef3154fbd8bd54abda613ad0b2deae,
+    type: 3}
+  ClayTilePrefab: {fileID: 4275895577202392747, guid: 65717b7ee22c15547814d5ecb9cbc187,
+    type: 3}
+  SheepTilePrefab: {fileID: 5799304943962764923, guid: 560246340d3b3b2438b69a7163b2816f,
+    type: 3}
+  WheatTilePrefab: {fileID: 4837849007097611830, guid: 6a1f041f36c3aef4a8ccbebbdce926f2,
+    type: 3}
+  OreTilePrefab: {fileID: 7355053520602925453, guid: 049ff4aca0d21534fbd7a182ff703a1d,
+    type: 3}
+  DesertTilePrefab: {fileID: 278714691926240667, guid: bebaf9202b61a4c469349909961e0e11,
+    type: 3}
+  WaterTilePrefab: {fileID: 7119111873892639185, guid: 5374bde773ce30b41988e076729e3ecb,
+    type: 3}
+  HexVertexPrefab: {fileID: 3049046381786106406, guid: 9d458d272332173479efcc68bfb0632e,
+    type: 3}
+  HexEdgePrefab: {fileID: 6190589593697046225, guid: d4b4338e8d02712418528a0e5d9e1450,
+    type: 3}
+  RobberPrefab: {fileID: 6566817388692851183, guid: 35d5b8e8bf259fb4b8e40bad0741b030,
+    type: 3}

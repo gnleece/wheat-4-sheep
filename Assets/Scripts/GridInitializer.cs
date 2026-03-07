@@ -16,16 +16,7 @@ public class GridInitializer
     private readonly float horizontalSpacing;
     private readonly float verticalSpacing;
 
-    private readonly GameObject woodTilePrefab;
-    private readonly GameObject clayTilePrefab;
-    private readonly GameObject sheepTilePrefab;
-    private readonly GameObject wheatTilePrefab;
-    private readonly GameObject oreTilePrefab;
-    private readonly GameObject desertTilePrefab;
-    private readonly GameObject waterTilePrefab;
-    private readonly GameObject hexVertexPrefab;
-    private readonly GameObject hexEdgePrefab;
-    private readonly GameObject robberPrefab;
+    private readonly BoardPrefabConfig prefabConfig;
 
     #endregion
 
@@ -34,31 +25,13 @@ public class GridInitializer
         System.Random random,
         float horizontalSpacing,
         float verticalSpacing,
-        GameObject woodTilePrefab,
-        GameObject clayTilePrefab,
-        GameObject sheepTilePrefab,
-        GameObject wheatTilePrefab,
-        GameObject oreTilePrefab,
-        GameObject desertTilePrefab,
-        GameObject waterTilePrefab,
-        GameObject hexVertexPrefab,
-        GameObject hexEdgePrefab,
-        GameObject robberPrefab)
+        BoardPrefabConfig prefabConfig)
     {
         this.gameConfig = gameConfig;
         this.random = random;
         this.horizontalSpacing = horizontalSpacing;
         this.verticalSpacing = verticalSpacing;
-        this.woodTilePrefab = woodTilePrefab;
-        this.clayTilePrefab = clayTilePrefab;
-        this.sheepTilePrefab = sheepTilePrefab;
-        this.wheatTilePrefab = wheatTilePrefab;
-        this.oreTilePrefab = oreTilePrefab;
-        this.desertTilePrefab = desertTilePrefab;
-        this.waterTilePrefab = waterTilePrefab;
-        this.hexVertexPrefab = hexVertexPrefab;
-        this.hexEdgePrefab = hexEdgePrefab;
-        this.robberPrefab = robberPrefab;
+        this.prefabConfig = prefabConfig;
     }
 
     /// <summary>
@@ -131,7 +104,7 @@ public class GridInitializer
                 tilePosition.x -= horizontalSpacing / 2;
             }
 
-            var tilePrefab = waterTilePrefab;
+            var tilePrefab = prefabConfig.WaterTilePrefab;
             int? diceNumber = null;
             if (hex.Ring <= shuffleableGridSize)
             {
@@ -164,7 +137,7 @@ public class GridInitializer
                     continue;
                 }
 
-                var vertexObject = UnityEngine.Object.Instantiate(hexVertexPrefab, Vector3.zero, Quaternion.identity);
+                var vertexObject = UnityEngine.Object.Instantiate(prefabConfig.HexVertexPrefab, Vector3.zero, Quaternion.identity);
 
                 vertex.VertexObject = vertexObject.GetComponent<HexVertexObject>();
                 vertex.VertexObject.Initialize(boardManager, vertex);
@@ -208,7 +181,7 @@ public class GridInitializer
                     continue;
                 }
 
-                var edgeObject = UnityEngine.Object.Instantiate(hexEdgePrefab, Vector3.zero, Quaternion.identity);
+                var edgeObject = UnityEngine.Object.Instantiate(prefabConfig.HexEdgePrefab, Vector3.zero, Quaternion.identity);
 
                 edge.EdgeObject = edgeObject.GetComponent<HexEdgeObject>();
                 edge.EdgeObject.Initialize(boardManager, edge);
@@ -239,7 +212,7 @@ public class GridInitializer
         }
 
         // Spawn the robber object and place it on the desert tile
-        var robberGO = UnityEngine.Object.Instantiate(robberPrefab, Vector3.zero, Quaternion.identity);
+        var robberGO = UnityEngine.Object.Instantiate(prefabConfig.RobberPrefab, Vector3.zero, Quaternion.identity);
         robberObject = robberGO.GetComponent<RobberObject>();
         robberStartTile = null;
 
@@ -310,13 +283,13 @@ public class GridInitializer
     {
         switch (type)
         {
-            case TileType.Wood:     return woodTilePrefab;
-            case TileType.Clay:     return clayTilePrefab;
-            case TileType.Sheep:    return sheepTilePrefab;
-            case TileType.Wheat:    return wheatTilePrefab;
-            case TileType.Ore:      return oreTilePrefab;
-            case TileType.Desert:   return desertTilePrefab;
-            case TileType.Water:    return waterTilePrefab;
+            case TileType.Wood:     return prefabConfig.WoodTilePrefab;
+            case TileType.Clay:     return prefabConfig.ClayTilePrefab;
+            case TileType.Sheep:    return prefabConfig.SheepTilePrefab;
+            case TileType.Wheat:    return prefabConfig.WheatTilePrefab;
+            case TileType.Ore:      return prefabConfig.OreTilePrefab;
+            case TileType.Desert:   return prefabConfig.DesertTilePrefab;
+            case TileType.Water:    return prefabConfig.WaterTilePrefab;
             default:                return null;
         }
     }

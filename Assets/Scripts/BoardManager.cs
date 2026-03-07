@@ -30,27 +30,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
     private float verticalSpacing = 1.5f;
 
     [SerializeField]
-    private GameObject WoodTilePrefab;
-    [SerializeField]
-    private GameObject ClayTilePrefab;
-    [SerializeField]
-    private GameObject SheepTilePrefab;
-    [SerializeField]
-    private GameObject WheatTilePrefab;
-    [SerializeField]
-    private GameObject OreTilePrefab;
-    [SerializeField]
-    private GameObject DesertTilePrefab;
-    [SerializeField]
-    private GameObject WaterTilePrefab;
-
-    [SerializeField]
-    private GameObject HexVertexPrefab;
-    [SerializeField]
-    private GameObject HexEdgePrefab;
-
-    [SerializeField]
-    private GameObject RobberPrefab;
+    private BoardPrefabConfig boardPrefabConfig;
 
     #endregion
 
@@ -104,10 +84,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         buildingManager = new BuildingManager(vertexMap, edgeMap, hexTileMap, turnManager, resourceManager, gameManager);
 
-        gridInitializer = new GridInitializer(
-            gameConfig, random, horizontalSpacing, verticalSpacing,
-            WoodTilePrefab, ClayTilePrefab, SheepTilePrefab, WheatTilePrefab, OreTilePrefab,
-            DesertTilePrefab, WaterTilePrefab, HexVertexPrefab, HexEdgePrefab, RobberPrefab);
+        gridInitializer = new GridInitializer(gameConfig, random, horizontalSpacing, verticalSpacing, boardPrefabConfig);
 
         ClearBoard();
         gridInitializer.InitializeBoard(
