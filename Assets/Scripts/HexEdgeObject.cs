@@ -35,7 +35,7 @@ public class HexEdgeObject : MonoBehaviour
 
     private void HandleRoadLocationSelected()
     {
-        boardManager.ManualRoadLocationSelected(hexEdge);
+        boardManager.CompleteSelection(hexEdge);
     }
 
     public void EnableSelection(bool enable, Color? hoverColor = null)

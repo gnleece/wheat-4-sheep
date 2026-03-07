@@ -53,15 +53,7 @@ public interface IBoardManager
 
     public Task<IPlayer> GetManualSelectionForPlayerToStealFrom(IPlayer currentPlayer, List<IPlayer> availablePlayers);
 
-    public void ManualSettlementLocationSelected(HexVertex hexVertex);
-
-    public void ManualRoadLocationSelected(HexEdge hexEdge);
-
-    public void ManualSettlementUpgradeLocationSelected(HexVertex hexVertex);
-
-    public void ManualVertexSelected(HexVertex hexVertex);
-
-    public void ManualHexTileSelected(HexTile hexTile);
+    public void CompleteSelection(object selection);
 
     public bool BuildSettlement(IPlayer player, HexVertex hexVertex);
 

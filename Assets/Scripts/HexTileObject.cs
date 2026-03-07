@@ -86,7 +86,7 @@ public class HexTileObject : MonoBehaviour
 
     private void HexTileSelected()
     {
-        boardManager.ManualHexTileSelected(hexTile);
+        boardManager.CompleteSelection(hexTile);
     }
 
     public void EnableSelection(bool enable, Color? hoverColor = null)

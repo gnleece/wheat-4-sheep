@@ -53,7 +53,7 @@ public class HexVertexObject : MonoBehaviour
 
     private void HandleBuildingLocationSelected()
     {
-        boardManager.ManualVertexSelected(hexVertex);
+        boardManager.CompleteSelection(hexVertex);
     }
 
     public void EnableSelection(bool enable, Color? hoverColor = null)

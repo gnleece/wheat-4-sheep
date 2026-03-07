@@ -64,10 +64,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private GridInitializer gridInitializer;
 
-    private HexVertex manuallySelectedSettlementLocation = null;
-    private HexEdge manuallySelectedRoadLocation = null;
-    private HexVertex manuallySelectedSettlementToUpgrade = null;
-    private HexTile manuallySelectedRobberLocation = null;
+    private TaskCompletionSource<object> pendingSelection;
 
     #endregion
 
@@ -120,18 +117,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return null;
         }
 
-        manuallySelectedSettlementLocation = null;
-
-        boardStateMachine.GoToState(BoardMode.ChooseSettlementLocation);
-
-        while (manuallySelectedSettlementLocation == null)
-        {
-            await Task.Yield();
-        }
-
-        boardStateMachine.GoToState(BoardMode.Idle);
-
-        return manuallySelectedSettlementLocation;
+        return await AwaitBoardSelection<HexVertex>(BoardMode.ChooseSettlementLocation);
     }
 
     public async Task<HexEdge> GetManualSelectionForRoadLocation(IPlayer player)
@@ -149,18 +135,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return null;
         }
 
-        manuallySelectedRoadLocation = null;
-
-        boardStateMachine.GoToState(BoardMode.ChooseRoadLocation);
-
-        while (manuallySelectedRoadLocation == null)
-        {
-            await Task.Yield();
-        }
-
-        boardStateMachine.GoToState(BoardMode.Idle);
-
-        return manuallySelectedRoadLocation;
+        return await AwaitBoardSelection<HexEdge>(BoardMode.ChooseRoadLocation);
     }
 
     public async Task<HexVertex> GetManualSelectionForSettlementUpgrade(IPlayer player)
@@ -178,18 +153,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return null;
         }
 
-        manuallySelectedSettlementToUpgrade = null;
-
-        boardStateMachine.GoToState(BoardMode.ChooseSettlementToUpgrade);
-
-        while (manuallySelectedSettlementToUpgrade == null)
-        {
-            await Task.Yield();
-        }
-
-        boardStateMachine.GoToState(BoardMode.Idle);
-
-        return manuallySelectedSettlementToUpgrade;
+        return await AwaitBoardSelection<HexVertex>(BoardMode.ChooseSettlementToUpgrade);
     }
 
     public async Task<HexTile> GetManualSelectionForRobberLocation(IPlayer player)
@@ -207,18 +171,22 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return null;
         }
 
-        manuallySelectedRobberLocation = null;
+        return await AwaitBoardSelection<HexTile>(BoardMode.ChooseRobberLocation);
+    }
 
-        boardStateMachine.GoToState(BoardMode.ChooseRobberLocation);
+    public void CompleteSelection(object selection)
+    {
+        pendingSelection?.TrySetResult(selection);
+    }
 
-        while (manuallySelectedRobberLocation == null)
-        {
-            await Task.Yield();
-        }
-
+    private async Task<T> AwaitBoardSelection<T>(BoardMode mode)
+    {
+        pendingSelection = new TaskCompletionSource<object>();
+        boardStateMachine.GoToState(mode);
+        var result = (T)await pendingSelection.Task;
         boardStateMachine.GoToState(BoardMode.Idle);
-
-        return manuallySelectedRobberLocation;
+        pendingSelection = null;
+        return result;
     }
 
     public async Task GetManualDiscardOnSevenRoll(IPlayer player, ResourceHand hand, int cardsToDiscard)
@@ -504,34 +472,6 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
     }
 
-    public void ManualSettlementLocationSelected(HexVertex hexVertex)
-    {
-        manuallySelectedSettlementLocation = hexVertex;
-    }
-
-    public void ManualVertexSelected(HexVertex hexVertex)
-    {
-        // Route the selection based on current board mode
-        switch (boardStateMachine.CurrentState)
-        {
-            case BoardMode.ChooseSettlementLocation:
-                ManualSettlementLocationSelected(hexVertex);    // TODO: these methods don't need to be public anymore
-                break;
-            case BoardMode.ChooseSettlementToUpgrade:
-                ManualSettlementUpgradeLocationSelected(hexVertex);
-                break;
-            default:
-                // Fallback to settlement selection for backward compatibility
-                ManualSettlementLocationSelected(hexVertex);
-                break;
-        }
-    }
-
-    public void ManualHexTileSelected(HexTile hexTile)
-    {
-        manuallySelectedRobberLocation = hexTile;
-    }
-
     private void OnExitSettlementLocationSelectionMode()
     {
         foreach (var hexVertex in vertexMap.Values)
@@ -554,11 +494,6 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
     }
 
-    public void ManualRoadLocationSelected(HexEdge hexEdge)
-    {
-        manuallySelectedRoadLocation = hexEdge;
-    }
-
     private void OnExitRoadLocationSelectionMode()
     {
         foreach (var hexEdge in edgeMap.Values)
@@ -579,11 +514,6 @@ public class BoardManager : MonoBehaviour, IBoardManager
             var selectionEnabled = settlementUpgradeSet.Contains(hexVertex);
             hexVertex.EnableSelection(selectionEnabled, playerColor);
         }
-    }
-
-    public void ManualSettlementUpgradeLocationSelected(HexVertex hexVertex)
-    {
-        manuallySelectedSettlementToUpgrade = hexVertex;
     }
 
     private void OnExitSettlementUpgradeSelectionMode()
