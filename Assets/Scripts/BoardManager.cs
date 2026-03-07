@@ -879,7 +879,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         var dieA = random.Next(1, 7);
         var dieB = random.Next(1, 7);
-        var diceRoll = 7;// dieA + dieB;
+        var diceRoll = dieA + dieB;
 
         Debug.Log($"Player {player.PlayerId} rolled a {diceRoll} ({dieA} + {dieB})");
 
@@ -895,7 +895,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         // Handle 7 roll - force players with more than 7 cards to discard
         if (diceRoll == 7)
         {
-            //await HandleSevenRollDiscard();         // TODO: check rules to confirm which order these two steps should occur in
+            await HandleSevenRollDiscard();         // TODO: check rules to confirm which order these two steps should occur in
             await HandleSevenRollMoveRobber();
         }
 
