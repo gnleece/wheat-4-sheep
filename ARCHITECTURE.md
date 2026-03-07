@@ -35,10 +35,10 @@ Fixed (uncommented by linter/user).
 
 ### `BoardManager` is a God Object
 
-> **Refactoring complete** — `TurnManager` ✅, `ResourceManager` ✅, `BuildingManager` ✅. `BoardManager` is now a thin coordinator.
+> **Refactoring complete** — `GridInitializer` ✅, `TurnManager` ✅, `ResourceManager` ✅, `BuildingManager` ✅. `BoardManager` is now a thin coordinator.
 
 
-At ~1,430 lines, `BoardManager.cs` owns too many responsibilities:
+At ~1,430 lines, `BoardManager.cs` owned too many responsibilities:
 
 - Hex grid initialization and neighbor setup
 - Turn state tracking and validation (`PlayerTurn` nested class)
@@ -49,7 +49,7 @@ At ~1,430 lines, `BoardManager.cs` owns too many responsibilities:
 - Player stealing
 - Victory point scoring queries
 
-**Recommended split:**
+**Extracted classes:**
 
 | Extracted class | Responsibilities |
 |---|---|
@@ -58,7 +58,7 @@ At ~1,430 lines, `BoardManager.cs` owns too many responsibilities:
 | `ResourceManager` | `playerResourceHands`, distribution, discard, stealing |
 | `BuildingManager` | Placement validation, cost deduction, upgrade logic |
 
-`BoardManager` would coordinate these rather than implement them all.
+`BoardManager` coordinates these rather than implementing them.
 
 ---
 
@@ -132,7 +132,8 @@ These exist because board mode and awaited selection type track parallel state. 
 | File | Purpose |
 |---|---|
 | `GameManager.cs` | Main game flow, state machine, player creation |
-| `BoardManager.cs` | Board state and logic (God Object — see above) |
+| `BoardManager.cs` | Board state coordinator (thin — delegates to sub-managers) |
+| `GridInitializer.cs` | Tile/vertex/edge creation, GameObject spawning, neighbor wiring |
 | `StateMachine.cs` | Generic reusable state machine |
 | `IGameManager.cs` | GameManager interface |
 | `IBoardManager.cs` | BoardManager interface |

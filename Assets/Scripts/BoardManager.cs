@@ -1,11 +1,8 @@
 using Grid;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 /// <summary>
 /// Manages the state of the board.
@@ -85,6 +82,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private BuildingManager buildingManager;
 
+    private GridInitializer gridInitializer;
+
     private HexVertex manuallySelectedSettlementLocation = null;
     private HexEdge manuallySelectedRoadLocation = null;
     private HexVertex manuallySelectedSettlementToUpgrade = null;
@@ -105,8 +104,18 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         buildingManager = new BuildingManager(vertexMap, edgeMap, hexTileMap, turnManager, resourceManager, gameManager);
 
+        gridInitializer = new GridInitializer(
+            gameConfig, random, horizontalSpacing, verticalSpacing,
+            WoodTilePrefab, ClayTilePrefab, SheepTilePrefab, WheatTilePrefab, OreTilePrefab,
+            DesertTilePrefab, WaterTilePrefab, HexVertexPrefab, HexEdgePrefab, RobberPrefab);
+
         ClearBoard();
-        InitializeBoard(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
+        gridInitializer.InitializeBoard(
+            INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE,
+            hexTileMap, vertexMap, edgeMap,
+            this,
+            out var robberObj, out var robberTile);
+        buildingManager.InitializeRobber(robberObj, robberTile);
 
         boardStateMachine = new StateMachine<BoardMode>("BoardMode");
 
@@ -632,252 +641,10 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     #endregion
 
-    private void InitializeBoard(int shuffleableGridSize, int fullGridSize)
-    {
-        // Initialize data structure for full grid
-        for (int q = -fullGridSize; q <= fullGridSize; q++)
-        {
-            for (int r = -fullGridSize; r <= fullGridSize; r++)
-            {
-                if (q+r >= -fullGridSize && q+r <= fullGridSize)
-                {
-                    // Hex
-                    var coord = new HexCoord(q, r);
-                    var isValidForBuilding = coord.Ring <= shuffleableGridSize;
-                    var hexTile = new HexTile(coord, isValidForBuilding);
-                    hexTileMap.Add(coord, hexTile);
-
-                    // Verts
-                    var northVertexCoord = new VertexCoord(coord, VertexOrientation.North);
-                    var northVertex = new HexVertex(northVertexCoord);
-                    vertexMap.Add(northVertexCoord, northVertex);
-
-                    var southVertexCoord = new VertexCoord(coord, VertexOrientation.South);
-                    var southVertex = new HexVertex(southVertexCoord);
-                    vertexMap.Add(southVertexCoord, southVertex);
-
-                    // Edges
-                    var westEdgeCoord = new EdgeCoord(coord, EdgeOrientation.West);
-                    var westEdge = new HexEdge(westEdgeCoord);
-                    edgeMap.Add(westEdgeCoord, westEdge);
-
-                    var northWestEdgeCoord = new EdgeCoord(coord, EdgeOrientation.NorthWest);
-                    var northWestEdge = new HexEdge(northWestEdgeCoord);
-                    edgeMap.Add(northWestEdgeCoord, northWestEdge);
-
-                    var northEastEdgeCoord = new EdgeCoord(coord, EdgeOrientation.NorthEast);
-                    var northEastEdge = new HexEdge(northEastEdgeCoord);
-                    edgeMap.Add(northEastEdgeCoord, northEastEdge);
-                }
-            }
-        }
-
-        // Spawn tile objects for the full grid.
-        // Tiles within the inner shuffleable region will get randomized tiles.
-        // Tiles outside the shuffleable area witll get water tiles.
-        var tileTypesList = GetShuffledTileTypes();
-        var shuffledTileCount = 0;
-        var shuffledDiceNumbers = GetShuffledTileDiceNumbers();
-        var shuffledDiceNumbersCount = 0;
-        foreach (var hex in hexTileMap.Values)
-        {
-            var offsetCoord = GridHelpers.AxialHexToOffsetCoord(hex.HexCoordinates);
-            
-            var tilePosition = new Vector3(offsetCoord.x * horizontalSpacing, 0, offsetCoord.y * verticalSpacing);
-            if (offsetCoord.y % 2 == 0)
-            {
-                tilePosition.x -= horizontalSpacing / 2;
-            }
-
-            var tilePrefab = WaterTilePrefab;
-            int? diceNumber = null;
-            if (hex.Ring <= shuffleableGridSize)
-            {
-                var tileType = tileTypesList[shuffledTileCount];
-                tilePrefab = GetTilePrefab(tileType);
-                shuffledTileCount++;
-
-                if (tileType != TileType.Desert && tileType != TileType.Water)
-                {
-                    diceNumber = shuffledDiceNumbers[shuffledDiceNumbersCount];
-                    shuffledDiceNumbersCount++;
-                }
-            }
-
-            var tileObject = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
-            var tileObjectComponent = tileObject.GetComponent<HexTileObject>();
-            hex.TileObject = tileObjectComponent;
-            tileObjectComponent.Initialize(this, hex, diceNumber);
-        }
-
-        // Spawn vertex objects and initialize neighbors
-        foreach (var vertex in vertexMap.Values)
-        {
-            if (hexTileMap.TryGetValue(vertex.VertexCoord.HexCoord, out var hex))
-            {
-                vertex.InitializeNeighbors(this);
-
-                if (!vertex.CanHaveBuildings())
-                {
-                    continue;
-                }
-
-                var vertexObject = Instantiate(HexVertexPrefab, Vector3.zero, Quaternion.identity);
-
-                vertex.VertexObject = vertexObject.GetComponent<HexVertexObject>();
-                vertex.VertexObject.Initialize(this, vertex);
-
-                switch (vertex.VertexCoord.Orientation)
-                {
-                    case VertexOrientation.North:
-                        vertexObject.transform.parent = hex.TileObject.NorthVertexTransform;
-                        break;
-                    case VertexOrientation.South:
-                        vertexObject.transform.parent = hex.TileObject.SouthVertexTransform;
-                        break;
-                    default:
-                        Debug.LogError($"Unknown vertex orientation for {vertex}");
-                        break;
-                }
-
-                vertexObject.transform.localPosition = Vector3.zero;
-            }
-            else
-            {
-                Debug.LogError($"Could not find parent hex for {vertex}");
-            }
-        }
-
-        // After all vertices are initialized, initialize hex tile neighbors
-        foreach (var hexTile in hexTileMap.Values)
-        {
-            hexTile.InitializeNeighbors(this);
-        }
-
-        // Spawn edge objects
-        foreach (var edge in edgeMap.Values)
-        {
-            if (hexTileMap.TryGetValue(edge.EdgeCoord.HexCoord, out var hex))
-            {
-                edge.InitializeNeighbors(this);
-
-                if (!edge.CanHaveRoads())
-                {
-                    continue;
-                }
-
-                var edgeObject = Instantiate(HexEdgePrefab, Vector3.zero, Quaternion.identity);
-
-                edge.EdgeObject = edgeObject.GetComponent<HexEdgeObject>();
-                edge.EdgeObject.Initialize(this, edge);
-
-                switch (edge.EdgeCoord.Orientation)
-                {
-                    case EdgeOrientation.West:
-                        edgeObject.transform.parent = hex.TileObject.WestEdgeTransform;
-                        break;
-                    case EdgeOrientation.NorthWest:
-                        edgeObject.transform.parent = hex.TileObject.NorthWestEdgeTransform;
-                        break;
-                    case EdgeOrientation.NorthEast:
-                        edgeObject.transform.parent = hex.TileObject.NorthEastEdgeTransform;
-                        break;
-                    default:
-                        Debug.LogError($"Unknown edge orientation for {edge}");
-                        break;
-                }
-
-                edgeObject.transform.localPosition = Vector3.zero;
-                edgeObject.transform.localRotation = Quaternion.identity;
-            }
-            else
-            {
-                Debug.LogError($"Could not find parent hex for {edge}");
-            }
-        }
-
-        // Spawn the robber object
-        var robberGO = Instantiate(RobberPrefab, Vector3.zero, Quaternion.identity);
-        var robberObj = robberGO.GetComponent<RobberObject>();
-
-        foreach (var tile in hexTileMap.Values)
-        {
-            if (tile.TileObject.TileType == TileType.Desert)
-            {
-                tile.MoveRobberToTile(robberObj);
-                buildingManager.InitializeRobber(robberObj, tile);
-                break;
-            }
-        }
-    }
-
     private void ClearBoard()
     {
         turnManager.Clear();
-
-        foreach (var tile in hexTileMap.Values)
-        {
-            if (tile.TileObject != null)
-            {
-                Destroy(tile.TileObject.gameObject);
-            }
-        }
-        hexTileMap.Clear();
-
-        foreach (var vertex in vertexMap.Values)
-        {
-            if (vertex.VertexObject != null)
-            {
-                Destroy(vertex.VertexObject.gameObject);
-            }
-        }
-        vertexMap.Clear();
-
-        foreach (var edge in edgeMap.Values)
-        {
-            if (edge.EdgeObject != null)
-            {
-                Destroy(edge.EdgeObject.gameObject);
-            }
-        }
-        edgeMap.Clear();
-    }
-
-    private List<TileType> GetShuffledTileTypes()
-    {
-        var tileCounts = gameConfig.GetShuffleableTileCounts();
-        var tileTypesList = new List<TileType>();
-        foreach (var type in tileCounts.Keys)
-        {
-            var count = tileCounts[type];
-            tileTypesList.AddRange(Enumerable.Repeat(type, count));
-        }
-
-        Util.Shuffle(tileTypesList);
-
-        return tileTypesList;
-    }
-
-    private GameObject GetTilePrefab(TileType type)
-    {
-        switch (type)
-        {
-            case TileType.Wood:     return WoodTilePrefab;
-            case TileType.Clay:     return ClayTilePrefab;
-            case TileType.Sheep:    return SheepTilePrefab;
-            case TileType.Wheat:    return WheatTilePrefab;
-            case TileType.Ore:      return OreTilePrefab;
-            case TileType.Desert:   return DesertTilePrefab;
-            case TileType.Water:    return WaterTilePrefab;
-            default:                return null;
-        }
-    }
-
-    private List<int> GetShuffledTileDiceNumbers()
-    {
-        var diceNumbers = gameConfig.TileDiceNumbers.ToList();
-        Util.Shuffle(diceNumbers);
-        return diceNumbers;
+        gridInitializer?.ClearBoard(hexTileMap, vertexMap, edgeMap);
     }
 
     #region Debugging
