@@ -79,20 +79,16 @@ public class BoardManager : MonoBehaviour, IBoardManager
     private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
     private Dictionary<EdgeCoord, HexEdge> edgeMap = new Dictionary<EdgeCoord, HexEdge>();
 
-    private HexTile currentRobberHexTile = null;
-    private RobberObject robberObject = null;
-
     private ResourceManager resourceManager = new ResourceManager();
 
     private TurnManager turnManager = new TurnManager();
+
+    private BuildingManager buildingManager;
 
     private HexVertex manuallySelectedSettlementLocation = null;
     private HexEdge manuallySelectedRoadLocation = null;
     private HexVertex manuallySelectedSettlementToUpgrade = null;
     private HexTile manuallySelectedRobberLocation = null;
-
-    // Track the last settlement placed by each player for second settlement placement phase
-    private Dictionary<IPlayer, HexVertex> lastSettlementPlaced = new Dictionary<IPlayer, HexVertex>();
 
     #endregion
 
@@ -107,11 +103,10 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
         this.gameManager = gameManager;
 
+        buildingManager = new BuildingManager(vertexMap, edgeMap, hexTileMap, turnManager, resourceManager, gameManager);
+
         ClearBoard();
         InitializeBoard(INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE);
-
-        // Clear settlement tracking for new game
-        lastSettlementPlaced.Clear();
 
         boardStateMachine = new StateMachine<BoardMode>("BoardMode");
 
@@ -273,206 +268,32 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
     }
 
-    private HexVertex GetLastSettlementPlaced(IPlayer player)
-    {
-        if (lastSettlementPlaced.TryGetValue(player, out var hexVertex))
-        {
-            return hexVertex;
-        }
-        return null;
-    }
-
     public bool BuildSettlement(IPlayer player, HexVertex hexVertex)
     {
-        if (!turnManager.IsPlayerTurn(player))
-        {
-            Debug.LogError($"Board manager BuildSettlement: turn is not active for {player}");
-            return false;
-        }
-
-        if (turnManager.CurrentTurnType == PlayerTurnType.RegularTurn && !turnManager.HasRolledDice)
-        {
-            Debug.LogError($"Player {player.PlayerId} must roll dice before building settlements");
-            return false;
-        }
-
-        if (hexVertex == null)
-        {
-            Debug.LogError("Board manager BuildSettlement: hex vertex is null");
-            return false;
-        }
-
-        var isBuildingFree = gameManager.CurrentGameState == GameManager.GameState.FirstSettlementPlacement ||
-                             gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement;
-
-        if (!isBuildingFree && !resourceManager.HasEnoughResources(player, BuildingCosts.SettlementCost))
-        {
-            Debug.LogError($"Player {player.PlayerId} does not have enough resources to build a settlement");
-            return false;
-        }
-
-        var success = hexVertex.TryPlaceBuilding(Building.BuildingType.Settlement, player);
-        if (success)
-        {
-            // Track the last settlement placed by this player
-            lastSettlementPlaced[player] = hexVertex;
-
-            if (!isBuildingFree)
-            {
-                resourceManager.DeductResources(player, BuildingCosts.SettlementCost);
-            }
-
-            // If this is the second settlement during initial game setup, give the player resources from each of the adjacent hex tiles
-            if (gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement)
-            {
-                resourceManager.GivePlayerResourcesForNeighborHexTiles(player, hexVertex);
-            }
-
-            Debug.Log($"PLACED SETTLEMENT: {hexVertex}");
-        }
-        else
-        {
-            Debug.Log("Invalid settlement position. Try again.");
-        }
-
+        var success = buildingManager.BuildSettlement(player, hexVertex);
         BoardStateChanged?.Invoke();
         return success;
     }
 
     public bool BuildRoad(IPlayer player, HexEdge hexEdge)
     {
-        if (!turnManager.IsPlayerTurn(player))
-        {
-            Debug.LogError($"Board manager BuildRoad: turn is not active for {player}");
-            return false;
-        }
-
-        if (turnManager.CurrentTurnType == PlayerTurnType.RegularTurn && !turnManager.HasRolledDice)
-        {
-            Debug.LogError($"Player {player.PlayerId} must roll dice before building roads");
-            return false;
-        }
-
-        if (hexEdge == null)
-        {
-            Debug.LogError("Board manager BuildRoad: hex edge is null");
-            return false;
-        }
-
-        var isBuildingFree = gameManager.CurrentGameState == GameManager.GameState.FirstSettlementPlacement ||
-                             gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement;
-
-        if (!isBuildingFree && !resourceManager.HasEnoughResources(player, BuildingCosts.RoadCost))
-        {
-            Debug.LogError($"Player {player.PlayerId} does not have enough resources to build a road");
-            return false;
-        }
-
-        Debug.Log($"Trying to place road at {hexEdge}");
-
-        var success = hexEdge.TryPlaceRoad(player);
-        if (success)
-        {
-            if (!isBuildingFree)
-            {
-                resourceManager.DeductResources(player, BuildingCosts.RoadCost);
-            }
-            Debug.Log($"PLACED ROAD: {hexEdge}");
-        }
-        else
-        {
-            Debug.Log("Invalid road position. Try again.");
-        }
-
+        var success = buildingManager.BuildRoad(player, hexEdge);
         BoardStateChanged?.Invoke();
         return success;
     }
 
     public bool UpgradeSettlementToCity(IPlayer player, HexVertex hexVertex)
     {
-        if (!turnManager.IsPlayerTurn(player))
-        {
-            Debug.LogError($"Board manager UpgradeSettlementToCity: turn is not active for {player}");
-            return false;
-        }
-
-        if (turnManager.CurrentTurnType == PlayerTurnType.RegularTurn && !turnManager.HasRolledDice)
-        {
-            Debug.LogError($"Player {player.PlayerId} must roll dice before upgrading settlements");
-            return false;
-        }
-
-        if (hexVertex == null)
-        {
-            Debug.LogError("Board manager UpgradeSettlementToCity: hex vertex is null");
-            return false;
-        }
-
-        if (hexVertex.Building == null || hexVertex.Building.Owner != player || hexVertex.Building.Type != Building.BuildingType.Settlement)
-        {
-            Debug.LogError($"Board manager UpgradeSettlementToCity: hex vertex does not contain a settlement owned by player {player.PlayerId}");
-            return false;
-        }
-
-        if (!resourceManager.HasEnoughResources(player, BuildingCosts.CityCost))
-        {
-            Debug.LogError($"Player {player.PlayerId} does not have enough resources to upgrade settlement to city");
-            return false;
-        }
-
-        var success = hexVertex.Building.Upgrade();
-        if (success)
-        {
-            resourceManager.DeductResources(player, BuildingCosts.CityCost);
-
-            // Refresh the visual representation        // TODO ideally this would be driven by BoardStateChanged instead
-            if (hexVertex.VertexObject != null)
-            {
-                hexVertex.VertexObject.Refresh();
-            }
-
-            Debug.Log($"UPGRADED SETTLEMENT TO CITY: {hexVertex}");
-        }
-        else
-        {
-            Debug.Log("Failed to upgrade settlement to city. Try again.");
-        }
-
+        var success = buildingManager.UpgradeSettlementToCity(player, hexVertex);
         BoardStateChanged?.Invoke();
         return success;
     }
 
     public bool MoveRobber(IPlayer player, HexTile hexTile)
     {
-        if (!turnManager.IsPlayerTurn(player))
-        {
-            Debug.LogError($"Board manager MoveRobber: turn is not active for {player}");
-            return false;
-        }
-
-        if (hexTile == null)
-        {
-            Debug.LogError("Board manager MoveRobber: hex tile is null");
-            return false;
-        }
-
-        if (hexTile == currentRobberHexTile)
-        {
-            Debug.LogError("Board manager MoveRobber: robber cannot be moved to the same tile where it is already located");
-            return false;
-        }
-
-        if (hexTile.TileType == TileType.Water)
-        {
-            Debug.LogError("Board manager MoveRobber: robber cannot be placed on a water tile");
-            return false;
-        }
-
-        currentRobberHexTile = hexTile;
-        currentRobberHexTile.MoveRobberToTile(robberObject);
-
+        var success = buildingManager.MoveRobber(player, hexTile);
         BoardStateChanged?.Invoke();
-        return true;
+        return success;
     }
 
     // Call this before StartNewGame to set up player resource hands
@@ -487,202 +308,25 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return resourceManager.GetResourceHandForPlayer(player);
     }
 
-    public int GetPlayerScore(IPlayer player)
-    {
-        var score = 0;
+    public int GetPlayerScore(IPlayer player) => buildingManager?.GetPlayerScore(player) ?? 0;
 
-        // 1 point for each settlement, 2 points for each city
-        foreach (var vertex in vertexMap.Values)
-        {
-            if (vertex.Building != null && vertex.Building.Owner == player)
-            {
-                score += vertex.Building.VictoryPoints;
-            }
-        }
+    public List<HexVertex> GetAvailableSettlementLocations(IPlayer player) => buildingManager.GetAvailableSettlementLocations(player);
 
-        // TODO: 1 point for each victory card
-        // TODO: 2 points for longest road
-        // TODO: 2 points for largest army
+    public List<HexEdge> GetAvailableRoadLocations(IPlayer player) => buildingManager.GetAvailableRoadLocations(player);
 
-        return score;
-    }
+    public List<HexVertex> GetAvailableSettlementsToUpgrade(IPlayer player) => buildingManager.GetAvailableSettlementsToUpgrade(player);
 
-    public List<HexVertex> GetAvailableSettlementLocations(IPlayer player)
-    {
-        var mustConnectToRoad = gameManager.SettlementsMustConnectToRoad;
+    public List<HexTile> GetAvailableRobberLocations(IPlayer player) => buildingManager.GetAvailableRobberLocations(player);
 
-        var locations = new List<HexVertex>();
-        foreach (var vertex in vertexMap.Values)
-        {
-            if (vertex.AvailableForBuilding(player, mustConnectToRoad))
-            {
-                locations.Add(vertex);
-            }
-        }
-        return locations;
-    }
+    public List<IPlayer> GetPlayersWithBuildingsOnHexTile(HexTile hexTile) => buildingManager.GetPlayersWithBuildingsOnHexTile(hexTile);
 
-    public List<HexEdge> GetAvailableRoadLocations(IPlayer player)
-    {
-        // Check if we're in second settlement placement phase and need to connect to the last settlement
-        HexVertex requiredSettlement = null;
-        if (gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement)
-        {
-            requiredSettlement = GetLastSettlementPlaced(turnManager.CurrentPlayer);
-        }
+    public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer) => resourceManager.StealRandomResourceFromPlayer(fromPlayer, toPlayer);
 
-        var locations = new List<HexEdge>();
-        foreach (var edge in edgeMap.Values)
-        {
-            if (edge.AvailableForBuilding(player, requiredSettlement))
-            {
-                locations.Add(edge);
-            }
-        }
-        return locations;
-    }
+    public bool CanBuildSettlement(IPlayer player) => buildingManager.CanBuildSettlement(player);
 
-    public List<HexVertex> GetAvailableSettlementsToUpgrade(IPlayer player)
-    {
-        var locations = new List<HexVertex>();
-        foreach (var vertex in vertexMap.Values)
-        {
-            if (vertex.Building != null && 
-                vertex.Building.Owner == player && 
-                vertex.Building.Type == Building.BuildingType.Settlement)
-            {
-                locations.Add(vertex);
-            }
-        }
-        return locations;
-    }
+    public bool CanBuildRoad(IPlayer player) => buildingManager.CanBuildRoad(player);
 
-    public List<HexTile> GetAvailableRobberLocations(IPlayer player)
-    {
-        var locations = new List<HexTile>();
-        foreach (var tile in hexTileMap.Values)
-        {
-            if (tile.TileType != TileType.Water && tile != currentRobberHexTile)
-            {
-                locations.Add(tile);
-            }
-        }
-        return locations;
-    }
-
-    public List<IPlayer> GetPlayersWithBuildingsOnHexTile(HexTile hexTile)
-    {
-        var players = new List<IPlayer>();
-        if (hexTile == null) return players;
-
-        foreach (var vertex in hexTile.NeighborVertices)
-        {
-            if (vertex.Building != null && vertex.Building.Owner != null)
-            {
-                // Only add each player once
-                if (!players.Contains(vertex.Building.Owner))
-                {
-                    players.Add(vertex.Building.Owner);
-                }
-            }
-        }
-        return players;
-    }
-
-    public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer)
-    {
-        return resourceManager.StealRandomResourceFromPlayer(fromPlayer, toPlayer);
-    }
-
-    public bool CanBuildSettlement(IPlayer player)
-    {
-        // Is it this player's turn?
-        if (!turnManager.IsPlayerTurn(player))
-        {
-            return false;
-        }
-
-        // Have they already rolled the dice?
-        if (!turnManager.HasRolledDice)
-        {
-            return false;
-        }
-
-        // Can they afford the building cost?
-        if (!resourceManager.HasEnoughResources(player, BuildingCosts.SettlementCost))
-        {
-            return false;
-        }
-
-        // Are there any valid settlement locations available?
-        var availableLocations = GetAvailableSettlementLocations(player);
-        if (availableLocations == null || availableLocations.Count == 0)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    public bool CanBuildRoad(IPlayer player)
-    {
-        // Is it this player's turn?
-        if (!turnManager.IsPlayerTurn(player))
-        {
-            return false;
-        }
-
-        // Have they already rolled the dice?
-        if (!turnManager.HasRolledDice)
-        {
-            return false;
-        }
-
-        // Can they afford the building cost?
-        if (!resourceManager.HasEnoughResources(player, BuildingCosts.RoadCost))
-        {
-            return false;
-        }
-
-        // Are there any valid road locations available?
-        var availableLocations = GetAvailableRoadLocations(player);
-        if (availableLocations == null || availableLocations.Count == 0)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    public bool CanUpgradeSettlement(IPlayer player)
-    {
-        // Is it this player's turn?
-        if (!turnManager.IsPlayerTurn(player))
-        {
-            return false;
-        }
-
-        // Have they already rolled the dice?
-        if (!turnManager.HasRolledDice)
-        {
-            return false;
-        }
-
-        // Can they afford the upgrade cost?
-        if (!resourceManager.HasEnoughResources(player, BuildingCosts.CityCost))
-        {
-            return false;
-        }
-
-        // Are there any settlements available for upgrade?
-        var availableSettlements = GetAvailableSettlementsToUpgrade(player);
-        if (availableSettlements == null || availableSettlements.Count == 0)
-        {
-            return false;
-        }
-
-        return true;
-    }
+    public bool CanUpgradeSettlement(IPlayer player) => buildingManager.CanUpgradeSettlement(player);
 
     public bool CanRollDice(IPlayer player)
     {
@@ -785,7 +429,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         await turnManager.CurrentPlayer.MoveRobber();
 
         // After moving the robber, let the current player choose another player on the robber's hex to steal from
-        var playersOnRobberHex = GetPlayersWithBuildingsOnHexTile(currentRobberHexTile);
+        var playersOnRobberHex = buildingManager.GetPlayersWithBuildingsOnHexTile(buildingManager.CurrentRobberHexTile);
         
         // Remove the current player from the list (can't steal from yourself)
         playersOnRobberHex.RemoveAll(p => p == turnManager.CurrentPlayer);
@@ -823,7 +467,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void GiveAllPlayersResourcesForHexTile(HexTile hexTile)
     {
-        resourceManager.GiveAllPlayersResourcesForHexTile(hexTile, currentRobberHexTile);
+        resourceManager.GiveAllPlayersResourcesForHexTile(hexTile, buildingManager.CurrentRobberHexTile);
     }
 
     #endregion
@@ -1154,14 +798,14 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         // Spawn the robber object
         var robberGO = Instantiate(RobberPrefab, Vector3.zero, Quaternion.identity);
-        robberObject = robberGO.GetComponent<RobberObject>();
+        var robberObj = robberGO.GetComponent<RobberObject>();
 
         foreach (var tile in hexTileMap.Values)
         {
             if (tile.TileObject.TileType == TileType.Desert)
             {
-                tile.MoveRobberToTile(robberObject);
-                currentRobberHexTile = tile;
+                tile.MoveRobberToTile(robberObj);
+                buildingManager.InitializeRobber(robberObj, tile);
                 break;
             }
         }
