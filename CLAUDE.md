@@ -4,6 +4,10 @@
 
 The design doc for this project lives in DESIGN-DOC.md. Keep it up to date when adding, removing, or modifying features. 
 
+## Unity Guidelines
+
+Don't modify scene files or prefabs directly. Instead, give the user instructions for how to make those modifications manually in the editor.
+
 ## Coding Style
 
 Follow the [Microsoft C# Coding Conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions) for all C# code in this project, including the [Identifier Naming Guidelines](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/identifier-names), unless a rule in this file explicitly states otherwise.
