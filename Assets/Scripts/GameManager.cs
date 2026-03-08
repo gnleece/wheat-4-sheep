@@ -38,6 +38,11 @@ public class GameManager : MonoBehaviour, IGameManager
     private bool playerCountSelected = false;
     private bool boardConfirmed = false;
 
+    public void RegisterUIManager(UIManager uiManager)
+    {
+        this.uiManager = uiManager;
+    }
+
     public IReadOnlyList<IPlayer> PlayerList => playerList.AsReadOnly();
 
     public GameState CurrentGameState => gameStateMachine != null ? gameStateMachine.CurrentState : GameState.None;
@@ -47,21 +52,7 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void Start()
     {
-        // UIManager will be found when needed since it's created dynamically
         Reset();
-    }
-    
-    private UIManager GetUIManager()
-    {
-        if (uiManager == null)
-        {
-            uiManager = FindAnyObjectByType<UIManager>();
-            if (uiManager == null)
-            {
-                Debug.LogWarning("GameManager: UIManager not found! UI features will not work.");
-            }
-        }
-        return uiManager;
     }
 
     private void Update()
@@ -96,10 +87,9 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void OnEnterPlayerSetup()
     {
-        var ui = GetUIManager();
-        if (ui != null)
+        if (uiManager != null)
         {
-            ui.ShowSetupScreen();
+            uiManager.ShowSetupScreen();
         }
     }
 
@@ -130,10 +120,9 @@ public class GameManager : MonoBehaviour, IGameManager
             playerCountSelected = true;
             Debug.Log($"Player count selected: {playerCount}");
             
-            var ui = GetUIManager();
-            if (ui != null)
+            if (uiManager != null)
             {
-                ui.HideSetupScreen();
+                uiManager.HideSetupScreen();
             }
         }
     }
@@ -143,17 +132,16 @@ public class GameManager : MonoBehaviour, IGameManager
         boardConfirmed = true;
         Debug.Log("Board layout confirmed");
         
-        var ui = GetUIManager();
-        if (ui != null)
+        if (uiManager != null)
         {
-            ui.HideBoardConfirmationScreen();
+            uiManager.HideBoardConfirmationScreen();
         }
     }
     
     public void RegenerateBoard()
     {
         Debug.Log("Regenerating board...");
-        boardManager.StartNewGame(this);
+        boardManager.StartNewGame(this, uiManager);
     }
 
     private void OnExitPlayerSetup()
@@ -168,12 +156,11 @@ public class GameManager : MonoBehaviour, IGameManager
         }
 
         boardManager.InitializePlayerResourceHands(playerList);
-
-        var ui = GetUIManager();
-        if (ui != null)
+        
+        if (uiManager != null)
         {
             Debug.Log("GameManager: Initializing UI player panels");
-            ui.InitializePlayerPanels(playerList);
+            uiManager.InitializePlayerPanels(playerList);
         }
         
         playerCountSelected = false; // Reset for next game
@@ -186,11 +173,11 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void OnEnterBoardSetup()
     {
-        boardManager.StartNewGame(this);
-        var ui = GetUIManager();
-        if (ui != null)
+        boardManager.StartNewGame(this, uiManager);
+
+        if (uiManager != null)
         {
-            ui.ShowBoardConfirmationScreen();
+            uiManager.ShowBoardConfirmationScreen();
         }
     }
 
@@ -280,10 +267,9 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void OnEnterPlaying()
     {
-        var ui = GetUIManager();
-        if (ui != null)
+        if (uiManager != null)
         {
-            ui.ShowGameplayUI();
+            uiManager.ShowGameplayUI();
         }
         
         playingTask = RunPlaying();
@@ -307,11 +293,10 @@ public class GameManager : MonoBehaviour, IGameManager
             {
                 Debug.Log($"Player {player.PlayerId} turn");
                 
-                var ui = GetUIManager();
-                if (ui != null)
+                if (uiManager != null)
                 {
-                    ui.SetActivePlayer(player.PlayerId);
-                    ui.UpdatePlayerPanels();
+                    uiManager.SetActivePlayer(player.PlayerId);
+                    uiManager.UpdatePlayerPanels();
                 }
                 
                 await player.PlayTurnAsync();
@@ -350,10 +335,9 @@ public class GameManager : MonoBehaviour, IGameManager
         int winningScore = winner != null ? boardManager.GetPlayerScore(winner) : 0;
         
         // Show the game over screen
-        var ui = GetUIManager();
-        if (ui != null && winner != null)
+        if (uiManager != null && winner != null)
         {
-            ui.ShowGameOverScreen(winner, winningScore);
+            uiManager.ShowGameOverScreen(winner, winningScore);
         }
     }
     
@@ -380,10 +364,9 @@ public class GameManager : MonoBehaviour, IGameManager
         Debug.Log("Restarting game...");
         
         // Hide game over screen
-        var ui = GetUIManager();
-        if (ui != null)
+        if (uiManager != null)
         {
-            ui.HideGameOverScreen();
+            uiManager.HideGameOverScreen();
         }
         
         // Reset the game state

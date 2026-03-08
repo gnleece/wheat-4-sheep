@@ -50,6 +50,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private IGameManager gameManager;
 
+    private IUIManager uiManager;
+
     private StateMachine<BoardMode> boardStateMachine;
 
     private Dictionary<HexCoord, HexTile> hexTileMap = new Dictionary<HexCoord, HexTile>();
@@ -70,7 +72,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     #region Public methods
 
-    public void StartNewGame(IGameManager gameManager)
+    public void StartNewGame(IGameManager gameManager, IUIManager uiManager)
     {
         if (gameManager == null)
         {
@@ -78,6 +80,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             return;
         }
         this.gameManager = gameManager;
+        this.uiManager = uiManager;
 
         buildingManager = new BuildingManager(vertexMap, edgeMap, hexTileMap, turnManager, resourceManager, gameManager);
 
@@ -194,14 +197,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
         Debug.Log($"Showing manual discard UI for Player {player.PlayerId} to discard {cardsToDiscard} cards...");
         
         // Show discard UI for human player
-        var uiManager = FindAnyObjectByType<UIManager>();
         if (uiManager != null)
         {
             await uiManager.ShowDiscardUI(player, hand, cardsToDiscard);
         }
         else
         {
-            Debug.LogError("UIManager not found! Cannot show discard UI for human player.");
+            Debug.LogError("UIManager not set! Cannot show discard UI for human player.");
         }
     }
 
@@ -210,14 +212,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
         Debug.Log($"Showing player selection UI for Player {currentPlayer.PlayerId} to choose who to steal from...");
         
         // Show player selection UI for human player
-        var uiManager = FindAnyObjectByType<UIManager>();
         if (uiManager != null)
         {
             return await uiManager.ShowPlayerSelectionUI(currentPlayer, availablePlayers);
         }
         else
         {
-            Debug.LogError("UIManager not found! Cannot show player selection UI for human player.");
+            Debug.LogError("UIManager not set! Cannot show player selection UI for human player.");
             return null;
         }
     }

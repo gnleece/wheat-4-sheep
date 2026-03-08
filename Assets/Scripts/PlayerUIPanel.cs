@@ -32,21 +32,15 @@ public class PlayerUIPanel : MonoBehaviour
     public TextMeshProUGUI largestArmyText;
     
     private IPlayer player;
-    private BoardManager boardManager;
-    
+    private IBoardManager boardManager;
+
     public IPlayer Player => player;
-    
-    public void Initialize(IPlayer playerData)
+
+    public void Initialize(IPlayer playerData, IBoardManager boardManager)
     {
         Debug.Log($"PlayerUIPanel: Initializing panel for Player {playerData?.PlayerId}");
         player = playerData;
-        boardManager = FindAnyObjectByType<BoardManager>();
-        
-        if (boardManager == null)
-        {
-            Debug.LogWarning("PlayerUIPanel: BoardManager not found!");
-        }
-        
+        this.boardManager = boardManager;
         SetupPlayerInfo();
         UpdateDisplay();
         Debug.Log($"PlayerUIPanel: Initialization completed for Player {player?.PlayerId}");

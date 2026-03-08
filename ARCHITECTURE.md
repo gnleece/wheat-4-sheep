@@ -62,15 +62,17 @@ At ~1,430 lines, `BoardManager.cs` owned too many responsibilities:
 
 ---
 
-### Coupling via `FindAnyObjectByType`
+### ~~Coupling via `FindAnyObjectByType`~~ ✅ Fixed
 
-`UIManager.cs:35-36`, `DiscardUIController`, and `PlayerSelectionUIController` all use `FindAnyObjectByType` to locate `GameManager` and `BoardManager`. This:
+~~`UIManager.cs:35-36`, `DiscardUIController`, and `PlayerSelectionUIController` all use `FindAnyObjectByType` to locate `GameManager` and `BoardManager`.~~
 
-- Fails silently at runtime if the object isn't in the scene
-- Makes dependencies invisible
-- Can't be tested without a full scene
-
-**Fix:** Use serialized inspector fields or a simple service locator.
+Fixed: All 12 usages across 7 files eliminated. `UISetup` is now the single wiring point — it runs in `Awake()`, creates `UIManager`, and injects dependencies explicitly:
+- `UIManager.Initialize(IBoardManager)` replaces `Start()` discovery
+- `GameManager.RegisterUIManager(UIManager)` replaces lazy `FindAnyObjectByType`
+- `BoardManager.StartNewGame(IGameManager, IUIManager)` receives a narrow `IUIManager` interface, breaking the circular dep
+- `PlayerUIPanel.Initialize(IPlayer, IBoardManager)` receives board manager directly
+- `UISetup` button lambdas capture the serialized `GameManager` field instead of searching at click time
+- `UIDebugHelper` uses a `[SerializeField]` field for `GameUIController`
 
 ---
 

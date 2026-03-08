@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class UIManager : MonoBehaviour
+public class UIManager : MonoBehaviour, IUIManager
 {
     [Header("UI References")]
     public Canvas mainCanvas;
@@ -25,15 +25,13 @@ public class UIManager : MonoBehaviour
     public Button tradeButton;
     public Button endTurnButton;
     
-    private GameManager gameManager;
     private List<PlayerUIPanel> playerUIPanels = new List<PlayerUIPanel>();
     private IPlayer currentPlayer;
     private IBoardManager boardManager;
-    
-    private void Start()
+
+    public void Initialize(IBoardManager boardManager)
     {
-        gameManager = FindAnyObjectByType<GameManager>();
-        boardManager = FindAnyObjectByType<BoardManager>();
+        this.boardManager = boardManager;
         boardManager.BoardStateChanged += RefreshUI;
         SetupActionButtons();
     }
@@ -217,7 +215,7 @@ public class UIManager : MonoBehaviour
         
         if (playerPanel != null)
         {
-            playerPanel.Initialize(player);
+            playerPanel.Initialize(player, boardManager);
             playerUIPanels.Add(playerPanel);
             Debug.Log($"UIManager: Successfully created panel for Player {player.PlayerId}");
         }

@@ -8,13 +8,20 @@ public class UISetup : MonoBehaviour
     public Font defaultFont;
     public Sprite buttonSprite;
     public Sprite panelSprite;
-    
+
+    [Header("Scene References")]
+    [SerializeField]
+    private GameManager gameManager;
+
+    [SerializeField]
+    private BoardManager boardManager;
+
     private Canvas mainCanvas;
     private UIManager uiManager;
-    
-    private void Start()
+
+    private void Awake()
     {
-        Debug.Log("UISetup Start() called");
+        Debug.Log("UISetup Awake() called");
         CreateMainUI();
     }
     
@@ -111,12 +118,8 @@ public class UISetup : MonoBehaviour
         Button threePlayerButtonComponent = threePlayerButton.GetComponent<Button>();
         threePlayerButtonComponent.onClick.AddListener(() => {
             Debug.Log("3 Players selected");
-            GameManager gameManager = FindAnyObjectByType<GameManager>();
-            if (gameManager != null)
-            {
-                gameManager.SelectPlayerCount(3);
-                setupScreen.SetActive(false);
-            }
+            gameManager.SelectPlayerCount(3);
+            setupScreen.SetActive(false);
         });
         
         // Create 4 Player button
@@ -124,12 +127,8 @@ public class UISetup : MonoBehaviour
         Button fourPlayerButtonComponent = fourPlayerButton.GetComponent<Button>();
         fourPlayerButtonComponent.onClick.AddListener(() => {
             Debug.Log("4 Players selected");
-            GameManager gameManager = FindAnyObjectByType<GameManager>();
-            if (gameManager != null)
-            {
-                gameManager.SelectPlayerCount(4);
-                setupScreen.SetActive(false);
-            }
+            gameManager.SelectPlayerCount(4);
+            setupScreen.SetActive(false);
         });
         
         Debug.Log("Setup screen created successfully");
@@ -207,11 +206,7 @@ public class UISetup : MonoBehaviour
         Button acceptButtonComponent = acceptButton.GetComponent<Button>();
         acceptButtonComponent.onClick.AddListener(() => {
             Debug.Log("Board accepted");
-            GameManager gameManager = FindAnyObjectByType<GameManager>();
-            if (gameManager != null)
-            {
-                gameManager.ConfirmBoard();
-            }
+            gameManager.ConfirmBoard();
         });
         
         // Create Regenerate Board button
@@ -219,11 +214,7 @@ public class UISetup : MonoBehaviour
         Button regenerateButtonComponent = regenerateButton.GetComponent<Button>();
         regenerateButtonComponent.onClick.AddListener(() => {
             Debug.Log("Board regeneration requested");
-            GameManager gameManager = FindAnyObjectByType<GameManager>();
-            if (gameManager != null)
-            {
-                gameManager.RegenerateBoard();
-            }
+            gameManager.RegenerateBoard();
         });
         
         // Hide the screen initially
@@ -318,11 +309,7 @@ public class UISetup : MonoBehaviour
         Button playAgainButtonComponent = playAgainButton.GetComponent<Button>();
         playAgainButtonComponent.onClick.AddListener(() => {
             Debug.Log("Play Again clicked");
-            GameManager gameManager = FindAnyObjectByType<GameManager>();
-            if (gameManager != null)
-            {
-                gameManager.RestartGame();
-            }
+            gameManager.RestartGame();
         });
         
         // Create Quit button
@@ -1124,11 +1111,15 @@ public class UISetup : MonoBehaviour
         uiManager.playerPanelPrefab = uiManager.playerPanelsContainer.transform.Find("Player Panel Prefab").gameObject;
         
         AssignActionButtons();
-        
+
         // Hide UI panels initially - they'll be shown when the game enters Playing state
         uiManager.actionPanel.SetActive(false);
         uiManager.playerPanelsContainer.SetActive(false);
-        
+
+        // Wire dependencies now that all UI references are set
+        uiManager.Initialize(boardManager);
+        gameManager.RegisterUIManager(uiManager);
+
         Debug.Log("UIManager setup completed successfully");
     }
     
