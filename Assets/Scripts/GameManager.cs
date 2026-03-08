@@ -34,11 +34,11 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private int playerCount = 0;
     private List<IPlayer> playerList = new List<IPlayer>();
-    private UIManager uiManager;
+    private IUIManager uiManager;
     private bool playerCountSelected = false;
     private bool boardConfirmed = false;
 
-    public void RegisterUIManager(UIManager uiManager)
+    public void RegisterUIManager(IUIManager uiManager)
     {
         this.uiManager = uiManager;
     }

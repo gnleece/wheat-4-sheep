@@ -17,7 +17,7 @@ public class UISetup : MonoBehaviour
     private BoardManager boardManager;
 
     private Canvas mainCanvas;
-    private UIManager uiManager;
+    private IUIManager uiManager;
 
     private void Awake()
     {
@@ -1098,42 +1098,46 @@ public class UISetup : MonoBehaviour
     {
         GameObject uiManagerObject = new GameObject("UI Manager");
         uiManagerObject.transform.SetParent(transform);
-        uiManager = uiManagerObject.AddComponent<UIManager>();
-        
-        uiManager.mainCanvas = mainCanvas;
-        uiManager.setupScreen = mainCanvas.transform.Find("Setup Screen").gameObject;
-        uiManager.boardConfirmationScreen = mainCanvas.transform.Find("Board Confirmation Screen").gameObject;
-        uiManager.gameOverScreen = mainCanvas.transform.Find("Game Over Screen").gameObject;
-        uiManager.discardScreen = mainCanvas.transform.Find("Discard Screen").gameObject;
-        uiManager.playerSelectionScreen = mainCanvas.transform.Find("Player Selection Screen").gameObject;
-        uiManager.actionPanel = mainCanvas.transform.Find("Action Panel").gameObject;
-        uiManager.playerPanelsContainer = mainCanvas.transform.Find("Player Panels Container").gameObject;
-        uiManager.playerPanelPrefab = uiManager.playerPanelsContainer.transform.Find("Player Panel Prefab").gameObject;
-        
-        AssignActionButtons();
+
+        // Use concrete type locally — needed to assign public fields before storing as interface
+        UIManager concreteUIManager = uiManagerObject.AddComponent<UIManager>();
+
+        concreteUIManager.mainCanvas = mainCanvas;
+        concreteUIManager.setupScreen = mainCanvas.transform.Find("Setup Screen").gameObject;
+        concreteUIManager.boardConfirmationScreen = mainCanvas.transform.Find("Board Confirmation Screen").gameObject;
+        concreteUIManager.gameOverScreen = mainCanvas.transform.Find("Game Over Screen").gameObject;
+        concreteUIManager.discardScreen = mainCanvas.transform.Find("Discard Screen").gameObject;
+        concreteUIManager.playerSelectionScreen = mainCanvas.transform.Find("Player Selection Screen").gameObject;
+        concreteUIManager.actionPanel = mainCanvas.transform.Find("Action Panel").gameObject;
+        concreteUIManager.playerPanelsContainer = mainCanvas.transform.Find("Player Panels Container").gameObject;
+        concreteUIManager.playerPanelPrefab = concreteUIManager.playerPanelsContainer.transform.Find("Player Panel Prefab").gameObject;
+
+        AssignActionButtons(concreteUIManager);
 
         // Hide UI panels initially - they'll be shown when the game enters Playing state
-        uiManager.actionPanel.SetActive(false);
-        uiManager.playerPanelsContainer.SetActive(false);
+        concreteUIManager.actionPanel.SetActive(false);
+        concreteUIManager.playerPanelsContainer.SetActive(false);
 
         // Wire dependencies now that all UI references are set
-        uiManager.Initialize(boardManager);
-        gameManager.RegisterUIManager(uiManager);
+        concreteUIManager.Initialize(boardManager);
+        gameManager.RegisterUIManager(concreteUIManager);
+
+        uiManager = concreteUIManager;
 
         Debug.Log("UIManager setup completed successfully");
     }
     
-    private void AssignActionButtons()
+    private void AssignActionButtons(UIManager concreteUIManager)
     {
         Transform actionPanel = mainCanvas.transform.Find("Action Panel");
-        
-        uiManager.rollDiceButton = actionPanel.Find("Roll Dice")?.GetComponent<Button>();
-        uiManager.buildRoadButton = actionPanel.Find("Build Road")?.GetComponent<Button>();
-        uiManager.buildSettlementButton = actionPanel.Find("Build Settlement")?.GetComponent<Button>();
-        uiManager.buildCityButton = actionPanel.Find("Build City")?.GetComponent<Button>();
-        uiManager.buyDevelopmentCardButton = actionPanel.Find("Buy Dev Card")?.GetComponent<Button>();
-        uiManager.tradeButton = actionPanel.Find("Trade")?.GetComponent<Button>();
-        uiManager.endTurnButton = actionPanel.Find("End Turn")?.GetComponent<Button>();
+
+        concreteUIManager.rollDiceButton = actionPanel.Find("Roll Dice")?.GetComponent<Button>();
+        concreteUIManager.buildRoadButton = actionPanel.Find("Build Road")?.GetComponent<Button>();
+        concreteUIManager.buildSettlementButton = actionPanel.Find("Build Settlement")?.GetComponent<Button>();
+        concreteUIManager.buildCityButton = actionPanel.Find("Build City")?.GetComponent<Button>();
+        concreteUIManager.buyDevelopmentCardButton = actionPanel.Find("Buy Dev Card")?.GetComponent<Button>();
+        concreteUIManager.tradeButton = actionPanel.Find("Trade")?.GetComponent<Button>();
+        concreteUIManager.endTurnButton = actionPanel.Find("End Turn")?.GetComponent<Button>();
     }
     
     private GameObject CreatePanel(string name, Transform parent)
