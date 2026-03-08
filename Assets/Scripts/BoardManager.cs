@@ -22,15 +22,15 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     [SerializeField]
     private GameConfig gameConfig;
+    
+    [SerializeField]
+    private BoardPrefabConfig boardPrefabConfig;
 
     [SerializeField]
     private float horizontalSpacing = 1.5f;
 
     [SerializeField]
     private float verticalSpacing = 1.5f;
-
-    [SerializeField]
-    private BoardPrefabConfig boardPrefabConfig;
 
     #endregion
 

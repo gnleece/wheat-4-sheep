@@ -83,10 +83,10 @@ public class GameManager : MonoBehaviour, IGameManager
         gameStateMachine = new StateMachine<GameState>("GameState");
 
         gameStateMachine.AddState(GameState.PlayerSetup, OnEnterPlayerSetup, OnUpdatePlayerSetup, OnExitPlayerSetup);
-        gameStateMachine.AddState(GameState.BoardSetup, OnEnterBoardSetup, OnUpdateBoardSetup, OnExitBoardSetup);
-        gameStateMachine.AddState(GameState.FirstSettlementPlacement, OnEnterFirstSettlementPlacement, OnUpdateFirstSettlementPlacement, OnExitFirstSettlementPlacement);
-        gameStateMachine.AddState(GameState.SecondSettlementPlacement, OnEnterSecondSettlementPlacement, OnUpdateSecondSettlementPlacement, OnExitSecondSettlementPlacement);
-        gameStateMachine.AddState(GameState.Playing, OnEnterPlaying, OnUpdatePlaying, OnExitPlaying);
+        gameStateMachine.AddState(GameState.BoardSetup, OnEnterBoardSetup, OnUpdateBoardSetup, null);
+        gameStateMachine.AddState(GameState.FirstSettlementPlacement, OnEnterFirstSettlementPlacement, OnUpdateFirstSettlementPlacement, null);
+        gameStateMachine.AddState(GameState.SecondSettlementPlacement, OnEnterSecondSettlementPlacement, OnUpdateSecondSettlementPlacement, null);
+        gameStateMachine.AddState(GameState.Playing, OnEnterPlaying, OnUpdatePlaying, null);
         gameStateMachine.AddState(GameState.GameOver, OnEnterGameOver, null, null);
 
         gameStateMachine.GoToState(GameState.PlayerSetup);
@@ -175,8 +175,7 @@ public class GameManager : MonoBehaviour, IGameManager
             Debug.Log("GameManager: Initializing UI player panels");
             ui.InitializePlayerPanels(playerList);
         }
-
-        ClearHudText();
+        
         playerCountSelected = false; // Reset for next game
         boardConfirmed = false; // Reset for next game
     }
@@ -214,11 +213,6 @@ public class GameManager : MonoBehaviour, IGameManager
         }
     }
 
-    private void OnExitBoardSetup()
-    {
-        ClearHudText();
-    }
-
     #endregion
 
     #region First Settlement Placement
@@ -237,11 +231,6 @@ public class GameManager : MonoBehaviour, IGameManager
             placementTask = null; // Clear the task reference
             gameStateMachine.GoToState(GameState.SecondSettlementPlacement);
         }
-    }
-
-    private void OnExitFirstSettlementPlacement()
-    {
-        ClearHudText();
     }
 
     private async Task RunFirstSettlementPlacement()
@@ -269,11 +258,6 @@ public class GameManager : MonoBehaviour, IGameManager
             placementTask = null; // Clear the task reference
             gameStateMachine.GoToState(GameState.Playing);
         }
-    }
-
-    private void OnExitSecondSettlementPlacement()
-    {
-        ClearHudText();
     }
 
     private async Task RunSecondSettlementPlacement()
@@ -312,11 +296,6 @@ public class GameManager : MonoBehaviour, IGameManager
             playingTask = null; // Clear the task reference
             gameStateMachine.GoToState(GameState.GameOver);
         }
-    }
-
-    private void OnExitPlaying()
-    {
-        ClearHudText();
     }
 
     private async Task RunPlaying()
@@ -409,15 +388,6 @@ public class GameManager : MonoBehaviour, IGameManager
         
         // Reset the game state
         Reset();
-    }
-
-    #endregion
-
-    #region Helpers
-
-    private void ClearHudText()
-    {
-        // Legacy method kept for compatibility - now does nothing
     }
 
     #endregion
