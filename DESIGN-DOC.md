@@ -15,8 +15,8 @@ Basic features that are working:
 
 Basic features that are not implemented yet:
 * Longest road
-* End game / victory state
 * Trading
+* Ports
 
 ## Advanced game features
 
