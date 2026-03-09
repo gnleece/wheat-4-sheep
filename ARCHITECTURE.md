@@ -284,18 +284,11 @@ HexVertex ── NeighborHexTiles ─────► HexTile[] (≤3 per vertex)
 - **Async/await throughout** — `Task`-based player actions and `TaskCompletionSource`-based selections compose well in a turn-based game. The game loop is easy to read.
 - **Generic `StateMachine<T>`** — reusable, clean enter/update/exit hooks.
 - **Board data/visual separation** — `HexTile`/`HexVertex`/`HexEdge` are pure C# objects; visuals are separate MonoBehaviours. Game logic never touches GameObjects.
+- **HexVertex/HexEdge are pure state containers** — placement validation (distance rule, road-connection rule) lives entirely in `BuildingManager`. `HexVertex.PlaceBuilding()` and `HexEdge.PlaceRoad()` are simple state setters that trigger a visual refresh. `CanHaveBuildings()`/`CanHaveRoads()` are retained as structural topology queries (is this vertex/edge adjacent to a land tile?) used by `GridInitializer` during board setup.
 
 ---
 
 ## Issues and Weaknesses
-
-### HexVertex/HexEdge contain game logic
-
-`HexVertex.TryPlaceBuilding()` and `HexEdge.TryPlaceRoad()` contain distance-rule and road-connection logic respectively. These placement rules live in data classes rather than in `BuildingManager`. This means:
-- `BuildingManager.BuildSettlement()` calls `hexVertex.TryPlaceBuilding()` — the validation is split across two classes.
-- For networking, game logic must run on the authoritative host, but `HexVertex` objects are local data structures.
-
----
 
 ### Random is unseeded and spread across managers
 
@@ -339,7 +332,6 @@ The `Task`-returning methods (RollDice, PlayDevelopmentCard, GetManualSelectionF
 | Blocker | Why | Fix |
 |---|---|---|
 | `IBoardActions` methods accept/return `HexVertex`, `HexEdge`, `HexTile` objects | These objects can't be serialized over a network | Replace with serializable coordinate IDs (`VertexCoord`, `EdgeCoord`, `HexCoord`) in the interface |
-| `HexVertex.TryPlaceBuilding()` — game logic in data class | Authority unclear: does the client validate or the server? | Move all game logic into `BuildingManager`; data classes become pure state containers |
 | Unseeded `System.Random` spread across three classes | Deterministic simulation impossible | Consolidate into a single `IRandomProvider` injected into all managers |
 | `BoardStateChanged` is a bare `Action` with no payload | Clients can't reconstruct what happened without full re-query | Move to a typed event/command system (e.g. `GameEvent` union type) that can be replayed/serialized |
 | `UIManager` directly references `BoardManager` (not interface) | Couples UI to local implementation | Already have `IBoardManager` — just use it consistently |
