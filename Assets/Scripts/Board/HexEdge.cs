@@ -15,6 +15,9 @@ public class HexEdge
     public bool IsOccupied => Road != null;
     public IPlayer Owner => Road?.Owner;
 
+    public IReadOnlyList<HexTile> NeighborHexTiles => neighborHexes;
+    public IReadOnlyList<HexVertex> NeighborVertices => neighborVertices;
+
     private List<HexTile> neighborHexes = null;
     private List<HexVertex> neighborVertices = null;
     private List<HexEdge> neighborEdges = null;

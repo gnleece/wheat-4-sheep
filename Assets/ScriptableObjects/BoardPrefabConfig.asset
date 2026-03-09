@@ -32,3 +32,5 @@ MonoBehaviour:
     type: 3}
   RobberPrefab: {fileID: 6566817388692851183, guid: 35d5b8e8bf259fb4b8e40bad0741b030,
     type: 3}
+  PortIndicatorPrefab: {fileID: 2892747533120644722, guid: 61dda8495658d744984d1726b23b34a6,
+    type: 3}

@@ -14,6 +14,8 @@ public class HexVertex
 
     public IPlayer Owner => Building?.Owner;
 
+    public Port Port { get; set; }
+
     public IReadOnlyList<HexTile> NeighborHexTiles => neighborHexes;
 
 

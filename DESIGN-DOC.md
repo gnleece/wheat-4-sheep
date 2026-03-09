@@ -12,11 +12,11 @@ Basic features that are working:
 * Settlment, city, and road building
 * Robber
 * Development cards: all 5 types (Knight, Victory Point, Year of Plenty, Monopoly, Road Building) and Largest Army
-* Trading: player-to-bank (4:1) and player-to-player
+* Trading: player-to-bank (4:1 default, 3:1 or 2:1 with ports) and player-to-player
+* Ports (9 ports randomly placed on the board perimeter: four 3:1 generic and one 2:1 per resource type)
 
 Basic features that are not implemented yet:
 * Longest road
-* Ports (port trade rates, 2:1 and 3:1)
 
 ## Advanced game features
 

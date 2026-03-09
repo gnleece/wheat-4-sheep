@@ -262,7 +262,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         resourceManager.Initialize(playerList);
         devCardManager = new DevelopmentCardManager(resourceManager, turnManager, random);  // TODO: Initialize this in a better place
         devCardManager.Initialize(playerList);
-        tradeManager = new TradeManager(resourceManager, turnManager);
+        tradeManager = new TradeManager(resourceManager, turnManager, new PortAwareBankTradeRateProvider(this));
         tradeManager.Initialize(playerList);
     }
 

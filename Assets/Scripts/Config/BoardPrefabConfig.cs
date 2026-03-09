@@ -16,4 +16,5 @@ public class BoardPrefabConfig : ScriptableObject
     public GameObject HexVertexPrefab;
     public GameObject HexEdgePrefab;
     public GameObject RobberPrefab;
+    public GameObject PortIndicatorPrefab;
 }

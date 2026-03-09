@@ -211,6 +211,9 @@ public class GridInitializer
             }
         }
 
+        // Assign ports to boundary vertices and spawn port indicators
+        AssignPorts(edgeMap);
+
         // Spawn the robber object and place it on the desert tile
         var robberGO = UnityEngine.Object.Instantiate(prefabConfig.RobberPrefab, Vector3.zero, Quaternion.identity);
         robberObject = robberGO.GetComponent<RobberObject>();
@@ -262,6 +265,108 @@ public class GridInitializer
             }
         }
         edgeMap.Clear();
+    }
+
+    private void AssignPorts(Dictionary<EdgeCoord, HexEdge> edgeMap)
+    {
+        // Find all boundary edges: adjacent to at least one land tile and at least one non-land tile.
+        var boundaryEdges = new List<HexEdge>();
+        foreach (var edge in edgeMap.Values)
+        {
+            if (edge.NeighborHexTiles == null)
+            {
+                continue;
+            }
+
+            var hasLand = false;
+            var hasNonLand = false;
+            foreach (var hex in edge.NeighborHexTiles)
+            {
+                if (hex.CanHaveBuildingsAndRoads)
+                {
+                    hasLand = true;
+                }
+                else
+                {
+                    hasNonLand = true;
+                }
+            }
+
+            // An edge with only land neighbors is interior; skip edges with no neighbor at all.
+            if (hasLand && hasNonLand)
+            {
+                boundaryEdges.Add(edge);
+            }
+        }
+
+        Util.Shuffle(boundaryEdges);
+
+        var portTypes = GetShuffledPortTypes();
+        var portCount = Mathf.Min(portTypes.Count, boundaryEdges.Count);
+
+        for (int i = 0; i < portCount; i++)
+        {
+            var edge = boundaryEdges[i];
+            var port = new Port(portTypes[i]);
+
+            // Assign the port to both vertices of this boundary edge.
+            if (edge.NeighborVertices != null)
+            {
+                foreach (var vertex in edge.NeighborVertices)
+                {
+                    if (vertex.CanHaveBuildings())
+                    {
+                        vertex.Port = port;
+                    }
+                }
+            }
+
+            // Spawn a port indicator on the land-side tile if a prefab is configured.
+            if (prefabConfig.PortIndicatorPrefab != null)
+            {
+                HexTile landTile = null;
+                foreach (var hex in edge.NeighborHexTiles)
+                {
+                    if (hex.CanHaveBuildingsAndRoads)
+                    {
+                        landTile = hex;
+                        break;
+                    }
+                }
+
+                if (landTile?.TileObject != null)
+                {
+                    var indicatorGO = UnityEngine.Object.Instantiate(
+                        prefabConfig.PortIndicatorPrefab,
+                        landTile.TileObject.transform.position,
+                        Quaternion.identity,
+                        landTile.TileObject.transform);
+                    var indicator = indicatorGO.GetComponent<PortIndicatorObject>();
+                    if (indicator != null)
+                    {
+                        indicator.Initialize(port.PortType);
+                    }
+                }
+            }
+        }
+    }
+
+    private List<PortType> GetShuffledPortTypes()
+    {
+        var types = new List<PortType>
+        {
+            PortType.Generic,
+            PortType.Generic,
+            PortType.Generic,
+            PortType.Generic,
+            PortType.Wood,
+            PortType.Clay,
+            PortType.Sheep,
+            PortType.Wheat,
+            PortType.Ore,
+        };
+        Util.Shuffle(types);
+        return types;
     }
 
     private List<TileType> GetShuffledTileTypes()
