@@ -12,7 +12,7 @@ public class GridInitializer
     #region Private members
 
     private readonly GameConfig gameConfig;
-    private readonly System.Random random;
+    private readonly IRandomProvider random;
     private readonly float horizontalSpacing;
     private readonly float verticalSpacing;
 
@@ -22,7 +22,7 @@ public class GridInitializer
 
     public GridInitializer(
         GameConfig gameConfig,
-        System.Random random,
+        IRandomProvider random,
         float horizontalSpacing,
         float verticalSpacing,
         BoardPrefabConfig prefabConfig)
@@ -299,7 +299,7 @@ public class GridInitializer
             }
         }
 
-        Util.Shuffle(boundaryEdges);
+        Util.Shuffle(boundaryEdges, random);
 
         var portTypes = GetShuffledPortTypes();
 
@@ -446,7 +446,7 @@ public class GridInitializer
             PortType.Wheat,
             PortType.Ore,
         };
-        Util.Shuffle(types);
+        Util.Shuffle(types, random);
         return types;
     }
 
@@ -460,7 +460,7 @@ public class GridInitializer
             tileTypesList.AddRange(Enumerable.Repeat(type, count));
         }
 
-        Util.Shuffle(tileTypesList);
+        Util.Shuffle(tileTypesList, random);
 
         return tileTypesList;
     }
@@ -483,7 +483,7 @@ public class GridInitializer
     private List<int> GetShuffledTileDiceNumbers()
     {
         var diceNumbers = gameConfig.TileDiceNumbers.ToList();
-        Util.Shuffle(diceNumbers);
+        Util.Shuffle(diceNumbers, random);
         return diceNumbers;
     }
 }

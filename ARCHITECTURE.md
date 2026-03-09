@@ -290,11 +290,9 @@ HexVertex ── NeighborHexTiles ─────► HexTile[] (≤3 per vertex)
 
 ## Issues and Weaknesses
 
-### Random is unseeded and spread across managers
+### ~~Random is unseeded and spread across managers~~ *(resolved)*
 
-`ResourceManager`, `AIPlayer`, and `DevelopmentCardManager` each create their own `System.Random` instances with no shared seed. This means:
-- Games are not reproducible.
-- For networking (lockstep or deterministic rollback), a shared, seeded RNG is mandatory.
+All randomness is now routed through a single `IRandomProvider` instance (`SystemRandomProvider`) created by `GameManager` at the start of each game and injected into `BoardManager` (via `InitializePlayerResourceHands`) and each `AIPlayer` (via constructor). `BoardManager` passes it down to `ResourceManager`, `DevelopmentCardManager`, and `GridInitializer`. `Util.Shuffle` accepts `IRandomProvider` as a parameter instead of using a private static `Random`. To make games reproducible, replace `new SystemRandomProvider()` in `GameManager.OnExitPlayerSetup` with `new SystemRandomProvider(seed)`.
 
 ---
 
@@ -332,7 +330,7 @@ The `Task`-returning methods (RollDice, PlayDevelopmentCard, GetManualSelectionF
 | Blocker | Why | Fix |
 |---|---|---|
 | `IBoardActions` methods accept/return `HexVertex`, `HexEdge`, `HexTile` objects | These objects can't be serialized over a network | Replace with serializable coordinate IDs (`VertexCoord`, `EdgeCoord`, `HexCoord`) in the interface |
-| Unseeded `System.Random` spread across three classes | Deterministic simulation impossible | Consolidate into a single `IRandomProvider` injected into all managers |
+| ~~Unseeded `System.Random` spread across three classes~~ | ~~Deterministic simulation impossible~~ | *Resolved — single `IRandomProvider` injected via `GameManager`* |
 | `BoardStateChanged` is a bare `Action` with no payload | Clients can't reconstruct what happened without full re-query | Move to a typed event/command system (e.g. `GameEvent` union type) that can be replayed/serialized |
 | `UIManager` directly references `BoardManager` (not interface) | Couples UI to local implementation | Already have `IBoardManager` — just use it consistently |
 
@@ -504,4 +502,6 @@ The migration is **low-risk** because `IUIManager` isolates the rest of the game
 | `BoardPrefabConfig.cs` | ScriptableObject: all prefab references for board generation |
 | `PlayerColorManager.cs` | Static player color assignment |
 | `DebugSettings.cs` | Debug toggle ScriptableObject |
-| `Util.cs` | Fisher-Yates shuffle |
+| `Util.cs` | Fisher-Yates shuffle (requires `IRandomProvider`) |
+| `IRandomProvider.cs` | Interface: `Next(int)`, `Next(int, int)`, `NextDouble()` |
+| `SystemRandomProvider.cs` | Wraps `System.Random`; supports optional seed |

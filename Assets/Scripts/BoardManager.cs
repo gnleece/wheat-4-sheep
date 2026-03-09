@@ -46,7 +46,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     #region Private members
 
-    private readonly System.Random random = new System.Random();    // TODO: use a single global random instance that can be seeded
+    private IRandomProvider random;
 
     private IGameManager gameManager;
 
@@ -58,7 +58,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
     private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
     private Dictionary<EdgeCoord, HexEdge> edgeMap = new Dictionary<EdgeCoord, HexEdge>();
 
-    private ResourceManager resourceManager = new ResourceManager();
+    private ResourceManager resourceManager;
 
     private TurnManager turnManager = new TurnManager();
 
@@ -256,8 +256,11 @@ public class BoardManager : MonoBehaviour, IBoardManager
     }
 
     // Call this before StartNewGame to set up player resource hands and dev card system
-    public void InitializePlayerResourceHands(IEnumerable<IPlayer> players)
+    public void InitializePlayerResourceHands(IEnumerable<IPlayer> players, IRandomProvider randomProvider)
     {
+        random = randomProvider;
+        resourceManager = new ResourceManager(random);
+
         var playerList = new System.Collections.Generic.List<IPlayer>(players);
         var extraResources = new System.Collections.Generic.Dictionary<ResourceType, int>
         {
@@ -268,7 +271,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             { ResourceType.Ore,   gameConfig.StartingOreCardCount   },
         };
         resourceManager.Initialize(playerList, extraResources);
-        devCardManager = new DevelopmentCardManager(resourceManager, turnManager, random);  // TODO: Initialize this in a better place
+        devCardManager = new DevelopmentCardManager(resourceManager, turnManager, random);
         devCardManager.Initialize(playerList);
         tradeManager = new TradeManager(resourceManager, turnManager, new PortAwareBankTradeRateProvider(this));
         tradeManager.Initialize(playerList);

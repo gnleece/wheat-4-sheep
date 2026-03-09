@@ -38,6 +38,7 @@ public class GameManager : MonoBehaviour, IGameManager
     private int playerCount = 0;
     private List<IPlayer> playerList = new List<IPlayer>();
     private IUIManager uiManager;
+    private IRandomProvider randomProvider;
     private bool playerCountSelected = false;
     private bool boardConfirmed = false;
 
@@ -149,16 +150,17 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void OnExitPlayerSetup()
     {
+        randomProvider = new SystemRandomProvider();
         playerList = new List<IPlayer>(playerCount);
 
         for (int i = 0; i < playerCount; i++)
         {
-            IPlayer player = i == 0 ? new HumanPlayer() : new AIPlayer();
+            IPlayer player = i == 0 ? new HumanPlayer() : new AIPlayer(randomProvider);
             player.Initialize(i, boardManager);
             playerList.Add(player);
         }
 
-        boardManager.InitializePlayerResourceHands(playerList);
+        boardManager.InitializePlayerResourceHands(playerList, randomProvider);
         
         if (uiManager != null)
         {

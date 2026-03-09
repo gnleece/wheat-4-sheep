@@ -1,18 +1,15 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 
 public static class Util
 {
-    private static Random rng = new Random();
-
-    public static void Shuffle<T>(IList<T> list)
+    public static void Shuffle<T>(IList<T> list, IRandomProvider random)
     {
         int n = list.Count;
         while (n > 1)
         {
             n--;
-            int k = rng.Next(n + 1);
+            int k = random.Next(n + 1);
             T value = list[k];
             list[k] = list[n];
             list[n] = value;

@@ -6,7 +6,12 @@ using UnityEngine;
 public class ResourceManager
 {
     private readonly Dictionary<IPlayer, ResourceHand> playerResourceHands = new Dictionary<IPlayer, ResourceHand>();
-    private readonly System.Random random = new System.Random();
+    private readonly IRandomProvider random;
+
+    public ResourceManager(IRandomProvider random)
+    {
+        this.random = random;
+    }
 
     public void Initialize(IEnumerable<IPlayer> players, Dictionary<ResourceType, int> extraStartingResources = null)
     {

@@ -13,7 +13,12 @@ public class AIPlayer : IPlayer
 
     private int playerId;
     private IBoardManager boardManager;
-    private System.Random random = new System.Random();
+    private readonly IRandomProvider random;
+
+    public AIPlayer(IRandomProvider random)
+    {
+        this.random = random;
+    }
 
     public void Initialize(int playerId, IBoardManager boardManager)
     {

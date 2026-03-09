@@ -12,7 +12,7 @@ public class DevelopmentCardManager
 
     private readonly ResourceManager resourceManager;
     private readonly TurnManager turnManager;
-    private readonly System.Random random;
+    private readonly IRandomProvider random;
 
     private List<DevelopmentCardType> deck = new List<DevelopmentCardType>();
     private Dictionary<IPlayer, DevelopmentCardHand> playerHands = new Dictionary<IPlayer, DevelopmentCardHand>();
@@ -20,7 +20,7 @@ public class DevelopmentCardManager
     private IPlayer largestArmyHolder = null;
     private List<IPlayer> allPlayers = new List<IPlayer>();
 
-    public DevelopmentCardManager(ResourceManager resourceManager, TurnManager turnManager, System.Random random)
+    public DevelopmentCardManager(ResourceManager resourceManager, TurnManager turnManager, IRandomProvider random)
     {
         this.resourceManager = resourceManager;
         this.turnManager = turnManager;
@@ -53,12 +53,7 @@ public class DevelopmentCardManager
         for (int i = 0; i < MonopolyCount; i++) deck.Add(DevelopmentCardType.Monopoly);
         for (int i = 0; i < RoadBuildingCount; i++) deck.Add(DevelopmentCardType.RoadBuilding);
 
-        // Fisher-Yates shuffle
-        for (int i = deck.Count - 1; i > 0; i--)
-        {
-            int j = random.Next(i + 1);
-            (deck[i], deck[j]) = (deck[j], deck[i]);
-        }
+        Util.Shuffle(deck, random);
     }
 
     public bool IsDeckEmpty => deck.Count == 0;
