@@ -34,3 +34,5 @@ MonoBehaviour:
     type: 3}
   PortIndicatorPrefab: {fileID: 2892747533120644722, guid: 61dda8495658d744984d1726b23b34a6,
     type: 3}
+  PortVertexIndicatorPrefab: {fileID: 7212894836659541577, guid: 0532c4b8e113c1b459779edb262009b9,
+    type: 3}

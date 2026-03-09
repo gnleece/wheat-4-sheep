@@ -309,38 +309,52 @@ public class GridInitializer
             var edge = boundaryEdges[i];
             var port = new Port(portTypes[i]);
 
-            // Assign the port to both vertices of this boundary edge.
+            // Assign the port to both vertices of this boundary edge,
+            // and spawn a small marker on each access vertex.
             if (edge.NeighborVertices != null)
             {
                 foreach (var vertex in edge.NeighborVertices)
                 {
-                    if (vertex.CanHaveBuildings())
+                    if (!vertex.CanHaveBuildings())
                     {
-                        vertex.Port = port;
+                        continue;
+                    }
+
+                    vertex.Port = port;
+
+                    if (prefabConfig.PortVertexIndicatorPrefab != null && vertex.VertexObject != null)
+                    {
+                        var markerGO = UnityEngine.Object.Instantiate(
+                            prefabConfig.PortVertexIndicatorPrefab,
+                            Vector3.zero,
+                            Quaternion.identity,
+                            vertex.VertexObject.transform);
+                        markerGO.transform.localPosition = Vector3.zero;
                     }
                 }
             }
 
-            // Spawn a port indicator on the land-side tile if a prefab is configured.
+            // Spawn a port label on the water-side tile if a prefab is configured.
             if (prefabConfig.PortIndicatorPrefab != null)
             {
-                HexTile landTile = null;
+                HexTile waterTile = null;
                 foreach (var hex in edge.NeighborHexTiles)
                 {
-                    if (hex.CanHaveBuildingsAndRoads)
+                    if (!hex.CanHaveBuildingsAndRoads)
                     {
-                        landTile = hex;
+                        waterTile = hex;
                         break;
                     }
                 }
 
-                if (landTile?.TileObject != null)
+                if (waterTile?.TileObject != null)
                 {
                     var indicatorGO = UnityEngine.Object.Instantiate(
                         prefabConfig.PortIndicatorPrefab,
-                        landTile.TileObject.transform.position,
+                        Vector3.zero,
                         Quaternion.identity,
-                        landTile.TileObject.transform);
+                        waterTile.TileObject.transform);
+                    indicatorGO.transform.localPosition = Vector3.zero;
                     var indicator = indicatorGO.GetComponent<PortIndicatorObject>();
                     if (indicator != null)
                     {
