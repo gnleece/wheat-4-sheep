@@ -91,6 +91,14 @@ public interface IBoardManager
     public Task<DevelopmentCardType> GetManualDevCardSelection(IPlayer player);
     public Task<ResourceType> GetManualResourceTypeSelection(IPlayer player, string prompt);
 
+    public bool CanInitiateTrade(IPlayer player);
+    public int GetBankTradeRate(IPlayer player, ResourceType resourceType);
+    public bool CanBankTrade(IPlayer player, ResourceType giving, ResourceType receiving);
+    public void ExecuteBankTrade(IPlayer player, ResourceType giving, ResourceType receiving);
+    public Task GetManualTradeSelection(IPlayer player);
+    public Task<bool> GetManualTradeOfferResponse(IPlayer player, TradeOffer offer);
+    public Task<bool> ProposePlayerTrade(IPlayer initiator, TradeOffer offer);
+
     public IReadOnlyDictionary<HexCoord, HexTile> HexMap { get; }
     public IReadOnlyDictionary<VertexCoord, HexVertex> VertexMap { get; }
     public IReadOnlyDictionary<EdgeCoord, HexEdge> EdgeMap { get; }

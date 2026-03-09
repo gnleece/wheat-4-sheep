@@ -22,6 +22,8 @@ internal sealed class UISetup
         CreatePlayerSelectionScreen();
         CreateDevCardSelectionScreen();
         CreateResourceTypeSelectionScreen();
+        CreateTradeScreen();
+        CreateTradeOfferScreen();
         CreateActionPanel();
         CreatePlayerPanelsArea();
         Debug.Log("Main UI creation completed");
@@ -50,6 +52,8 @@ internal sealed class UISetup
             playerSelectionScreen: canvasTransform.Find("Player Selection Screen").gameObject,
             devCardSelectionScreen: canvasTransform.Find("Dev Card Selection Screen").gameObject,
             resourceTypeSelectionScreen: canvasTransform.Find("Resource Type Selection Screen").gameObject,
+            tradeScreen: canvasTransform.Find("Trade Screen").gameObject,
+            tradeOfferScreen: canvasTransform.Find("Trade Offer Screen").gameObject,
             actionPanel: actionPanelObj,
             playerPanelsContainer: playerPanelsContainerObj,
             playerPanelPrefab: playerPanelsContainerObj.transform.Find("Player Panel Prefab").gameObject,
@@ -885,6 +889,470 @@ internal sealed class UISetup
         }
 
         screen.AddComponent<ResourceTypeSelectionUIController>();
+        screen.SetActive(false);
+    }
+
+    private void CreateTradeScreen()
+    {
+        GameObject screen = new GameObject("Trade Screen");
+        screen.transform.SetParent(_mainCanvas.transform);
+
+        Image screenImage = screen.AddComponent<Image>();
+        screenImage.color = new Color(0f, 0f, 0f, 0.8f);
+
+        RectTransform screenRect = screen.GetComponent<RectTransform>();
+        screenRect.anchorMin = Vector2.zero;
+        screenRect.anchorMax = Vector2.one;
+        screenRect.anchoredPosition = Vector2.zero;
+        screenRect.sizeDelta = Vector2.zero;
+
+        GameObject contentContainer = new GameObject("Trade Content");
+        contentContainer.transform.SetParent(screen.transform);
+        RectTransform contentRect = contentContainer.AddComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.1f, 0.05f);
+        contentRect.anchorMax = new Vector2(0.9f, 0.95f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = Vector2.zero;
+        contentContainer.AddComponent<Image>().color = new Color(0.2f, 0.2f, 0.2f, 0.95f);
+
+        // Title
+        GameObject titleText = CreateText("Title", contentContainer.transform, "Trade");
+        TextMeshProUGUI titleComp = titleText.GetComponent<TextMeshProUGUI>();
+        titleComp.fontSize = 28;
+        titleComp.fontStyle = FontStyles.Bold;
+        titleComp.alignment = TextAlignmentOptions.Center;
+        RectTransform titleRect = titleText.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0, 0.92f);
+        titleRect.anchorMax = new Vector2(1, 1f);
+        titleRect.anchoredPosition = Vector2.zero;
+        titleRect.sizeDelta = Vector2.zero;
+
+        // ----- Bank Trade section -----
+        GameObject bankSection = new GameObject("Bank Trade Section");
+        bankSection.transform.SetParent(contentContainer.transform);
+        RectTransform bankRect = bankSection.AddComponent<RectTransform>();
+        bankRect.anchorMin = new Vector2(0.02f, 0.47f);
+        bankRect.anchorMax = new Vector2(0.98f, 0.9f);
+        bankRect.anchoredPosition = Vector2.zero;
+        bankRect.sizeDelta = Vector2.zero;
+
+        GameObject bankLabel = CreateText("Bank Label", bankSection.transform, "Bank Trade (4:1)");
+        TextMeshProUGUI bankLabelComp = bankLabel.GetComponent<TextMeshProUGUI>();
+        bankLabelComp.fontSize = 20;
+        bankLabelComp.fontStyle = FontStyles.Bold;
+        bankLabelComp.alignment = TextAlignmentOptions.Center;
+        RectTransform bankLabelRect = bankLabel.GetComponent<RectTransform>();
+        bankLabelRect.anchorMin = new Vector2(0, 0.85f);
+        bankLabelRect.anchorMax = new Vector2(1, 1f);
+        bankLabelRect.anchoredPosition = Vector2.zero;
+        bankLabelRect.sizeDelta = Vector2.zero;
+
+        // Rate label
+        GameObject rateLabel = CreateText("Rate Label", bankSection.transform, "Select resource to give");
+        TextMeshProUGUI rateLabelComp = rateLabel.GetComponent<TextMeshProUGUI>();
+        rateLabelComp.fontSize = 16;
+        rateLabelComp.alignment = TextAlignmentOptions.Center;
+        RectTransform rateLabelRect = rateLabel.GetComponent<RectTransform>();
+        rateLabelRect.anchorMin = new Vector2(0.3f, 0.72f);
+        rateLabelRect.anchorMax = new Vector2(0.7f, 0.85f);
+        rateLabelRect.anchoredPosition = Vector2.zero;
+        rateLabelRect.sizeDelta = Vector2.zero;
+
+        // Giving buttons row
+        GameObject givingRow = new GameObject("Giving Row");
+        givingRow.transform.SetParent(bankSection.transform);
+        RectTransform givingRowRect = givingRow.AddComponent<RectTransform>();
+        givingRowRect.anchorMin = new Vector2(0, 0.45f);
+        givingRowRect.anchorMax = new Vector2(1, 0.72f);
+        givingRowRect.anchoredPosition = Vector2.zero;
+        givingRowRect.sizeDelta = Vector2.zero;
+        HorizontalLayoutGroup givingLayout = givingRow.AddComponent<HorizontalLayoutGroup>();
+        givingLayout.spacing = 6f;
+        givingLayout.childControlWidth = true;
+        givingLayout.childControlHeight = true;
+        givingLayout.childForceExpandWidth = true;
+        givingLayout.childForceExpandHeight = true;
+
+        string[] resourceNames = { "Wood", "Clay", "Sheep", "Wheat", "Ore" };
+        Color[] resourceColors =
+        {
+            new Color(0.6f, 0.4f, 0.2f),
+            new Color(0.8f, 0.4f, 0.2f),
+            new Color(0.7f, 0.85f, 0.7f),
+            new Color(1f, 0.8f, 0.2f),
+            new Color(0.6f, 0.6f, 0.6f),
+        };
+
+        var givingButtons = new System.Collections.Generic.List<Button>();
+        for (int i = 0; i < resourceNames.Length; i++)
+        {
+            GameObject btn = new GameObject($"Give {resourceNames[i]}");
+            btn.transform.SetParent(givingRow.transform);
+            btn.AddComponent<Image>().color = resourceColors[i];
+            Button btnComp = btn.AddComponent<Button>();
+            givingButtons.Add(btnComp);
+
+            GameObject textObj = CreateText("Label", btn.transform, $"{resourceNames[i]}\n(0)", 14);
+            textObj.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+            RectTransform textRect = textObj.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.anchoredPosition = Vector2.zero;
+            textRect.sizeDelta = Vector2.zero;
+        }
+
+        // "Give arrow" label
+        GameObject giveArrow = CreateText("Give Arrow", bankSection.transform, "GIVE \u2193");
+        TextMeshProUGUI giveArrowComp = giveArrow.GetComponent<TextMeshProUGUI>();
+        giveArrowComp.fontSize = 14;
+        giveArrowComp.alignment = TextAlignmentOptions.Center;
+        RectTransform giveArrowRect = giveArrow.GetComponent<RectTransform>();
+        giveArrowRect.anchorMin = new Vector2(0, 0.37f);
+        giveArrowRect.anchorMax = new Vector2(0.5f, 0.46f);
+        giveArrowRect.anchoredPosition = Vector2.zero;
+        giveArrowRect.sizeDelta = Vector2.zero;
+
+        GameObject receiveArrow = CreateText("Receive Arrow", bankSection.transform, "RECEIVE \u2193");
+        TextMeshProUGUI receiveArrowComp = receiveArrow.GetComponent<TextMeshProUGUI>();
+        receiveArrowComp.fontSize = 14;
+        receiveArrowComp.alignment = TextAlignmentOptions.Center;
+        RectTransform receiveArrowRect = receiveArrow.GetComponent<RectTransform>();
+        receiveArrowRect.anchorMin = new Vector2(0.5f, 0.37f);
+        receiveArrowRect.anchorMax = new Vector2(1f, 0.46f);
+        receiveArrowRect.anchoredPosition = Vector2.zero;
+        receiveArrowRect.sizeDelta = Vector2.zero;
+
+        // Receiving buttons row
+        GameObject receivingRow = new GameObject("Receiving Row");
+        receivingRow.transform.SetParent(bankSection.transform);
+        RectTransform receivingRowRect = receivingRow.AddComponent<RectTransform>();
+        receivingRowRect.anchorMin = new Vector2(0, 0.08f);
+        receivingRowRect.anchorMax = new Vector2(1, 0.37f);
+        receivingRowRect.anchoredPosition = Vector2.zero;
+        receivingRowRect.sizeDelta = Vector2.zero;
+        HorizontalLayoutGroup receivingLayout = receivingRow.AddComponent<HorizontalLayoutGroup>();
+        receivingLayout.spacing = 6f;
+        receivingLayout.childControlWidth = true;
+        receivingLayout.childControlHeight = true;
+        receivingLayout.childForceExpandWidth = true;
+        receivingLayout.childForceExpandHeight = true;
+
+        var receivingButtons = new System.Collections.Generic.List<Button>();
+        for (int i = 0; i < resourceNames.Length; i++)
+        {
+            GameObject btn = new GameObject($"Receive {resourceNames[i]}");
+            btn.transform.SetParent(receivingRow.transform);
+            btn.AddComponent<Image>().color = resourceColors[i];
+            Button btnComp = btn.AddComponent<Button>();
+            receivingButtons.Add(btnComp);
+
+            GameObject textObj = CreateText("Label", btn.transform, resourceNames[i], 14);
+            textObj.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+            RectTransform textRect = textObj.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.anchoredPosition = Vector2.zero;
+            textRect.sizeDelta = Vector2.zero;
+        }
+
+        // Bank confirm button
+        GameObject bankConfirmBtn = new GameObject("Bank Confirm Button");
+        bankConfirmBtn.transform.SetParent(bankSection.transform);
+        bankConfirmBtn.AddComponent<Image>().color = new Color(0.2f, 0.6f, 0.2f);
+        Button bankConfirmComp = bankConfirmBtn.AddComponent<Button>();
+        RectTransform bankConfirmRect = bankConfirmBtn.GetComponent<RectTransform>();
+        bankConfirmRect.anchorMin = new Vector2(0.3f, 0f);
+        bankConfirmRect.anchorMax = new Vector2(0.7f, 0.08f);
+        bankConfirmRect.anchoredPosition = Vector2.zero;
+        bankConfirmRect.sizeDelta = Vector2.zero;
+        GameObject bankConfirmText = CreateText("Label", bankConfirmBtn.transform, "Trade with Bank", 16);
+        bankConfirmText.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+        RectTransform bankConfirmTextRect = bankConfirmText.GetComponent<RectTransform>();
+        bankConfirmTextRect.anchorMin = Vector2.zero;
+        bankConfirmTextRect.anchorMax = Vector2.one;
+        bankConfirmTextRect.anchoredPosition = Vector2.zero;
+        bankConfirmTextRect.sizeDelta = Vector2.zero;
+
+        // ----- Player Trade section -----
+        GameObject playerSection = new GameObject("Player Trade Section");
+        playerSection.transform.SetParent(contentContainer.transform);
+        RectTransform playerRect = playerSection.AddComponent<RectTransform>();
+        playerRect.anchorMin = new Vector2(0.02f, 0.08f);
+        playerRect.anchorMax = new Vector2(0.98f, 0.45f);
+        playerRect.anchoredPosition = Vector2.zero;
+        playerRect.sizeDelta = Vector2.zero;
+
+        GameObject playerLabel = CreateText("Player Label", playerSection.transform, "Player Trade");
+        TextMeshProUGUI playerLabelComp = playerLabel.GetComponent<TextMeshProUGUI>();
+        playerLabelComp.fontSize = 20;
+        playerLabelComp.fontStyle = FontStyles.Bold;
+        playerLabelComp.alignment = TextAlignmentOptions.Center;
+        RectTransform playerLabelRect = playerLabel.GetComponent<RectTransform>();
+        playerLabelRect.anchorMin = new Vector2(0, 0.86f);
+        playerLabelRect.anchorMax = new Vector2(1, 1f);
+        playerLabelRect.anchoredPosition = Vector2.zero;
+        playerLabelRect.sizeDelta = Vector2.zero;
+
+        // Offering/Requesting rows with +/- controls
+        var offeringPlusButtons = new System.Collections.Generic.Dictionary<ResourceType, Button>();
+        var offeringMinusButtons = new System.Collections.Generic.Dictionary<ResourceType, Button>();
+        var offeringCountLabels = new System.Collections.Generic.Dictionary<ResourceType, TextMeshProUGUI>();
+        var requestingPlusButtons = new System.Collections.Generic.Dictionary<ResourceType, Button>();
+        var requestingMinusButtons = new System.Collections.Generic.Dictionary<ResourceType, Button>();
+        var requestingCountLabels = new System.Collections.Generic.Dictionary<ResourceType, TextMeshProUGUI>();
+
+        ResourceType[] resourceTypes =
+        {
+            ResourceType.Wood, ResourceType.Clay, ResourceType.Sheep, ResourceType.Wheat, ResourceType.Ore,
+        };
+
+        string[] sectionLabels = { "Offering (You Give)", "Requesting (You Want)" };
+        float[] sectionTopAnchors = { 0.84f, 0.42f };
+        float[] sectionBottomAnchors = { 0.43f, 0.05f };
+
+        for (int s = 0; s < 2; s++)
+        {
+            GameObject sectionLabel = CreateText($"Section Label {s}", playerSection.transform, sectionLabels[s]);
+            TextMeshProUGUI sectionLabelComp = sectionLabel.GetComponent<TextMeshProUGUI>();
+            sectionLabelComp.fontSize = 15;
+            sectionLabelComp.alignment = TextAlignmentOptions.Center;
+            RectTransform sectionLabelRect = sectionLabel.GetComponent<RectTransform>();
+            sectionLabelRect.anchorMin = new Vector2(0, sectionTopAnchors[s] - 0.06f);
+            sectionLabelRect.anchorMax = new Vector2(1, sectionTopAnchors[s]);
+            sectionLabelRect.anchoredPosition = Vector2.zero;
+            sectionLabelRect.sizeDelta = Vector2.zero;
+
+            GameObject resourceRow = new GameObject($"Resource Row {s}");
+            resourceRow.transform.SetParent(playerSection.transform);
+            RectTransform rowRect = resourceRow.AddComponent<RectTransform>();
+            rowRect.anchorMin = new Vector2(0, sectionBottomAnchors[s]);
+            rowRect.anchorMax = new Vector2(1, sectionTopAnchors[s] - 0.07f);
+            rowRect.anchoredPosition = Vector2.zero;
+            rowRect.sizeDelta = Vector2.zero;
+            HorizontalLayoutGroup rowLayout = resourceRow.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.spacing = 4f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = true;
+            rowLayout.childForceExpandHeight = true;
+
+            for (int i = 0; i < resourceTypes.Length; i++)
+            {
+                var resType = resourceTypes[i];
+
+                GameObject cell = new GameObject($"{resType} Cell");
+                cell.transform.SetParent(resourceRow.transform);
+                cell.AddComponent<Image>().color = new Color(0.15f, 0.15f, 0.15f, 0.8f);
+                VerticalLayoutGroup cellLayout = cell.AddComponent<VerticalLayoutGroup>();
+                cellLayout.childControlWidth = true;
+                cellLayout.childControlHeight = true;
+                cellLayout.childForceExpandWidth = true;
+                cellLayout.childForceExpandHeight = true;
+                cellLayout.spacing = 1f;
+
+                // Resource name
+                GameObject nameLabel = CreateText("Name", cell.transform, resourceNames[i], 11);
+                nameLabel.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+                LayoutElement nameLe = nameLabel.AddComponent<LayoutElement>();
+                nameLe.flexibleHeight = 1f;
+
+                // Plus button
+                GameObject plusBtn = new GameObject("+");
+                plusBtn.transform.SetParent(cell.transform);
+                plusBtn.AddComponent<Image>().color = new Color(0.2f, 0.5f, 0.2f);
+                Button plusComp = plusBtn.AddComponent<Button>();
+                LayoutElement plusLe = plusBtn.AddComponent<LayoutElement>();
+                plusLe.flexibleHeight = 1.5f;
+                GameObject plusText = CreateText("Label", plusBtn.transform, "+", 16);
+                plusText.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+                RectTransform plusTextRect = plusText.GetComponent<RectTransform>();
+                plusTextRect.anchorMin = Vector2.zero;
+                plusTextRect.anchorMax = Vector2.one;
+                plusTextRect.anchoredPosition = Vector2.zero;
+                plusTextRect.sizeDelta = Vector2.zero;
+
+                // Count label
+                GameObject countLabel = CreateText("Count", cell.transform, "0", 16);
+                TextMeshProUGUI countComp = countLabel.GetComponent<TextMeshProUGUI>();
+                countComp.alignment = TextAlignmentOptions.Center;
+                LayoutElement countLe = countLabel.AddComponent<LayoutElement>();
+                countLe.flexibleHeight = 1.5f;
+
+                // Minus button
+                GameObject minusBtn = new GameObject("-");
+                minusBtn.transform.SetParent(cell.transform);
+                minusBtn.AddComponent<Image>().color = new Color(0.5f, 0.2f, 0.2f);
+                Button minusComp = minusBtn.AddComponent<Button>();
+                LayoutElement minusLe = minusBtn.AddComponent<LayoutElement>();
+                minusLe.flexibleHeight = 1.5f;
+                GameObject minusText = CreateText("Label", minusBtn.transform, "-", 16);
+                minusText.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+                RectTransform minusTextRect = minusText.GetComponent<RectTransform>();
+                minusTextRect.anchorMin = Vector2.zero;
+                minusTextRect.anchorMax = Vector2.one;
+                minusTextRect.anchoredPosition = Vector2.zero;
+                minusTextRect.sizeDelta = Vector2.zero;
+
+                if (s == 0)
+                {
+                    offeringPlusButtons[resType] = plusComp;
+                    offeringMinusButtons[resType] = minusComp;
+                    offeringCountLabels[resType] = countComp;
+                }
+                else
+                {
+                    requestingPlusButtons[resType] = plusComp;
+                    requestingMinusButtons[resType] = minusComp;
+                    requestingCountLabels[resType] = countComp;
+                }
+            }
+        }
+
+        // Propose button
+        GameObject proposeBtn = new GameObject("Propose Button");
+        proposeBtn.transform.SetParent(playerSection.transform);
+        proposeBtn.AddComponent<Image>().color = new Color(0.2f, 0.4f, 0.7f);
+        Button proposeComp = proposeBtn.AddComponent<Button>();
+        RectTransform proposeRect = proposeBtn.GetComponent<RectTransform>();
+        proposeRect.anchorMin = new Vector2(0.25f, 0f);
+        proposeRect.anchorMax = new Vector2(0.75f, 0.05f);
+        proposeRect.anchoredPosition = Vector2.zero;
+        proposeRect.sizeDelta = Vector2.zero;
+        GameObject proposeText = CreateText("Label", proposeBtn.transform, "Propose Trade", 16);
+        proposeText.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+        RectTransform proposeTextRect = proposeText.GetComponent<RectTransform>();
+        proposeTextRect.anchorMin = Vector2.zero;
+        proposeTextRect.anchorMax = Vector2.one;
+        proposeTextRect.anchoredPosition = Vector2.zero;
+        proposeTextRect.sizeDelta = Vector2.zero;
+
+        // Cancel button
+        GameObject cancelBtn = new GameObject("Cancel Button");
+        cancelBtn.transform.SetParent(contentContainer.transform);
+        cancelBtn.AddComponent<Image>().color = new Color(0.5f, 0.2f, 0.2f);
+        Button cancelComp = cancelBtn.AddComponent<Button>();
+        RectTransform cancelRect = cancelBtn.GetComponent<RectTransform>();
+        cancelRect.anchorMin = new Vector2(0.35f, 0.01f);
+        cancelRect.anchorMax = new Vector2(0.65f, 0.07f);
+        cancelRect.anchoredPosition = Vector2.zero;
+        cancelRect.sizeDelta = Vector2.zero;
+        GameObject cancelText = CreateText("Label", cancelBtn.transform, "Cancel", 18);
+        cancelText.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+        RectTransform cancelTextRect = cancelText.GetComponent<RectTransform>();
+        cancelTextRect.anchorMin = Vector2.zero;
+        cancelTextRect.anchorMax = Vector2.one;
+        cancelTextRect.anchoredPosition = Vector2.zero;
+        cancelTextRect.sizeDelta = Vector2.zero;
+
+        // Wire everything up to the controller
+        TradeUIController controller = screen.AddComponent<TradeUIController>();
+        controller.SetupBankTradeButtons(givingButtons, receivingButtons, rateLabelComp, bankConfirmComp);
+        controller.SetupPlayerTradeButtons(
+            offeringPlusButtons, offeringMinusButtons, offeringCountLabels,
+            requestingPlusButtons, requestingMinusButtons, requestingCountLabels,
+            proposeComp);
+        controller.SetupCancelButton(cancelComp);
+
+        screen.SetActive(false);
+    }
+
+    private void CreateTradeOfferScreen()
+    {
+        GameObject screen = new GameObject("Trade Offer Screen");
+        screen.transform.SetParent(_mainCanvas.transform);
+
+        Image screenImage = screen.AddComponent<Image>();
+        screenImage.color = new Color(0f, 0f, 0f, 0.8f);
+
+        RectTransform screenRect = screen.GetComponent<RectTransform>();
+        screenRect.anchorMin = Vector2.zero;
+        screenRect.anchorMax = Vector2.one;
+        screenRect.anchoredPosition = Vector2.zero;
+        screenRect.sizeDelta = Vector2.zero;
+
+        GameObject contentContainer = new GameObject("Trade Offer Content");
+        contentContainer.transform.SetParent(screen.transform);
+        RectTransform contentRect = contentContainer.AddComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.2f, 0.25f);
+        contentRect.anchorMax = new Vector2(0.8f, 0.75f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = Vector2.zero;
+        contentContainer.AddComponent<Image>().color = new Color(0.2f, 0.2f, 0.2f, 0.95f);
+
+        // Instruction text
+        GameObject instructionText = CreateText("Instruction Text", contentContainer.transform, "Trade offer");
+        TextMeshProUGUI instructionComp = instructionText.GetComponent<TextMeshProUGUI>();
+        instructionComp.fontSize = 20;
+        instructionComp.alignment = TextAlignmentOptions.Center;
+        RectTransform instructionRect = instructionText.GetComponent<RectTransform>();
+        instructionRect.anchorMin = new Vector2(0, 0.75f);
+        instructionRect.anchorMax = new Vector2(1, 0.95f);
+        instructionRect.anchoredPosition = Vector2.zero;
+        instructionRect.sizeDelta = Vector2.zero;
+
+        // Offering text
+        GameObject offeringText = CreateText("Offering Text", contentContainer.transform, "They offer: ...");
+        TextMeshProUGUI offeringComp = offeringText.GetComponent<TextMeshProUGUI>();
+        offeringComp.fontSize = 18;
+        offeringComp.alignment = TextAlignmentOptions.Center;
+        offeringComp.color = new Color(0.4f, 0.9f, 0.4f);
+        RectTransform offeringRect = offeringText.GetComponent<RectTransform>();
+        offeringRect.anchorMin = new Vector2(0, 0.55f);
+        offeringRect.anchorMax = new Vector2(1, 0.75f);
+        offeringRect.anchoredPosition = Vector2.zero;
+        offeringRect.sizeDelta = Vector2.zero;
+
+        // Requesting text
+        GameObject requestingText = CreateText("Requesting Text", contentContainer.transform, "They want: ...");
+        TextMeshProUGUI requestingComp = requestingText.GetComponent<TextMeshProUGUI>();
+        requestingComp.fontSize = 18;
+        requestingComp.alignment = TextAlignmentOptions.Center;
+        requestingComp.color = new Color(0.9f, 0.6f, 0.4f);
+        RectTransform requestingRect = requestingText.GetComponent<RectTransform>();
+        requestingRect.anchorMin = new Vector2(0, 0.35f);
+        requestingRect.anchorMax = new Vector2(1, 0.55f);
+        requestingRect.anchoredPosition = Vector2.zero;
+        requestingRect.sizeDelta = Vector2.zero;
+
+        // Accept button
+        GameObject acceptBtn = new GameObject("Accept Button");
+        acceptBtn.transform.SetParent(contentContainer.transform);
+        acceptBtn.AddComponent<Image>().color = new Color(0.2f, 0.6f, 0.2f);
+        Button acceptComp = acceptBtn.AddComponent<Button>();
+        RectTransform acceptRect = acceptBtn.GetComponent<RectTransform>();
+        acceptRect.anchorMin = new Vector2(0.05f, 0.05f);
+        acceptRect.anchorMax = new Vector2(0.45f, 0.25f);
+        acceptRect.anchoredPosition = Vector2.zero;
+        acceptRect.sizeDelta = Vector2.zero;
+        GameObject acceptText = CreateText("Label", acceptBtn.transform, "Accept", 20);
+        acceptText.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+        RectTransform acceptTextRect = acceptText.GetComponent<RectTransform>();
+        acceptTextRect.anchorMin = Vector2.zero;
+        acceptTextRect.anchorMax = Vector2.one;
+        acceptTextRect.anchoredPosition = Vector2.zero;
+        acceptTextRect.sizeDelta = Vector2.zero;
+
+        // Decline button
+        GameObject declineBtn = new GameObject("Decline Button");
+        declineBtn.transform.SetParent(contentContainer.transform);
+        declineBtn.AddComponent<Image>().color = new Color(0.6f, 0.2f, 0.2f);
+        Button declineComp = declineBtn.AddComponent<Button>();
+        RectTransform declineRect = declineBtn.GetComponent<RectTransform>();
+        declineRect.anchorMin = new Vector2(0.55f, 0.05f);
+        declineRect.anchorMax = new Vector2(0.95f, 0.25f);
+        declineRect.anchoredPosition = Vector2.zero;
+        declineRect.sizeDelta = Vector2.zero;
+        GameObject declineText = CreateText("Label", declineBtn.transform, "Decline", 20);
+        declineText.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+        RectTransform declineTextRect = declineText.GetComponent<RectTransform>();
+        declineTextRect.anchorMin = Vector2.zero;
+        declineTextRect.anchorMax = Vector2.one;
+        declineTextRect.anchoredPosition = Vector2.zero;
+        declineTextRect.sizeDelta = Vector2.zero;
+
+        TradeOfferUIController controller = screen.AddComponent<TradeOfferUIController>();
+        controller.SetupButtons(acceptComp, declineComp);
+
         screen.SetActive(false);
     }
 

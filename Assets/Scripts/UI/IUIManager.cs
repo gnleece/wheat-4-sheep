@@ -18,4 +18,6 @@ public interface IUIManager
     Task<IPlayer> ShowPlayerSelectionUI(IPlayer currentPlayer, List<IPlayer> availablePlayers);
     Task<DevelopmentCardType> ShowDevCardSelectionUI(IPlayer player, Dictionary<DevelopmentCardType, int> hand);
     Task<ResourceType> ShowResourceTypeSelectionUI(IPlayer player, string prompt);
+    Task ShowTradeUI(IPlayer player);
+    Task<bool> ShowTradeOfferUI(IPlayer player, TradeOffer offer);
 }

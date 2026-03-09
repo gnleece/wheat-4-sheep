@@ -177,6 +177,12 @@ public class AIPlayer : IPlayer
         return choice;
     }
 
+    public Task<bool> ConsiderTradeOffer(TradeOffer offer)
+    {
+        Debug.Log($"AI Player {playerId} declined trade offer from Player {offer.Initiator.PlayerId}");
+        return Task.FromResult(false);
+    }
+
     private async Task PlaceRandomSettlementAsync()
     {
         var locations = boardManager.GetAvailableSettlementLocations(this);

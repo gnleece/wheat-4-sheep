@@ -11,6 +11,8 @@ internal readonly struct UIReferences
     internal readonly GameObject PlayerSelectionScreen;
     internal readonly GameObject DevCardSelectionScreen;
     internal readonly GameObject ResourceTypeSelectionScreen;
+    internal readonly GameObject TradeScreen;
+    internal readonly GameObject TradeOfferScreen;
     internal readonly GameObject ActionPanel;
     internal readonly GameObject PlayerPanelsContainer;
     internal readonly GameObject PlayerPanelPrefab;
@@ -32,6 +34,8 @@ internal readonly struct UIReferences
         GameObject playerSelectionScreen,
         GameObject devCardSelectionScreen,
         GameObject resourceTypeSelectionScreen,
+        GameObject tradeScreen,
+        GameObject tradeOfferScreen,
         GameObject actionPanel,
         GameObject playerPanelsContainer,
         GameObject playerPanelPrefab,
@@ -52,6 +56,8 @@ internal readonly struct UIReferences
         PlayerSelectionScreen = playerSelectionScreen;
         DevCardSelectionScreen = devCardSelectionScreen;
         ResourceTypeSelectionScreen = resourceTypeSelectionScreen;
+        TradeScreen = tradeScreen;
+        TradeOfferScreen = tradeOfferScreen;
         ActionPanel = actionPanel;
         PlayerPanelsContainer = playerPanelsContainer;
         PlayerPanelPrefab = playerPanelPrefab;

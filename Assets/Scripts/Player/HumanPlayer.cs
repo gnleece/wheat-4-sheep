@@ -133,4 +133,9 @@ public class HumanPlayer : IPlayer
         // Use BoardManager to show player selection UI
         return await boardManager.GetManualSelectionForPlayerToStealFrom(this, availablePlayers);
     }
+
+    public async Task<bool> ConsiderTradeOffer(TradeOffer offer)
+    {
+        return await boardManager.GetManualTradeOfferResponse(this, offer);
+    }
 }

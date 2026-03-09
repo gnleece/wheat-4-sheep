@@ -66,6 +66,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private DevelopmentCardManager devCardManager;
 
+    private TradeManager tradeManager;
+
     private GridInitializer gridInitializer;
 
     private TaskCompletionSource<object> pendingSelection;
@@ -256,9 +258,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
     // Call this before StartNewGame to set up player resource hands and dev card system
     public void InitializePlayerResourceHands(IEnumerable<IPlayer> players)
     {
-        resourceManager.Initialize(players);
+        var playerList = new System.Collections.Generic.List<IPlayer>(players);
+        resourceManager.Initialize(playerList);
         devCardManager = new DevelopmentCardManager(resourceManager, turnManager, random);  // TODO: Initialize this in a better place
-        devCardManager.Initialize(players);
+        devCardManager.Initialize(playerList);
+        tradeManager = new TradeManager(resourceManager, turnManager);
+        tradeManager.Initialize(playerList);
     }
 
     // Returns a copy of the resource hand for the given player, or null if not found
@@ -350,6 +355,70 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
 
         return await uiManager.ShowResourceTypeSelectionUI(player, prompt);
+    }
+
+    public bool CanInitiateTrade(IPlayer player) => tradeManager?.CanInitiateTrade(player) ?? false;
+
+    public int GetBankTradeRate(IPlayer player, ResourceType resourceType)
+        => tradeManager?.GetBankTradeRate(player, resourceType) ?? 4;
+
+    public bool CanBankTrade(IPlayer player, ResourceType giving, ResourceType receiving)
+        => tradeManager?.CanBankTrade(player, giving, receiving) ?? false;
+
+    public void ExecuteBankTrade(IPlayer player, ResourceType giving, ResourceType receiving)
+    {
+        tradeManager?.ExecuteBankTrade(player, giving, receiving);
+        BoardStateChanged?.Invoke();
+    }
+
+    public async Task GetManualTradeSelection(IPlayer player)
+    {
+        if (uiManager == null)
+        {
+            Debug.LogError("UIManager not set! Cannot show trade UI.");
+            return;
+        }
+
+        await uiManager.ShowTradeUI(player);
+        BoardStateChanged?.Invoke();
+    }
+
+    public async Task<bool> GetManualTradeOfferResponse(IPlayer player, TradeOffer offer)
+    {
+        if (uiManager == null)
+        {
+            Debug.LogError("UIManager not set! Cannot show trade offer UI.");
+            return false;
+        }
+
+        return await uiManager.ShowTradeOfferUI(player, offer);
+    }
+
+    public async Task<bool> ProposePlayerTrade(IPlayer initiator, TradeOffer offer)
+    {
+        if (tradeManager == null)
+        {
+            return false;
+        }
+
+        var otherPlayers = tradeManager.GetOtherPlayers(initiator);
+        foreach (var player in otherPlayers)
+        {
+            if (!tradeManager.CanExecutePlayerTrade(offer, player))
+            {
+                continue;
+            }
+
+            bool accepted = await player.ConsiderTradeOffer(offer);
+            if (accepted)
+            {
+                tradeManager.ExecutePlayerTrade(offer, player);
+                BoardStateChanged?.Invoke();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public List<HexVertex> GetAvailableSettlementLocations(IPlayer player) => buildingManager.GetAvailableSettlementLocations(player);

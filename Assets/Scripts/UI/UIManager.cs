@@ -30,6 +30,8 @@ public class UIManager : MonoBehaviour, IUIManager
     private GameObject _playerSelectionScreen;
     private GameObject _devCardSelectionScreen;
     private GameObject _resourceTypeSelectionScreen;
+    private GameObject _tradeScreen;
+    private GameObject _tradeOfferScreen;
     private GameObject _actionPanel;
     private GameObject _playerPanelsContainer;
     private GameObject _playerPanelPrefab;
@@ -59,6 +61,8 @@ public class UIManager : MonoBehaviour, IUIManager
         _playerSelectionScreen = refs.PlayerSelectionScreen;
         _devCardSelectionScreen = refs.DevCardSelectionScreen;
         _resourceTypeSelectionScreen = refs.ResourceTypeSelectionScreen;
+        _tradeScreen = refs.TradeScreen;
+        _tradeOfferScreen = refs.TradeOfferScreen;
         _actionPanel = refs.ActionPanel;
         _playerPanelsContainer = refs.PlayerPanelsContainer;
         _playerPanelPrefab = refs.PlayerPanelPrefab;
@@ -256,12 +260,11 @@ public class UIManager : MonoBehaviour, IUIManager
         await _boardManagerInterface.PlayDevelopmentCard(_currentPlayer, selectedCard);
     }
 
-    private void OnTradeClicked()
+    private async void OnTradeClicked()
     {
-        if (_currentPlayer == null) return;
+        if (_currentPlayer == null || _boardManagerInterface == null) return;
 
-        Debug.Log("Trade - Not yet implemented");
-        // TODO: Implement trading when available in IBoardManager
+        await _boardManagerInterface.GetManualTradeSelection(_currentPlayer);
     }
 
     private void OnEndTurnClicked()
@@ -620,7 +623,7 @@ public class UIManager : MonoBehaviour, IUIManager
         SetButtonInteractable(_buildCityButton, _boardManagerInterface.CanUpgradeSettlement(_currentPlayer));
         SetButtonInteractable(_buyDevelopmentCardButton, _boardManagerInterface.CanBuyDevelopmentCard(_currentPlayer));
         SetButtonInteractable(_playDevelopmentCardButton, _boardManagerInterface.CanPlayAnyDevCard(_currentPlayer));
-        SetButtonInteractable(_tradeButton, false); // Disabled until trade is implemented
+        SetButtonInteractable(_tradeButton, _boardManagerInterface.CanInitiateTrade(_currentPlayer));
 
         SetButtonInteractable(_endTurnButton, _boardManagerInterface.CanEndTurn(_currentPlayer));
     }
@@ -694,5 +697,68 @@ public class UIManager : MonoBehaviour, IUIManager
 
         _resourceTypeSelectionScreen.SetActive(false);
         return selected;
+    }
+
+    public async System.Threading.Tasks.Task ShowTradeUI(IPlayer player)
+    {
+        if (_tradeScreen == null)
+        {
+            Debug.LogError("Trade screen not found!");
+            return;
+        }
+
+        var controller = _tradeScreen.GetComponent<TradeUIController>();
+        if (controller != null)
+        {
+            controller.Initialize(player, _boardManagerInterface);
+        }
+
+        _tradeScreen.SetActive(true);
+        TradeSelection selection = null;
+        if (controller != null)
+        {
+            selection = await controller.WaitForSelection();
+        }
+
+        _tradeScreen.SetActive(false);
+
+        if (selection is BankTradeSelection bankTrade)
+        {
+            _boardManagerInterface.ExecuteBankTrade(player, bankTrade.Giving, bankTrade.Receiving);
+        }
+        else if (selection is PlayerTradeSelection playerTrade)
+        {
+            var offer = new TradeOffer(player, playerTrade.Offering, playerTrade.Requesting);
+            bool traded = await _boardManagerInterface.ProposePlayerTrade(player, offer);
+            if (!traded)
+            {
+                Debug.Log($"Player {player.PlayerId}: no one accepted the trade offer.");
+            }
+        }
+    }
+
+    public async System.Threading.Tasks.Task<bool> ShowTradeOfferUI(IPlayer player, TradeOffer offer)
+    {
+        if (_tradeOfferScreen == null)
+        {
+            Debug.LogError("Trade offer screen not found!");
+            return false;
+        }
+
+        var controller = _tradeOfferScreen.GetComponent<TradeOfferUIController>();
+        if (controller != null)
+        {
+            controller.Initialize(player, offer);
+        }
+
+        _tradeOfferScreen.SetActive(true);
+        bool accepted = false;
+        if (controller != null)
+        {
+            accepted = await controller.WaitForResponse();
+        }
+
+        _tradeOfferScreen.SetActive(false);
+        return accepted;
     }
 }
