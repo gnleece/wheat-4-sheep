@@ -45,6 +45,91 @@ public class BuildingManager
         return hexVertex;
     }
 
+    // Returns true if the vertex is a valid, unoccupied location for player to build a settlement,
+    // respecting the distance rule and (optionally) the road-connection requirement.
+    private bool IsVertexAvailableForBuilding(HexVertex vertex, IPlayer player, bool mustConnectToRoad)
+    {
+        if (!vertex.CanHaveBuildings())
+        {
+            return false;
+        }
+
+        if (vertex.IsOccupied)
+        {
+            return false;
+        }
+
+        // Distance rule: no adjacent vertex may be occupied.
+        foreach (var neighbor in vertex.NeighborVertices)
+        {
+            if (neighbor.IsOccupied)
+            {
+                return false;
+            }
+        }
+
+        if (mustConnectToRoad)
+        {
+            foreach (var edge in vertex.NeighborEdges)
+            {
+                if (edge.IsOccupied && edge.Road.Owner == player)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    // Returns true if the edge is a valid, unoccupied location for player to build a road.
+    // When requiredNeighborVertex is non-null (initial road placement after second settlement),
+    // the edge must be adjacent to that specific vertex.
+    private bool IsEdgeAvailableForBuilding(HexEdge edge, IPlayer player, HexVertex requiredNeighborVertex)
+    {
+        if (!edge.CanHaveRoads())
+        {
+            return false;
+        }
+
+        if (edge.IsOccupied)
+        {
+            return false;
+        }
+
+        if (requiredNeighborVertex != null)
+        {
+            foreach (var vertex in edge.NeighborVertices)
+            {
+                if (vertex == requiredNeighborVertex)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Road must connect to a building or road owned by the player.
+        foreach (var vertex in edge.NeighborVertices)
+        {
+            if (vertex.IsOccupied && vertex.Owner == player)
+            {
+                return true;
+            }
+        }
+
+        foreach (var neighborEdge in edge.NeighborEdges)
+        {
+            if (neighborEdge.IsOccupied && neighborEdge.Road.Owner == player)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public bool BuildSettlement(IPlayer player, HexVertex hexVertex)
     {
         if (!turnManager.IsPlayerTurn(player))
@@ -74,29 +159,37 @@ public class BuildingManager
             return false;
         }
 
-        var success = hexVertex.TryPlaceBuilding(Building.BuildingType.Settlement, player);
-        if (success)
-        {
-            lastSettlementPlaced[player] = hexVertex;
-
-            if (!isBuildingFree)
-            {
-                resourceManager.DeductResources(player, BuildingCosts.SettlementCost);
-            }
-
-            if (gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement)
-            {
-                resourceManager.GivePlayerResourcesForNeighborHexTiles(player, hexVertex);
-            }
-
-            Debug.Log($"PLACED SETTLEMENT: {hexVertex}");
-        }
-        else
+        // Validate placement: unoccupied vertex, distance rule satisfied.
+        if (hexVertex.IsOccupied || player == null)
         {
             Debug.Log("Invalid settlement position. Try again.");
+            return false;
         }
 
-        return success;
+        foreach (var neighbor in hexVertex.NeighborVertices)
+        {
+            if (neighbor.IsOccupied)
+            {
+                Debug.Log("Invalid settlement position. Try again.");
+                return false;
+            }
+        }
+
+        hexVertex.PlaceBuilding(new Building(Building.BuildingType.Settlement, hexVertex, player));
+        lastSettlementPlaced[player] = hexVertex;
+
+        if (!isBuildingFree)
+        {
+            resourceManager.DeductResources(player, BuildingCosts.SettlementCost);
+        }
+
+        if (gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement)
+        {
+            resourceManager.GivePlayerResourcesForNeighborHexTiles(player, hexVertex);
+        }
+
+        Debug.Log($"PLACED SETTLEMENT: {hexVertex}");
+        return true;
     }
 
     public bool BuildRoad(IPlayer player, HexEdge hexEdge)
@@ -132,26 +225,57 @@ public class BuildingManager
 
         Debug.Log($"Trying to place road at {hexEdge}");
 
-        var success = hexEdge.TryPlaceRoad(player);
-        if (success)
-        {
-            if (!isBuildingFree)
-            {
-                resourceManager.DeductResources(player, BuildingCosts.RoadCost);
-            }
-            else if (hasFreeRoad && !isInitialPlacement)
-            {
-                turnManager.UseOneRoad();
-            }
-
-            Debug.Log($"PLACED ROAD: {hexEdge}");
-        }
-        else
+        if (hexEdge.IsOccupied || player == null)
         {
             Debug.Log("Invalid road position. Try again.");
+            return false;
         }
 
-        return success;
+        // Road must connect to an existing building or road owned by the player.
+        var connected = false;
+
+        foreach (var vertex in hexEdge.NeighborVertices)
+        {
+            Debug.Log($"....neighbor vertex: {vertex}, occupied = {vertex.IsOccupied}, owner = {vertex.Owner}");
+            if (vertex.IsOccupied && vertex.Owner == player)
+            {
+                connected = true;
+                break;
+            }
+        }
+
+        if (!connected)
+        {
+            foreach (var neighborEdge in hexEdge.NeighborEdges)
+            {
+                Debug.Log($"....neighbor edge: {neighborEdge}, occupied = {neighborEdge.IsOccupied}, owner = {neighborEdge.Road?.Owner}");
+                if (neighborEdge.IsOccupied && neighborEdge.Road.Owner == player)
+                {
+                    connected = true;
+                    break;
+                }
+            }
+        }
+
+        if (!connected)
+        {
+            Debug.Log("Invalid road position. Try again.");
+            return false;
+        }
+
+        hexEdge.PlaceRoad(new Road(hexEdge, player));
+
+        if (!isBuildingFree)
+        {
+            resourceManager.DeductResources(player, BuildingCosts.RoadCost);
+        }
+        else if (hasFreeRoad && !isInitialPlacement)
+        {
+            turnManager.UseOneRoad();
+        }
+
+        Debug.Log($"PLACED ROAD: {hexEdge}");
+        return true;
     }
 
     public bool UpgradeSettlementToCity(IPlayer player, HexVertex hexVertex)
@@ -261,7 +385,7 @@ public class BuildingManager
         var locations = new List<HexVertex>();
         foreach (var vertex in vertexMap.Values)
         {
-            if (vertex.AvailableForBuilding(player, mustConnectToRoad))
+            if (IsVertexAvailableForBuilding(vertex, player, mustConnectToRoad))
             {
                 locations.Add(vertex);
             }
@@ -280,7 +404,7 @@ public class BuildingManager
         var locations = new List<HexEdge>();
         foreach (var edge in edgeMap.Values)
         {
-            if (edge.AvailableForBuilding(player, requiredSettlement))
+            if (IsEdgeAvailableForBuilding(edge, player, requiredSettlement))
             {
                 locations.Add(edge);
             }

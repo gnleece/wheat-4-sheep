@@ -17,6 +17,7 @@ public class HexEdge
 
     public IReadOnlyList<HexTile> NeighborHexTiles => neighborHexes;
     public IReadOnlyList<HexVertex> NeighborVertices => neighborVertices;
+    public IReadOnlyList<HexEdge> NeighborEdges => neighborEdges;
 
     private List<HexTile> neighborHexes = null;
     private List<HexVertex> neighborVertices = null;
@@ -40,52 +41,6 @@ public class HexEdge
         }
     }
 
-    public bool TryPlaceRoad(IPlayer owner)
-    {
-        if (IsOccupied || owner == null)
-        {
-            return false;
-        }
-
-        // Roads must be connected to an existing road or building with the same owner
-        var success = false;
-        
-        // Check if connected to a building (settlement/city) owned by the player
-        foreach (var neighbor in neighborVertices)
-        {
-            Debug.Log($"....neighbor vertex: {neighbor}, occupied = {neighbor.IsOccupied}, owner = {neighbor.Owner}");
-            if (neighbor.IsOccupied && neighbor.Owner == owner)
-            {
-                success = true;
-                break;
-            }
-        }
-
-        // Check if connected to a road owned by the player
-        if (!success)
-        {
-            foreach (var edge in neighborEdges)
-            {
-                Debug.Log($"....neighbor edge: {edge}, occupied = {edge.IsOccupied}, owner = {edge.Road?.Owner}");
-                if (edge.IsOccupied && edge.Road.Owner == owner)
-                {
-                    success = true;
-                    break;
-                }
-            }
-        }
-
-        if (success)
-        {
-            Road = new Road(this, owner);
-            if (EdgeObject != null)
-            {
-                EdgeObject.Refresh();
-            }
-        }
-        return success;
-    }
-
     public bool CanHaveRoads()
     {
         if (neighborHexes == null || neighborHexes.Count == 0)
@@ -105,51 +60,13 @@ public class HexEdge
         return false;
     }
 
-    public bool AvailableForBuilding(IPlayer player, HexVertex requiredNeighborVertex)
+    public void PlaceRoad(Road road)
     {
-        if (!CanHaveRoads())
+        Road = road;
+        if (EdgeObject != null)
         {
-            return false;
+            EdgeObject.Refresh();
         }
-
-        if (IsOccupied)
-        {
-            return false;
-        }
-
-        if (requiredNeighborVertex != null)
-        {
-            // Check if edge is connected to the required neighbor vertex
-            foreach (var vertex in neighborVertices)
-            {
-                if (vertex == requiredNeighborVertex)
-                {
-                    return true;
-                }
-            }
-        }
-        else
-        {
-            // Check if edge is connected to a building owned by the player
-            foreach (var vertex in neighborVertices)
-            {
-                if (vertex.IsOccupied && vertex.Owner == player)
-                {
-                    return true;
-                }
-            }
-
-            // Check if edge is connected to a road owned by the player
-            foreach (var edge in neighborEdges)
-            {
-                if (edge.IsOccupied && edge.Road.Owner == player)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     public void InitializeNeighbors(IBoardManager boardManager)
