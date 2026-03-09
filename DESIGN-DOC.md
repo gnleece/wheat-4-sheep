@@ -17,6 +17,7 @@ Basic features that are working:
 
 Basic features that are not implemented yet:
 * Longest road
+* UI that shows a log of all player actions, with colors and icons for easy readability
 
 ## Advanced game features
 
@@ -28,3 +29,5 @@ Once all the core game functionality is implemented, some ideas for advanced fea
 
 * All of the UI is ugly placeholder UI
 * Selecting a location for road building is hard, the hitbox is too small
+* Result of dice roll isn't diplayed to the user
+* If the player buys 2 dev cards in a single turn and they're the same type (e.g. two knights), the game allows one of them to be played, which should not be possible. If Catan rules prevent purchasing multiple dev cards in one turn, then the fix should be to limit it to 1 purchase. If on the other hand the rules allow purchasing multiple per turn but none of them can be played in the same turn, then the logic for preventing a card from being played in the turn where it was purchased has a bug

@@ -90,11 +90,11 @@ These exist because board mode and awaited selection type track parallel state. 
 
 ---
 
-### Brittle neighbor logic in `HexVertex` and `HexEdge`
+### ~~Brittle neighbor logic in `HexVertex` and `HexEdge`~~ ✅ Fixed
 
-`HexVertex.InitializeNeighbors()` (lines 132–169) and `HexEdge.InitializeNeighbors()` (lines 161–211) contain hardcoded coordinate offsets for specific vertex/edge orientations. If the coordinate system changes, both files break independently.
+~~`HexVertex.InitializeNeighbors()` (lines 132–169) and `HexEdge.InitializeNeighbors()` (lines 161–211) contain hardcoded coordinate offsets for specific vertex/edge orientations. If the coordinate system changes, both files break independently.~~
 
-**Fix:** Move neighbor math to `GridHelpers`.
+Fixed: All coordinate offset tables moved to `GridHelpers` as six static methods (`GetVertexNeighborHexCoords`, `GetVertexNeighborVertexCoords`, `GetVertexNeighborEdgeCoords`, `GetEdgeNeighborHexCoords`, `GetEdgeNeighborVertexCoords`, `GetEdgeNeighborEdgeCoords`). `InitializeNeighbors` in both classes now iterates the results — no coordinate math in either.
 
 ---
 

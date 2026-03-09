@@ -100,6 +100,185 @@ namespace Grid
             return new Vector2(col, row);
         }
 
+        public static HexCoord[] GetVertexNeighborHexCoords(VertexCoord vc)
+        {
+            int q = vc.HexCoord.q;
+            int r = vc.HexCoord.r;
+
+            switch (vc.Orientation)
+            {
+                case VertexOrientation.North:
+                    return new[]
+                    {
+                        new HexCoord(q, r),
+                        new HexCoord(q, r + 1),
+                        new HexCoord(q - 1, r + 1),
+                    };
+                case VertexOrientation.South:
+                    return new[]
+                    {
+                        new HexCoord(q, r),
+                        new HexCoord(q, r - 1),
+                        new HexCoord(q + 1, r - 1),
+                    };
+                default:
+                    Debug.LogError($"Unknown vertex orientation: {vc.Orientation}");
+                    return System.Array.Empty<HexCoord>();
+            }
+        }
+
+        public static VertexCoord[] GetVertexNeighborVertexCoords(VertexCoord vc)
+        {
+            int q = vc.HexCoord.q;
+            int r = vc.HexCoord.r;
+
+            switch (vc.Orientation)
+            {
+                case VertexOrientation.North:
+                    return new[]
+                    {
+                        new VertexCoord(q - 1, r + 1, VertexOrientation.South),
+                        new VertexCoord(q - 1, r + 2, VertexOrientation.South),
+                        new VertexCoord(q, r + 1, VertexOrientation.South),
+                    };
+                case VertexOrientation.South:
+                    return new[]
+                    {
+                        new VertexCoord(q + 1, r - 2, VertexOrientation.North),
+                        new VertexCoord(q, r - 1, VertexOrientation.North),
+                        new VertexCoord(q + 1, r - 1, VertexOrientation.North),
+                    };
+                default:
+                    Debug.LogError($"Unknown vertex orientation: {vc.Orientation}");
+                    return System.Array.Empty<VertexCoord>();
+            }
+        }
+
+        public static EdgeCoord[] GetVertexNeighborEdgeCoords(VertexCoord vc)
+        {
+            int q = vc.HexCoord.q;
+            int r = vc.HexCoord.r;
+
+            switch (vc.Orientation)
+            {
+                case VertexOrientation.North:
+                    return new[]
+                    {
+                        new EdgeCoord(q, r, EdgeOrientation.NorthWest),
+                        new EdgeCoord(q, r, EdgeOrientation.NorthEast),
+                        new EdgeCoord(q, r + 1, EdgeOrientation.West),
+                    };
+                case VertexOrientation.South:
+                    return new[]
+                    {
+                        new EdgeCoord(q, r - 1, EdgeOrientation.NorthEast),
+                        new EdgeCoord(q + 1, r - 1, EdgeOrientation.West),
+                        new EdgeCoord(q + 1, r - 1, EdgeOrientation.NorthWest),
+                    };
+                default:
+                    Debug.LogError($"Unknown vertex orientation: {vc.Orientation}");
+                    return System.Array.Empty<EdgeCoord>();
+            }
+        }
+
+        public static HexCoord[] GetEdgeNeighborHexCoords(EdgeCoord ec)
+        {
+            int q = ec.HexCoord.q;
+            int r = ec.HexCoord.r;
+
+            switch (ec.Orientation)
+            {
+                case EdgeOrientation.West:
+                    return new[]
+                    {
+                        new HexCoord(q, r),
+                        new HexCoord(q - 1, r),
+                    };
+                case EdgeOrientation.NorthWest:
+                    return new[]
+                    {
+                        new HexCoord(q, r),
+                        new HexCoord(q - 1, r + 1),
+                    };
+                case EdgeOrientation.NorthEast:
+                    return new[]
+                    {
+                        new HexCoord(q, r),
+                        new HexCoord(q, r + 1),
+                    };
+                default:
+                    Debug.LogError($"Unknown edge orientation: {ec.Orientation}");
+                    return System.Array.Empty<HexCoord>();
+            }
+        }
+
+        public static VertexCoord[] GetEdgeNeighborVertexCoords(EdgeCoord ec)
+        {
+            int q = ec.HexCoord.q;
+            int r = ec.HexCoord.r;
+
+            switch (ec.Orientation)
+            {
+                case EdgeOrientation.West:
+                    return new[]
+                    {
+                        new VertexCoord(q, r - 1, VertexOrientation.North),
+                        new VertexCoord(q - 1, r + 1, VertexOrientation.South),
+                    };
+                case EdgeOrientation.NorthWest:
+                    return new[]
+                    {
+                        new VertexCoord(q, r, VertexOrientation.North),
+                        new VertexCoord(q - 1, r + 1, VertexOrientation.South),
+                    };
+                case EdgeOrientation.NorthEast:
+                    return new[]
+                    {
+                        new VertexCoord(q, r, VertexOrientation.North),
+                        new VertexCoord(q, r + 1, VertexOrientation.South),
+                    };
+                default:
+                    Debug.LogError($"Unknown edge orientation: {ec.Orientation}");
+                    return System.Array.Empty<VertexCoord>();
+            }
+        }
+
+        public static EdgeCoord[] GetEdgeNeighborEdgeCoords(EdgeCoord ec)
+        {
+            int q = ec.HexCoord.q;
+            int r = ec.HexCoord.r;
+
+            switch (ec.Orientation)
+            {
+                case EdgeOrientation.West:
+                    return new[]
+                    {
+                        new EdgeCoord(q - 1, r, EdgeOrientation.NorthEast),
+                        new EdgeCoord(q, r, EdgeOrientation.NorthWest),
+                        new EdgeCoord(q, r - 1, EdgeOrientation.NorthEast),
+                        new EdgeCoord(q, r - 1, EdgeOrientation.NorthWest),
+                    };
+                case EdgeOrientation.NorthWest:
+                    return new[]
+                    {
+                        new EdgeCoord(q - 1, r, EdgeOrientation.NorthEast),
+                        new EdgeCoord(q, r, EdgeOrientation.West),
+                        new EdgeCoord(q, r + 1, EdgeOrientation.West),
+                        new EdgeCoord(q, r, EdgeOrientation.NorthEast),
+                    };
+                case EdgeOrientation.NorthEast:
+                    return new[]
+                    {
+                        new EdgeCoord(q, r, EdgeOrientation.NorthWest),
+                        new EdgeCoord(q, r + 1, EdgeOrientation.West),
+                        new EdgeCoord(q + 1, r, EdgeOrientation.NorthWest),
+                        new EdgeCoord(q + 1, r, EdgeOrientation.West),
+                    };
+                default:
+                    Debug.LogError($"Unknown edge orientation: {ec.Orientation}");
+                    return System.Array.Empty<EdgeCoord>();
+            }
+        }
     }
 
     #endregion
