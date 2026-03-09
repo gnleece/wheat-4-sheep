@@ -9,6 +9,8 @@ internal readonly struct UIReferences
     internal readonly GameObject GameOverScreen;
     internal readonly GameObject DiscardScreen;
     internal readonly GameObject PlayerSelectionScreen;
+    internal readonly GameObject DevCardSelectionScreen;
+    internal readonly GameObject ResourceTypeSelectionScreen;
     internal readonly GameObject ActionPanel;
     internal readonly GameObject PlayerPanelsContainer;
     internal readonly GameObject PlayerPanelPrefab;
@@ -17,6 +19,7 @@ internal readonly struct UIReferences
     internal readonly Button BuildSettlementButton;
     internal readonly Button BuildCityButton;
     internal readonly Button BuyDevelopmentCardButton;
+    internal readonly Button PlayDevelopmentCardButton;
     internal readonly Button TradeButton;
     internal readonly Button EndTurnButton;
 
@@ -27,6 +30,8 @@ internal readonly struct UIReferences
         GameObject gameOverScreen,
         GameObject discardScreen,
         GameObject playerSelectionScreen,
+        GameObject devCardSelectionScreen,
+        GameObject resourceTypeSelectionScreen,
         GameObject actionPanel,
         GameObject playerPanelsContainer,
         GameObject playerPanelPrefab,
@@ -35,6 +40,7 @@ internal readonly struct UIReferences
         Button buildSettlementButton,
         Button buildCityButton,
         Button buyDevelopmentCardButton,
+        Button playDevelopmentCardButton,
         Button tradeButton,
         Button endTurnButton)
     {
@@ -44,6 +50,8 @@ internal readonly struct UIReferences
         GameOverScreen = gameOverScreen;
         DiscardScreen = discardScreen;
         PlayerSelectionScreen = playerSelectionScreen;
+        DevCardSelectionScreen = devCardSelectionScreen;
+        ResourceTypeSelectionScreen = resourceTypeSelectionScreen;
         ActionPanel = actionPanel;
         PlayerPanelsContainer = playerPanelsContainer;
         PlayerPanelPrefab = playerPanelPrefab;
@@ -52,6 +60,7 @@ internal readonly struct UIReferences
         BuildSettlementButton = buildSettlementButton;
         BuildCityButton = buildCityButton;
         BuyDevelopmentCardButton = buyDevelopmentCardButton;
+        PlayDevelopmentCardButton = playDevelopmentCardButton;
         TradeButton = tradeButton;
         EndTurnButton = endTurnButton;
     }

@@ -46,6 +46,18 @@ public class AIPlayer : IPlayer
         boardManager.BeginPlayerTurn(this, PlayerTurnType.RegularTurn);
 
         await Task.Delay(THINKING_DELAY_TIME_MS);
+
+        // Play a Knight card before rolling if one is available
+        if (boardManager.CanPlayAnyDevCard(this))
+        {
+            var hand = boardManager.GetDevCardHandForPlayer(this);
+            if (hand.TryGetValue(DevelopmentCardType.Knight, out int knightCount) && knightCount > 0)
+            {
+                await boardManager.PlayDevelopmentCard(this, DevelopmentCardType.Knight);
+                await Task.Delay(THINKING_DELAY_TIME_MS);
+            }
+        }
+
         await boardManager.RollDice(this);
 
         await Task.Delay(THINKING_DELAY_TIME_MS);
@@ -57,15 +69,16 @@ public class AIPlayer : IPlayer
             var resources = boardManager.GetResourceHandForPlayer(this);
             var canAffordSettlement = ResourceHand.HasEnoughResources(resources, BuildingCosts.SettlementCost);
             var canAffordRoad = ResourceHand.HasEnoughResources(resources, BuildingCosts.RoadCost);
+            var canAffordDevCard = boardManager.CanBuyDevelopmentCard(this);
 
-            if (!canAffordSettlement && !canAffordRoad)
+            if (!canAffordSettlement && !canAffordRoad && !canAffordDevCard)
             {
                 // If I can't afford anything, end my turn
                 Debug.Log("AI Player cannot afford any actions, ending turn.");
                 break;
             }
 
-            // Try to build something (priority: settlement > road)
+            // Try to build something (priority: settlement > road > dev card)
             var settlementLocations = boardManager.GetAvailableSettlementLocations(this);
             var roadLocations = boardManager.GetAvailableRoadLocations(this);
             if (settlementLocations.Count > 0 && canAffordSettlement)
@@ -85,6 +98,10 @@ public class AIPlayer : IPlayer
                     Debug.LogWarning($"AI Player {playerId} failed to place road at {roadLocations[0]}. This should not happen if the game is set up correctly.");
                     break;
                 }
+            }
+            else if (canAffordDevCard)
+            {
+                boardManager.BuyDevelopmentCard(this);
             }
 
             actionCount++;

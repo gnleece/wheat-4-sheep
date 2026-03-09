@@ -81,6 +81,23 @@ public class HumanPlayer : IPlayer
                 var chosenSettlementToUpgrade = await boardManager.GetManualSelectionForSettlementUpgrade(this);
                 boardManager.UpgradeSettlementToCity(this, chosenSettlementToUpgrade);
             }
+            else if (Input.GetKeyDown(KeyCode.Alpha5))
+            {
+                // Buy Development Card
+                if (boardManager.CanBuyDevelopmentCard(this))
+                {
+                    boardManager.BuyDevelopmentCard(this);
+                }
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha6))
+            {
+                // Play Development Card
+                if (boardManager.CanPlayAnyDevCard(this))
+                {
+                    var cardType = await boardManager.GetManualDevCardSelection(this);
+                    await boardManager.PlayDevelopmentCard(this, cardType);
+                }
+            }
             else if (Input.GetKeyDown(KeyCode.Alpha0))
             {
                 // End Turn

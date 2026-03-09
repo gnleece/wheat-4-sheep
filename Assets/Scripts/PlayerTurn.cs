@@ -3,6 +3,9 @@ public class PlayerTurn
     public IPlayer Player;
     public PlayerTurnType TurnType;
     public bool HasRolledDice = false;
+    public bool DevCardBoughtThisTurn = false;
+    public bool DevCardPlayedThisTurn = false;
+    public int FreeRoadsRemaining = 0;
 
     public bool CanEndTurn
     {

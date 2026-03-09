@@ -28,6 +28,8 @@ public class UIManager : MonoBehaviour, IUIManager
     private GameObject _gameOverScreen;
     private GameObject _discardScreen;
     private GameObject _playerSelectionScreen;
+    private GameObject _devCardSelectionScreen;
+    private GameObject _resourceTypeSelectionScreen;
     private GameObject _actionPanel;
     private GameObject _playerPanelsContainer;
     private GameObject _playerPanelPrefab;
@@ -36,6 +38,7 @@ public class UIManager : MonoBehaviour, IUIManager
     private Button _buildSettlementButton;
     private Button _buildCityButton;
     private Button _buyDevelopmentCardButton;
+    private Button _playDevelopmentCardButton;
     private Button _tradeButton;
     private Button _endTurnButton;
 
@@ -54,6 +57,8 @@ public class UIManager : MonoBehaviour, IUIManager
         _gameOverScreen = refs.GameOverScreen;
         _discardScreen = refs.DiscardScreen;
         _playerSelectionScreen = refs.PlayerSelectionScreen;
+        _devCardSelectionScreen = refs.DevCardSelectionScreen;
+        _resourceTypeSelectionScreen = refs.ResourceTypeSelectionScreen;
         _actionPanel = refs.ActionPanel;
         _playerPanelsContainer = refs.PlayerPanelsContainer;
         _playerPanelPrefab = refs.PlayerPanelPrefab;
@@ -62,6 +67,7 @@ public class UIManager : MonoBehaviour, IUIManager
         _buildSettlementButton = refs.BuildSettlementButton;
         _buildCityButton = refs.BuildCityButton;
         _buyDevelopmentCardButton = refs.BuyDevelopmentCardButton;
+        _playDevelopmentCardButton = refs.PlayDevelopmentCardButton;
         _tradeButton = refs.TradeButton;
         _endTurnButton = refs.EndTurnButton;
 
@@ -109,6 +115,11 @@ public class UIManager : MonoBehaviour, IUIManager
             _buyDevelopmentCardButton.onClick.RemoveAllListeners();
         }
 
+        if (_playDevelopmentCardButton != null)
+        {
+            _playDevelopmentCardButton.onClick.RemoveAllListeners();
+        }
+
         if (_tradeButton != null)
         {
             _tradeButton.onClick.RemoveAllListeners();
@@ -151,6 +162,11 @@ public class UIManager : MonoBehaviour, IUIManager
         if (_buyDevelopmentCardButton != null)
         {
             _buyDevelopmentCardButton.onClick.AddListener(OnBuyDevelopmentCardClicked);
+        }
+
+        if (_playDevelopmentCardButton != null)
+        {
+            _playDevelopmentCardButton.onClick.AddListener(OnPlayDevelopmentCardClicked);
         }
 
         if (_tradeButton != null)
@@ -225,10 +241,19 @@ public class UIManager : MonoBehaviour, IUIManager
 
     private void OnBuyDevelopmentCardClicked()
     {
-        if (_currentPlayer == null) return;
+        if (_currentPlayer == null || _boardManagerInterface == null) return;
 
-        Debug.Log("Buy Development Card - Not yet implemented");
-        // TODO: Implement development card purchase when available in IBoardManager
+        var card = _boardManagerInterface.BuyDevelopmentCard(_currentPlayer);
+        Debug.Log($"Player {_currentPlayer.PlayerId} bought a {card} card.");
+    }
+
+    private async void OnPlayDevelopmentCardClicked()
+    {
+        if (_currentPlayer == null || _boardManagerInterface == null) return;
+
+        var hand = _boardManagerInterface.GetDevCardHandForPlayer(_currentPlayer);
+        var selectedCard = await ShowDevCardSelectionUI(_currentPlayer, hand);
+        await _boardManagerInterface.PlayDevelopmentCard(_currentPlayer, selectedCard);
     }
 
     private void OnTradeClicked()
@@ -583,6 +608,7 @@ public class UIManager : MonoBehaviour, IUIManager
             SetButtonInteractable(_buildSettlementButton, false);
             SetButtonInteractable(_buildCityButton, false);
             SetButtonInteractable(_buyDevelopmentCardButton, false);
+            SetButtonInteractable(_playDevelopmentCardButton, false);
             SetButtonInteractable(_tradeButton, false);
             SetButtonInteractable(_endTurnButton, false);
             return;
@@ -592,8 +618,9 @@ public class UIManager : MonoBehaviour, IUIManager
         SetButtonInteractable(_buildRoadButton, _boardManagerInterface.CanBuildRoad(_currentPlayer));
         SetButtonInteractable(_buildSettlementButton, _boardManagerInterface.CanBuildSettlement(_currentPlayer));
         SetButtonInteractable(_buildCityButton, _boardManagerInterface.CanUpgradeSettlement(_currentPlayer));
-        SetButtonInteractable(_buyDevelopmentCardButton, false); // Disabled until dev cards are implemented
-        SetButtonInteractable(_tradeButton, false);              // Disabled until trade is implemented
+        SetButtonInteractable(_buyDevelopmentCardButton, _boardManagerInterface.CanBuyDevelopmentCard(_currentPlayer));
+        SetButtonInteractable(_playDevelopmentCardButton, _boardManagerInterface.CanPlayAnyDevCard(_currentPlayer));
+        SetButtonInteractable(_tradeButton, false); // Disabled until trade is implemented
 
         SetButtonInteractable(_endTurnButton, _boardManagerInterface.CanEndTurn(_currentPlayer));
     }
@@ -617,5 +644,55 @@ public class UIManager : MonoBehaviour, IUIManager
 
             button.colors = colors;
         }
+    }
+
+    public async System.Threading.Tasks.Task<DevelopmentCardType> ShowDevCardSelectionUI(IPlayer player, Dictionary<DevelopmentCardType, int> hand)
+    {
+        if (_devCardSelectionScreen == null)
+        {
+            Debug.LogError("Dev card selection screen not found!");
+            return default;
+        }
+
+        var controller = _devCardSelectionScreen.GetComponent<DevCardSelectionUIController>();
+        if (controller != null)
+        {
+            controller.Initialize(player, hand);
+        }
+
+        _devCardSelectionScreen.SetActive(true);
+        DevelopmentCardType selected = default;
+        if (controller != null)
+        {
+            selected = await controller.WaitForCardSelection();
+        }
+
+        _devCardSelectionScreen.SetActive(false);
+        return selected;
+    }
+
+    public async System.Threading.Tasks.Task<ResourceType> ShowResourceTypeSelectionUI(IPlayer player, string prompt)
+    {
+        if (_resourceTypeSelectionScreen == null)
+        {
+            Debug.LogError("Resource type selection screen not found!");
+            return ResourceType.None;
+        }
+
+        var controller = _resourceTypeSelectionScreen.GetComponent<ResourceTypeSelectionUIController>();
+        if (controller != null)
+        {
+            controller.Initialize(player, prompt);
+        }
+
+        _resourceTypeSelectionScreen.SetActive(true);
+        ResourceType selected = ResourceType.None;
+        if (controller != null)
+        {
+            selected = await controller.WaitForResourceTypeSelection();
+        }
+
+        _resourceTypeSelectionScreen.SetActive(false);
+        return selected;
     }
 }

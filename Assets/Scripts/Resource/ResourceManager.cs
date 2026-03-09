@@ -123,6 +123,14 @@ public class ResourceManager
         }
     }
 
+    public void GiveResourcesToPlayer(IPlayer player, ResourceType resourceType, int amount)
+    {
+        if (playerResourceHands.TryGetValue(player, out var hand))
+        {
+            hand.Add(resourceType, amount);
+        }
+    }
+
     public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer)
     {
         if (fromPlayer == null || toPlayer == null) return null;

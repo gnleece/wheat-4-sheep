@@ -119,8 +119,10 @@ public class BuildingManager
             return false;
         }
 
-        var isBuildingFree = gameManager.CurrentGameState == GameManager.GameState.FirstSettlementPlacement ||
-                             gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement;
+        var isInitialPlacement = gameManager.CurrentGameState == GameManager.GameState.FirstSettlementPlacement ||
+                                 gameManager.CurrentGameState == GameManager.GameState.SecondSettlementPlacement;
+        var hasFreeRoad = turnManager.FreeRoadsRemaining > 0;
+        var isBuildingFree = isInitialPlacement || hasFreeRoad;
 
         if (!isBuildingFree && !resourceManager.HasEnoughResources(player, BuildingCosts.RoadCost))
         {
@@ -137,6 +139,11 @@ public class BuildingManager
             {
                 resourceManager.DeductResources(player, BuildingCosts.RoadCost);
             }
+            else if (hasFreeRoad && !isInitialPlacement)
+            {
+                turnManager.UseOneRoad();
+            }
+
             Debug.Log($"PLACED ROAD: {hexEdge}");
         }
         else
@@ -232,7 +239,7 @@ public class BuildingManager
         return true;
     }
 
-    public int GetPlayerScore(IPlayer player)
+    public int GetPlayerBuildingScore(IPlayer player)
     {
         var score = 0;
 
@@ -243,10 +250,6 @@ public class BuildingManager
                 score += vertex.Building.VictoryPoints;
             }
         }
-
-        // TODO: 1 point for each victory card
-        // TODO: 2 points for longest road
-        // TODO: 2 points for largest army
 
         return score;
     }
@@ -345,7 +348,9 @@ public class BuildingManager
     {
         if (!turnManager.IsPlayerTurn(player)) return false;
         if (!turnManager.HasRolledDice) return false;
-        if (!resourceManager.HasEnoughResources(player, BuildingCosts.RoadCost)) return false;
+
+        var hasFreeRoad = turnManager.FreeRoadsRemaining > 0;
+        if (!hasFreeRoad && !resourceManager.HasEnoughResources(player, BuildingCosts.RoadCost)) return false;
 
         var availableLocations = GetAvailableRoadLocations(player);
         return availableLocations != null && availableLocations.Count > 0;

@@ -11,10 +11,10 @@ Basic features that are working:
 * Basic turn flow with resource distribution
 * Settlment, city, and road building
 * Robber
+* Development cards: all 5 types (Knight, Victory Point, Year of Plenty, Monopoly, Road Building) and Largest Army
 
 Basic features that are not implemented yet:
 * Longest road
-* Development cards
 * End game / victory state
 * Trading
 

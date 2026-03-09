@@ -20,6 +20,8 @@ internal sealed class UISetup
         CreateGameOverScreen();
         CreateDiscardScreen();
         CreatePlayerSelectionScreen();
+        CreateDevCardSelectionScreen();
+        CreateResourceTypeSelectionScreen();
         CreateActionPanel();
         CreatePlayerPanelsArea();
         Debug.Log("Main UI creation completed");
@@ -46,6 +48,8 @@ internal sealed class UISetup
             gameOverScreen: canvasTransform.Find("Game Over Screen").gameObject,
             discardScreen: canvasTransform.Find("Discard Screen").gameObject,
             playerSelectionScreen: canvasTransform.Find("Player Selection Screen").gameObject,
+            devCardSelectionScreen: canvasTransform.Find("Dev Card Selection Screen").gameObject,
+            resourceTypeSelectionScreen: canvasTransform.Find("Resource Type Selection Screen").gameObject,
             actionPanel: actionPanelObj,
             playerPanelsContainer: playerPanelsContainerObj,
             playerPanelPrefab: playerPanelsContainerObj.transform.Find("Player Panel Prefab").gameObject,
@@ -54,6 +58,7 @@ internal sealed class UISetup
             buildSettlementButton: actionPanelTransform.Find("Build Settlement")?.GetComponent<Button>(),
             buildCityButton: actionPanelTransform.Find("Build City")?.GetComponent<Button>(),
             buyDevelopmentCardButton: actionPanelTransform.Find("Buy Dev Card")?.GetComponent<Button>(),
+            playDevelopmentCardButton: actionPanelTransform.Find("Play Dev Card")?.GetComponent<Button>(),
             tradeButton: actionPanelTransform.Find("Trade")?.GetComponent<Button>(),
             endTurnButton: actionPanelTransform.Find("End Turn")?.GetComponent<Button>()
         );
@@ -744,6 +749,145 @@ internal sealed class UISetup
         return button;
     }
 
+    private void CreateDevCardSelectionScreen()
+    {
+        GameObject screen = new GameObject("Dev Card Selection Screen");
+        screen.transform.SetParent(_mainCanvas.transform);
+
+        Image screenImage = screen.AddComponent<Image>();
+        screenImage.color = new Color(0f, 0f, 0f, 0.8f);
+
+        RectTransform screenRect = screen.GetComponent<RectTransform>();
+        screenRect.anchorMin = Vector2.zero;
+        screenRect.anchorMax = Vector2.one;
+        screenRect.anchoredPosition = Vector2.zero;
+        screenRect.sizeDelta = Vector2.zero;
+
+        GameObject contentContainer = new GameObject("Dev Card Selection Content");
+        contentContainer.transform.SetParent(screen.transform);
+        RectTransform contentRect = contentContainer.AddComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.2f, 0.2f);
+        contentRect.anchorMax = new Vector2(0.8f, 0.8f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = Vector2.zero;
+
+        Image contentImage = contentContainer.AddComponent<Image>();
+        contentImage.color = new Color(0.2f, 0.2f, 0.2f, 0.95f);
+
+        GameObject instructionText = CreateText("Instruction Text", contentContainer.transform, "Choose a card to play:");
+        TextMeshProUGUI instructionComp = instructionText.GetComponent<TextMeshProUGUI>();
+        instructionComp.fontSize = 24;
+        instructionComp.alignment = TextAlignmentOptions.Center;
+        RectTransform instructionRect = instructionText.GetComponent<RectTransform>();
+        instructionRect.anchorMin = new Vector2(0, 0.8f);
+        instructionRect.anchorMax = new Vector2(1, 0.95f);
+        instructionRect.anchoredPosition = Vector2.zero;
+        instructionRect.sizeDelta = Vector2.zero;
+
+        GameObject cardButtonsContainer = new GameObject("Card Buttons Container");
+        cardButtonsContainer.transform.SetParent(contentContainer.transform);
+        RectTransform buttonsRect = cardButtonsContainer.AddComponent<RectTransform>();
+        buttonsRect.anchorMin = new Vector2(0.05f, 0.1f);
+        buttonsRect.anchorMax = new Vector2(0.95f, 0.75f);
+        buttonsRect.anchoredPosition = Vector2.zero;
+        buttonsRect.sizeDelta = Vector2.zero;
+
+        VerticalLayoutGroup layout = cardButtonsContainer.AddComponent<VerticalLayoutGroup>();
+        layout.spacing = 8f;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = true;
+
+        screen.AddComponent<DevCardSelectionUIController>();
+        screen.SetActive(false);
+    }
+
+    private void CreateResourceTypeSelectionScreen()
+    {
+        GameObject screen = new GameObject("Resource Type Selection Screen");
+        screen.transform.SetParent(_mainCanvas.transform);
+
+        Image screenImage = screen.AddComponent<Image>();
+        screenImage.color = new Color(0f, 0f, 0f, 0.8f);
+
+        RectTransform screenRect = screen.GetComponent<RectTransform>();
+        screenRect.anchorMin = Vector2.zero;
+        screenRect.anchorMax = Vector2.one;
+        screenRect.anchoredPosition = Vector2.zero;
+        screenRect.sizeDelta = Vector2.zero;
+
+        GameObject contentContainer = new GameObject("Resource Selection Content");
+        contentContainer.transform.SetParent(screen.transform);
+        RectTransform contentRect = contentContainer.AddComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.2f, 0.25f);
+        contentRect.anchorMax = new Vector2(0.8f, 0.75f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = Vector2.zero;
+
+        Image contentImage = contentContainer.AddComponent<Image>();
+        contentImage.color = new Color(0.2f, 0.2f, 0.2f, 0.95f);
+
+        GameObject instructionText = CreateText("Instruction Text", contentContainer.transform, "Choose a resource:");
+        TextMeshProUGUI instructionComp = instructionText.GetComponent<TextMeshProUGUI>();
+        instructionComp.fontSize = 24;
+        instructionComp.alignment = TextAlignmentOptions.Center;
+        RectTransform instructionRect = instructionText.GetComponent<RectTransform>();
+        instructionRect.anchorMin = new Vector2(0, 0.75f);
+        instructionRect.anchorMax = new Vector2(1, 0.95f);
+        instructionRect.anchoredPosition = Vector2.zero;
+        instructionRect.sizeDelta = Vector2.zero;
+
+        GameObject resourceButtonsContainer = new GameObject("Resource Buttons Container");
+        resourceButtonsContainer.transform.SetParent(contentContainer.transform);
+        RectTransform buttonsRect = resourceButtonsContainer.AddComponent<RectTransform>();
+        buttonsRect.anchorMin = new Vector2(0.05f, 0.05f);
+        buttonsRect.anchorMax = new Vector2(0.95f, 0.7f);
+        buttonsRect.anchoredPosition = Vector2.zero;
+        buttonsRect.sizeDelta = Vector2.zero;
+
+        HorizontalLayoutGroup layout = resourceButtonsContainer.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 8f;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = true;
+
+        string[] resourceNames = { "Wood", "Clay", "Sheep", "Wheat", "Ore" };
+        Color[] resourceColors =
+        {
+            new Color(0.6f, 0.4f, 0.2f),
+            new Color(0.8f, 0.4f, 0.2f),
+            new Color(0.9f, 0.9f, 0.9f),
+            new Color(1f, 0.8f, 0.2f),
+            new Color(0.6f, 0.6f, 0.6f),
+        };
+
+        for (int i = 0; i < resourceNames.Length; i++)
+        {
+            GameObject btn = new GameObject($"{resourceNames[i]} Button");
+            btn.transform.SetParent(resourceButtonsContainer.transform);
+
+            Image btnImage = btn.AddComponent<Image>();
+            btnImage.color = resourceColors[i];
+
+            btn.AddComponent<Button>();
+
+            GameObject textObj = CreateText($"{resourceNames[i]} Text", btn.transform, resourceNames[i], 18);
+            TextMeshProUGUI textComp = textObj.GetComponent<TextMeshProUGUI>();
+            textComp.alignment = TextAlignmentOptions.Center;
+            textComp.color = Color.black;
+            RectTransform textRect = textObj.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.anchoredPosition = Vector2.zero;
+            textRect.sizeDelta = Vector2.zero;
+        }
+
+        screen.AddComponent<ResourceTypeSelectionUIController>();
+        screen.SetActive(false);
+    }
+
     private void CreateActionPanel()
     {
         GameObject actionPanel = CreatePanel("Action Panel", _mainCanvas.transform);
@@ -772,7 +916,7 @@ internal sealed class UISetup
 
     private void CreateActionButtons(GameObject parent)
     {
-        string[] buttonNames = { "Roll Dice", "Build Road", "Build Settlement", "Build City", "Buy Dev Card", "Trade", "End Turn" };
+        string[] buttonNames = { "Roll Dice", "Build Road", "Build Settlement", "Build City", "Buy Dev Card", "Play Dev Card", "Trade", "End Turn" };
         float buttonHeight = 50f;
         int fontSize = 30;
         float buttonWidth = 200f;

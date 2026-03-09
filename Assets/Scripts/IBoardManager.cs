@@ -83,6 +83,14 @@ public interface IBoardManager
     public bool CanUpgradeSettlement(IPlayer player);
     public bool CanRollDice(IPlayer player);
 
+    public bool CanBuyDevelopmentCard(IPlayer player);
+    public DevelopmentCardType BuyDevelopmentCard(IPlayer player);
+    public Dictionary<DevelopmentCardType, int> GetDevCardHandForPlayer(IPlayer player);
+    public bool CanPlayAnyDevCard(IPlayer player);
+    public Task PlayDevelopmentCard(IPlayer player, DevelopmentCardType cardType);
+    public Task<DevelopmentCardType> GetManualDevCardSelection(IPlayer player);
+    public Task<ResourceType> GetManualResourceTypeSelection(IPlayer player, string prompt);
+
     public IReadOnlyDictionary<HexCoord, HexTile> HexMap { get; }
     public IReadOnlyDictionary<VertexCoord, HexVertex> VertexMap { get; }
     public IReadOnlyDictionary<EdgeCoord, HexEdge> EdgeMap { get; }

@@ -7,6 +7,8 @@ public class TurnManager
     public IPlayer CurrentPlayer => currentTurn?.Player;
     public PlayerTurnType? CurrentTurnType => currentTurn?.TurnType;
     public bool HasRolledDice => currentTurn?.HasRolledDice ?? false;
+    public bool DevCardBoughtThisTurn => currentTurn?.DevCardBoughtThisTurn ?? false;
+    public bool DevCardPlayedThisTurn => currentTurn?.DevCardPlayedThisTurn ?? false;
     public bool IsActive => currentTurn != null;
 
     public bool BeginTurn(IPlayer player, PlayerTurnType turnType)
@@ -52,7 +54,43 @@ public class TurnManager
     public void SetHasRolledDice()
     {
         if (currentTurn != null)
+        {
             currentTurn.HasRolledDice = true;
+        }
+    }
+
+    public void SetDevCardBoughtThisTurn()
+    {
+        if (currentTurn != null)
+        {
+            currentTurn.DevCardBoughtThisTurn = true;
+        }
+    }
+
+    public void SetDevCardPlayedThisTurn()
+    {
+        if (currentTurn != null)
+        {
+            currentTurn.DevCardPlayedThisTurn = true;
+        }
+    }
+
+    public int FreeRoadsRemaining => currentTurn?.FreeRoadsRemaining ?? 0;
+
+    public void AddFreeRoads(int count)
+    {
+        if (currentTurn != null)
+        {
+            currentTurn.FreeRoadsRemaining += count;
+        }
+    }
+
+    public void UseOneRoad()
+    {
+        if (currentTurn != null && currentTurn.FreeRoadsRemaining > 0)
+        {
+            currentTurn.FreeRoadsRemaining--;
+        }
     }
 
     public void Clear() => currentTurn = null;

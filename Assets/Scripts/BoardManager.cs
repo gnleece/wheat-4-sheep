@@ -64,6 +64,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private BuildingManager buildingManager;
 
+    private DevelopmentCardManager devCardManager;
+
     private GridInitializer gridInitializer;
 
     private TaskCompletionSource<object> pendingSelection;
@@ -251,10 +253,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return success;
     }
 
-    // Call this before StartNewGame to set up player resource hands
+    // Call this before StartNewGame to set up player resource hands and dev card system
     public void InitializePlayerResourceHands(IEnumerable<IPlayer> players)
     {
         resourceManager.Initialize(players);
+        devCardManager = new DevelopmentCardManager(resourceManager, turnManager, random);  // TODO: Initialize this in a better place
+        devCardManager.Initialize(players);
     }
 
     // Returns a copy of the resource hand for the given player, or null if not found
@@ -263,7 +267,90 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return resourceManager.GetResourceHandForPlayer(player);
     }
 
-    public int GetPlayerScore(IPlayer player) => buildingManager?.GetPlayerScore(player) ?? 0;
+    public int GetPlayerScore(IPlayer player)
+    {
+        var score = buildingManager?.GetPlayerBuildingScore(player) ?? 0;
+        score += devCardManager?.GetVictoryPointBonus(player) ?? 0;
+        score += devCardManager?.GetLargestArmyBonus(player) ?? 0;
+        return score;
+    }
+
+    public bool CanBuyDevelopmentCard(IPlayer player) => devCardManager?.CanBuyDevelopmentCard(player) ?? false;
+
+    public DevelopmentCardType BuyDevelopmentCard(IPlayer player)
+    {
+        var card = devCardManager.BuyDevelopmentCard(player);
+        BoardStateChanged?.Invoke();
+        return card;
+    }
+
+    public Dictionary<DevelopmentCardType, int> GetDevCardHandForPlayer(IPlayer player)
+        => devCardManager?.GetPlayerHand(player) ?? new Dictionary<DevelopmentCardType, int>();
+
+    public bool CanPlayAnyDevCard(IPlayer player) => devCardManager?.CanPlayAnyDevCard(player) ?? false;
+
+    public async Task PlayDevelopmentCard(IPlayer player, DevelopmentCardType cardType)
+    {
+        if (devCardManager == null || !devCardManager.ConsumeDevCard(player, cardType))
+        {
+            return;
+        }
+
+        switch (cardType)
+        {
+            case DevelopmentCardType.Knight:
+                devCardManager.RecordKnightPlayed(player);
+                await HandleMoveRobber();
+                break;
+
+            case DevelopmentCardType.YearOfPlenty:
+                var resource1 = await GetManualResourceTypeSelection(player, "Choose first resource:");
+                devCardManager.GiveResourcesToPlayer(player, resource1, 1);
+                var resource2 = await GetManualResourceTypeSelection(player, "Choose second resource:");
+                devCardManager.GiveResourcesToPlayer(player, resource2, 1);
+                break;
+
+            case DevelopmentCardType.Monopoly:
+                var monopolyResource = await GetManualResourceTypeSelection(player, "Choose resource to monopolize:");
+                devCardManager.ExecuteMonopoly(player, monopolyResource);
+                break;
+
+            case DevelopmentCardType.RoadBuilding:
+                turnManager.AddFreeRoads(2);
+                Debug.Log($"Player {player.PlayerId} played Road Building: 2 free roads granted.");
+                break;
+
+            case DevelopmentCardType.VictoryPoint:
+                // VP cards are passive; ConsumeDevCard should not allow this to be reached
+                Debug.LogWarning("VP card should not be actively played.");
+                break;
+        }
+
+        BoardStateChanged?.Invoke();
+    }
+
+    public async Task<DevelopmentCardType> GetManualDevCardSelection(IPlayer player)
+    {
+        if (uiManager == null)
+        {
+            Debug.LogError("UIManager not set! Cannot show dev card selection UI.");
+            return default;
+        }
+
+        var hand = GetDevCardHandForPlayer(player);
+        return await uiManager.ShowDevCardSelectionUI(player, hand);
+    }
+
+    public async Task<ResourceType> GetManualResourceTypeSelection(IPlayer player, string prompt)
+    {
+        if (uiManager == null)
+        {
+            Debug.LogError("UIManager not set! Cannot show resource type selection UI.");
+            return ResourceType.None;
+        }
+
+        return await uiManager.ShowResourceTypeSelectionUI(player, prompt);
+    }
 
     public List<HexVertex> GetAvailableSettlementLocations(IPlayer player) => buildingManager.GetAvailableSettlementLocations(player);
 
@@ -365,7 +452,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         if (diceRoll == 7)
         {
             await HandleSevenRollDiscard();         // TODO: check rules to confirm which order these two steps should occur in
-            await HandleSevenRollMoveRobber();
+            await HandleMoveRobber();
         }
 
         turnManager.SetHasRolledDice();
@@ -379,7 +466,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         await resourceManager.HandleSevenRollDiscard();
     }
 
-    private async Task HandleSevenRollMoveRobber()
+    private async Task HandleMoveRobber()
     {
         await turnManager.CurrentPlayer.MoveRobber();
 
