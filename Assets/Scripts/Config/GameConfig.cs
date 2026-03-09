@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "Data", menuName = "ScriptableObjects/GameConfig", order = 1)]
 public class GameConfig : ScriptableObject
 {
+    [Header("Tile counts")]
     public int WoodTileCount;
     public int ClayTileCount;
     public int SheepTileCount;
@@ -13,7 +14,18 @@ public class GameConfig : ScriptableObject
     public int DesertTileCount;
     public int WaterTileCount;
 
+    [Header("Tile dice numbers")]
     public int[] TileDiceNumbers;
+
+    [Header("Victory points")]
+    public int VictoryPointsToWin = 10;
+
+    [Header("Starting resources")]
+    public int StartingWoodCardCount = 0;
+    public int StartingClayCardCount = 0;
+    public int StartingSheepCardCount = 0;
+    public int StartingWheatCardCount = 0;
+    public int StartingOreCardCount = 0;
 
     public int GetTileCount(TileType tileType)
     {

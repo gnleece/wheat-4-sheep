@@ -28,6 +28,9 @@ public class GameManager : MonoBehaviour, IGameManager
     [SerializeField]
     private BoardManager boardManager;
 
+    [SerializeField]
+    private GameConfig gameConfig;
+
     #endregion
 
     private StateMachine<GameState> gameStateMachine = null;
@@ -314,7 +317,7 @@ public class GameManager : MonoBehaviour, IGameManager
     {
         foreach (var player in playerList)
         {
-            if (boardManager.GetPlayerScore(player) >= 4)  // TODO: make this configurable
+            if (boardManager.GetPlayerScore(player) >= gameConfig.VictoryPointsToWin)
             {
                 return true;
             }

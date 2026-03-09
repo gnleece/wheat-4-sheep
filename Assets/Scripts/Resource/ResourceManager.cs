@@ -8,17 +8,22 @@ public class ResourceManager
     private readonly Dictionary<IPlayer, ResourceHand> playerResourceHands = new Dictionary<IPlayer, ResourceHand>();
     private readonly System.Random random = new System.Random();
 
-    public void Initialize(IEnumerable<IPlayer> players)
+    public void Initialize(IEnumerable<IPlayer> players, Dictionary<ResourceType, int> extraStartingResources = null)
     {
         playerResourceHands.Clear();
         foreach (var player in players)
         {
             playerResourceHands[player] = new ResourceHand();
-            playerResourceHands[player].Add(ResourceType.Wood, 2);
-            playerResourceHands[player].Add(ResourceType.Clay, 2);
-            playerResourceHands[player].Add(ResourceType.Sheep, 2);
-            playerResourceHands[player].Add(ResourceType.Wheat, 2);
-            playerResourceHands[player].Add(ResourceType.Ore, 2);
+            if (extraStartingResources != null)
+            {
+                foreach (var kvp in extraStartingResources)
+                {
+                    if (kvp.Value > 0)
+                    {
+                        playerResourceHands[player].Add(kvp.Key, kvp.Value);
+                    }
+                }
+            }
         }
     }
 

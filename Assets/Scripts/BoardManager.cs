@@ -259,7 +259,15 @@ public class BoardManager : MonoBehaviour, IBoardManager
     public void InitializePlayerResourceHands(IEnumerable<IPlayer> players)
     {
         var playerList = new System.Collections.Generic.List<IPlayer>(players);
-        resourceManager.Initialize(playerList);
+        var extraResources = new System.Collections.Generic.Dictionary<ResourceType, int>
+        {
+            { ResourceType.Wood,  gameConfig.StartingWoodCardCount  },
+            { ResourceType.Clay,  gameConfig.StartingClayCardCount  },
+            { ResourceType.Sheep, gameConfig.StartingSheepCardCount },
+            { ResourceType.Wheat, gameConfig.StartingWheatCardCount },
+            { ResourceType.Ore,   gameConfig.StartingOreCardCount   },
+        };
+        resourceManager.Initialize(playerList, extraResources);
         devCardManager = new DevelopmentCardManager(resourceManager, turnManager, random);  // TODO: Initialize this in a better place
         devCardManager.Initialize(playerList);
         tradeManager = new TradeManager(resourceManager, turnManager, new PortAwareBankTradeRateProvider(this));
