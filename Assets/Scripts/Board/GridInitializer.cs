@@ -302,11 +302,78 @@ public class GridInitializer
         Util.Shuffle(boundaryEdges);
 
         var portTypes = GetShuffledPortTypes();
-        var portCount = Mathf.Min(portTypes.Count, boundaryEdges.Count);
 
-        for (int i = 0; i < portCount; i++)
+        // Pick non-overlapping edges from the shuffled list.
+        // Two edges conflict if they share a buildable vertex or share the same water-side tile.
+        var usedVertices = new System.Collections.Generic.HashSet<HexVertex>();
+        var usedWaterTiles = new System.Collections.Generic.HashSet<HexTile>();
+        var selectedEdges = new List<HexEdge>();
+
+        foreach (var candidate in boundaryEdges)
         {
-            var edge = boundaryEdges[i];
+            if (selectedEdges.Count >= portTypes.Count)
+            {
+                break;
+            }
+
+            // Collect the water-side tile for this candidate.
+            HexTile candidateWaterTile = null;
+            foreach (var hex in candidate.NeighborHexTiles)
+            {
+                if (!hex.CanHaveBuildingsAndRoads)
+                {
+                    candidateWaterTile = hex;
+                    break;
+                }
+            }
+
+            if (candidateWaterTile != null && usedWaterTiles.Contains(candidateWaterTile))
+            {
+                continue;
+            }
+
+            // Check if any buildable vertex of this candidate is already claimed.
+            var vertexConflict = false;
+            if (candidate.NeighborVertices != null)
+            {
+                foreach (var vertex in candidate.NeighborVertices)
+                {
+                    if (vertex.CanHaveBuildings() && usedVertices.Contains(vertex))
+                    {
+                        vertexConflict = true;
+                        break;
+                    }
+                }
+            }
+
+            if (vertexConflict)
+            {
+                continue;
+            }
+
+            // No conflicts — claim this edge.
+            selectedEdges.Add(candidate);
+
+            if (candidateWaterTile != null)
+            {
+                usedWaterTiles.Add(candidateWaterTile);
+            }
+
+            if (candidate.NeighborVertices != null)
+            {
+                foreach (var vertex in candidate.NeighborVertices)
+                {
+                    if (vertex.CanHaveBuildings())
+                    {
+                        usedVertices.Add(vertex);
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < selectedEdges.Count; i++)
+        {
+            var edge = selectedEdges[i];
             var port = new Port(portTypes[i]);
 
             // Assign the port to both vertices of this boundary edge,
