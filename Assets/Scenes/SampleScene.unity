@@ -149,6 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boardManager: {fileID: 2069979699}
+  gameConfig: {fileID: 11400000, guid: c6361d11a4172dd409595e50670966ce, type: 2}
 --- !u!4 &609555072
 Transform:
   m_ObjectHideFlags: 0
