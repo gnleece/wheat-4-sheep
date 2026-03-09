@@ -278,7 +278,7 @@ HexVertex ── NeighborHexTiles ─────► HexTile[] (≤3 per vertex)
 ## What's Working Well
 
 - **Thin IPlayer contract** — `HumanPlayer` is 94 lines and contains no game logic. All decisions route through `IBoardManager`. This is the correct seam.
-- **IBoardManager interface** — cleanly decouples the player layer from game logic. Players never import `BuildingManager`, `ResourceManager`, etc.
+- **IBoardManager interface** — cleanly decouples the player layer from game logic. Players never import `BuildingManager`, `ResourceManager`, etc. Split into three sub-interfaces (`IBoardActions`, `IBoardQuery`, `IBoardSelection`) that make the mutating/read-only/async-selection distinction explicit; `IBoardManager` extends all three so existing consumers are unaffected.
 - **IUIManager interface** — `BoardManager` only calls the narrow `IUIManager` interface, not the full `UIManager`. This prevents circular coupling.
 - **UIReferences DTO** — separating UI construction (`UISetup`) from UI usage (`UIManager`) via a plain data object is a good pattern, even if both sides of it are currently coupled to procedural generation.
 - **Async/await throughout** — `Task`-based player actions and `TaskCompletionSource`-based selections compose well in a turn-based game. The game loop is easy to read.
@@ -288,14 +288,6 @@ HexVertex ── NeighborHexTiles ─────► HexTile[] (≤3 per vertex)
 ---
 
 ## Issues and Weaknesses
-
-### IBoardManager is too wide
-
-At 35 methods, `IBoardManager` is a kitchen-sink interface. Players use the full surface — build, query, trade, select, roll — all on one interface. When adding networking, you'll want to know which calls mutate shared state (need to be sent over the wire) versus which are pure queries (can be answered locally). Right now that distinction is invisible.
-
-**Split suggestion:** `IBoardActions` (mutating: Build*, Roll, Trade, MoveRobber), `IBoardQuery` (read-only: GetAvailable*, GetResourceHand*, GetPlayerScore), `IBoardSelection` (the async GetManualSelectionFor* methods).
-
----
 
 ### HexVertex/HexEdge contain game logic
 
@@ -335,18 +327,18 @@ At 35 methods, `IBoardManager` is a kitchen-sink interface. Players use the full
 
 **Remote players** can be implemented as a new `RemotePlayer : IPlayer` class. `PlayTurnAsync()` waits on a network signal instead of UI input. No other code knows the difference.
 
-**The harder part** is the `IBoardManager` side. Currently, all 35 methods on `IBoardManager` execute *immediately* and *locally*. For networking, mutating calls (Build*, Roll, MoveRobber, Trade) need to be:
+**The harder part** is the `IBoardManager` side. All methods on `IBoardManager` execute *immediately* and *locally*. For networking, mutating calls (Build*, Roll, MoveRobber, Trade) — now grouped under `IBoardActions` — need to be:
 1. Sent to a host/server as commands
 2. Validated authoritatively
 3. Applied to all clients
 
-The `Task`-returning methods (RollDice, PlayDevelopmentCard, GetManualSelectionFor*) already model async operations — they just happen to complete immediately. A `NetworkBoardManager` proxy could intercept mutating calls, serialize them as commands, and not complete the task until confirmation arrives from the network. The interface doesn't need to change; only the implementation does.
+The `Task`-returning methods (RollDice, PlayDevelopmentCard, GetManualSelectionFor*) already model async operations — they just happen to complete immediately. A `NetworkBoardManager` proxy could intercept `IBoardActions` calls, serialize them as commands, and not complete the task until confirmation arrives from the network. The interface doesn't need to change; only the implementation does.
 
 ### What blocks a clean implementation today
 
 | Blocker | Why | Fix |
 |---|---|---|
-| `IBoardManager` methods accept/return `HexVertex`, `HexEdge`, `HexTile` objects | Unity objects can't be sent over a network | Replace with serializable coordinate IDs (`VertexCoord`, `EdgeCoord`, `HexCoord`) in the interface |
+| `IBoardActions` methods accept/return `HexVertex`, `HexEdge`, `HexTile` objects | These objects can't be serialized over a network | Replace with serializable coordinate IDs (`VertexCoord`, `EdgeCoord`, `HexCoord`) in the interface |
 | `HexVertex.TryPlaceBuilding()` — game logic in data class | Authority unclear: does the client validate or the server? | Move all game logic into `BuildingManager`; data classes become pure state containers |
 | Unseeded `System.Random` spread across three classes | Deterministic simulation impossible | Consolidate into a single `IRandomProvider` injected into all managers |
 | `BoardStateChanged` is a bare `Action` with no payload | Clients can't reconstruct what happened without full re-query | Move to a typed event/command system (e.g. `GameEvent` union type) that can be replayed/serialized |
@@ -433,7 +425,10 @@ The migration is **low-risk** because `IUIManager` isolates the rest of the game
 | `PlayerTurn.cs` | Data: turn flags |
 | `StateMachine.cs` | Generic reusable state machine |
 | `IGameManager.cs` | GameManager interface (player list, game state, placement rules) |
-| `IBoardManager.cs` | BoardManager interface (full 35-method contract for players) |
+| `IBoardManager.cs` | Composite board interface — extends `IBoardActions`, `IBoardQuery`, `IBoardSelection` |
+| `IBoardActions.cs` | Mutating operations: turn lifecycle, Build*, Roll, Trade, MoveRobber, Steal, dev cards |
+| `IBoardQuery.cs` | Read-only queries: Can*, Get*, board maps, BoardStateChanged event |
+| `IBoardSelection.cs` | Async UI-driven selections: GetManualSelectionFor*, CompleteSelection |
 
 ### Sub-Managers
 | File | Purpose |
