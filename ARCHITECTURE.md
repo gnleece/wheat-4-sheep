@@ -329,7 +329,7 @@ The `Task`-returning methods (RollDice, PlayDevelopmentCard, GetManualSelectionF
 
 | Blocker | Why | Fix |
 |---|---|---|
-| `IBoardActions` methods accept/return `HexVertex`, `HexEdge`, `HexTile` objects | These objects can't be serialized over a network | Replace with serializable coordinate IDs (`VertexCoord`, `EdgeCoord`, `HexCoord`) in the interface |
+| ~~`IBoardActions` methods accept/return `HexVertex`, `HexEdge`, `HexTile` objects~~ | ~~These objects can't be serialized over a network~~ | *Resolved — `IBoardActions`, `IBoardQuery` (list methods), and `IBoardSelection` (selection methods) all use `VertexCoord`, `EdgeCoord`, `HexCoord`. `BoardManager` resolves coords to objects internally via the maps.* |
 | ~~Unseeded `System.Random` spread across three classes~~ | ~~Deterministic simulation impossible~~ | *Resolved — single `IRandomProvider` injected via `GameManager`* |
 | `BoardStateChanged` is a bare `Action` with no payload | Clients can't reconstruct what happened without full re-query | Move to a typed event/command system (e.g. `GameEvent` union type) that can be replayed/serialized |
 | `UIManager` directly references `BoardManager` (not interface) | Couples UI to local implementation | Already have `IBoardManager` — just use it consistently |

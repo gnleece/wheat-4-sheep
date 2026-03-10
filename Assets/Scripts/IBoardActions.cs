@@ -1,3 +1,4 @@
+using Grid;
 using System.Threading.Tasks;
 
 /// <summary>
@@ -11,10 +12,10 @@ public interface IBoardActions
 
     public Task<int?> RollDice(IPlayer player);
 
-    public bool BuildSettlement(IPlayer player, HexVertex hexVertex);
-    public bool BuildRoad(IPlayer player, HexEdge hexEdge);
-    public bool UpgradeSettlementToCity(IPlayer player, HexVertex hexVertex);
-    public bool MoveRobber(IPlayer player, HexTile hexTile);
+    public bool BuildSettlement(IPlayer player, VertexCoord vertexCoord);
+    public bool BuildRoad(IPlayer player, EdgeCoord edgeCoord);
+    public bool UpgradeSettlementToCity(IPlayer player, VertexCoord vertexCoord);
+    public bool MoveRobber(IPlayer player, HexCoord hexCoord);
 
     public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer);
 

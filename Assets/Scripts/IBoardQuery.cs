@@ -14,10 +14,10 @@ public interface IBoardQuery
     public Dictionary<ResourceType, int> GetResourceHandForPlayer(IPlayer player);
     public int GetPlayerScore(IPlayer player);
 
-    public List<HexVertex> GetAvailableSettlementLocations(IPlayer player);
-    public List<HexEdge> GetAvailableRoadLocations(IPlayer player);
-    public List<HexTile> GetAvailableRobberLocations(IPlayer player);
-    public List<IPlayer> GetPlayersWithBuildingsOnHexTile(HexTile hexTile);
+    public List<VertexCoord> GetAvailableSettlementLocations(IPlayer player);
+    public List<EdgeCoord> GetAvailableRoadLocations(IPlayer player);
+    public List<HexCoord> GetAvailableRobberLocations(IPlayer player);
+    public List<IPlayer> GetPlayersWithBuildingsOnHexTile(HexCoord hexCoord);
 
     public bool CanBuildSettlement(IPlayer player);
     public bool CanBuildRoad(IPlayer player);

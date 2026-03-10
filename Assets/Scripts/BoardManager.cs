@@ -1,6 +1,7 @@
 using Grid;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -100,76 +101,80 @@ public class BoardManager : MonoBehaviour, IBoardManager
         _boardStateMachine.GoToState(BoardMode.Idle);
     }
     
-    public async Task<HexVertex> GetManualSelectionForSettlementLocation(IPlayer player)
+    public async Task<VertexCoord> GetManualSelectionForSettlementLocation(IPlayer player)
     {
         if (_boardStateMachine.CurrentState != BoardMode.Idle)
         {
             Debug.LogError($"Cannot get manual selection for settlement location: board is not in idle mode, current state is {_boardStateMachine.CurrentState}");
-            return null;
+            return default;
         }
 
         var validLocations = GetAvailableSettlementLocations(player);
         if (validLocations == null || validLocations.Count == 0)
         {
             Debug.LogWarning($"No valid settlement locations available for player {player.PlayerId}");
-            return null;
+            return default;
         }
 
-        return await AwaitBoardSelection<HexVertex>(BoardMode.ChooseSettlementLocation);
+        var hexVertex = await AwaitBoardSelection<HexVertex>(BoardMode.ChooseSettlementLocation);
+        return hexVertex.VertexCoord;
     }
 
-    public async Task<HexEdge> GetManualSelectionForRoadLocation(IPlayer player)
+    public async Task<EdgeCoord> GetManualSelectionForRoadLocation(IPlayer player)
     {
         if (_boardStateMachine.CurrentState != BoardMode.Idle)
         {
             Debug.LogError($"Cannot get manual selection for road location: board is not in idle mode, current state is {_boardStateMachine.CurrentState}");
-            return null;
+            return default;
         }
 
         var validLocations = GetAvailableRoadLocations(player);
         if (validLocations == null || validLocations.Count == 0)
         {
             Debug.LogWarning($"No valid road locations available for player {player.PlayerId}");
-            return null;
+            return default;
         }
 
-        return await AwaitBoardSelection<HexEdge>(BoardMode.ChooseRoadLocation);
+        var hexEdge = await AwaitBoardSelection<HexEdge>(BoardMode.ChooseRoadLocation);
+        return hexEdge.EdgeCoord;
     }
 
-    public async Task<HexVertex> GetManualSelectionForSettlementUpgrade(IPlayer player)
+    public async Task<VertexCoord> GetManualSelectionForSettlementUpgrade(IPlayer player)
     {
         if (_boardStateMachine.CurrentState != BoardMode.Idle)
         {
             Debug.LogError($"Cannot get manual selection for settlement upgrade: board is not in idle mode, current state is {_boardStateMachine.CurrentState}");
-            return null;
+            return default;
         }
 
         var validLocations = GetAvailableSettlementsToUpgrade(player);
         if (validLocations == null || validLocations.Count == 0)
         {
             Debug.LogWarning($"No valid settlements available for upgrade for player {player.PlayerId}");
-            return null;
+            return default;
         }
 
-        return await AwaitBoardSelection<HexVertex>(BoardMode.ChooseSettlementToUpgrade);
+        var hexVertex = await AwaitBoardSelection<HexVertex>(BoardMode.ChooseSettlementToUpgrade);
+        return hexVertex.VertexCoord;
     }
 
-    public async Task<HexTile> GetManualSelectionForRobberLocation(IPlayer player)
+    public async Task<HexCoord> GetManualSelectionForRobberLocation(IPlayer player)
     {
         if (_boardStateMachine.CurrentState != BoardMode.Idle)
         {
             Debug.LogError($"Cannot get manual selection for robber location: board is not in idle mode, current state is {_boardStateMachine.CurrentState}");
-            return null;
+            return default;
         }
 
         var validLocations = GetAvailableRobberLocations(player);
         if (validLocations == null || validLocations.Count == 0)
         {
             Debug.LogWarning($"No valid robber locations available for player {player.PlayerId}");
-            return null;
+            return default;
         }
 
-        return await AwaitBoardSelection<HexTile>(BoardMode.ChooseRobberLocation);
+        var hexTile = await AwaitBoardSelection<HexTile>(BoardMode.ChooseRobberLocation);
+        return hexTile.HexCoordinates;
     }
 
     public void CompleteSelection(object selection)
@@ -218,29 +223,53 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
     }
 
-    public bool BuildSettlement(IPlayer player, HexVertex hexVertex)
+    public bool BuildSettlement(IPlayer player, VertexCoord vertexCoord)
     {
+        if (!_vertexMap.TryGetValue(vertexCoord, out var hexVertex))
+        {
+            Debug.LogError($"BuildSettlement: no vertex found at {vertexCoord}");
+            return false;
+        }
+
         var success = _buildingManager.BuildSettlement(player, hexVertex);
         BoardStateChanged?.Invoke();
         return success;
     }
 
-    public bool BuildRoad(IPlayer player, HexEdge hexEdge)
+    public bool BuildRoad(IPlayer player, EdgeCoord edgeCoord)
     {
+        if (!_edgeMap.TryGetValue(edgeCoord, out var hexEdge))
+        {
+            Debug.LogError($"BuildRoad: no edge found at {edgeCoord}");
+            return false;
+        }
+
         var success = _buildingManager.BuildRoad(player, hexEdge);
         BoardStateChanged?.Invoke();
         return success;
     }
 
-    public bool UpgradeSettlementToCity(IPlayer player, HexVertex hexVertex)
+    public bool UpgradeSettlementToCity(IPlayer player, VertexCoord vertexCoord)
     {
+        if (!_vertexMap.TryGetValue(vertexCoord, out var hexVertex))
+        {
+            Debug.LogError($"UpgradeSettlementToCity: no vertex found at {vertexCoord}");
+            return false;
+        }
+
         var success = _buildingManager.UpgradeSettlementToCity(player, hexVertex);
         BoardStateChanged?.Invoke();
         return success;
     }
 
-    public bool MoveRobber(IPlayer player, HexTile hexTile)
+    public bool MoveRobber(IPlayer player, HexCoord hexCoord)
     {
+        if (!_hexTileMap.TryGetValue(hexCoord, out var hexTile))
+        {
+            Debug.LogError($"MoveRobber: no tile found at {hexCoord}");
+            return false;
+        }
+
         var success = _buildingManager.MoveRobber(player, hexTile);
         BoardStateChanged?.Invoke();
         return success;
@@ -423,15 +452,26 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return false;
     }
 
-    public List<HexVertex> GetAvailableSettlementLocations(IPlayer player) => _buildingManager.GetAvailableSettlementLocations(player);
+    public List<VertexCoord> GetAvailableSettlementLocations(IPlayer player)
+        => _buildingManager.GetAvailableSettlementLocations(player).Select(v => v.VertexCoord).ToList();
 
-    public List<HexEdge> GetAvailableRoadLocations(IPlayer player) => _buildingManager.GetAvailableRoadLocations(player);
+    public List<EdgeCoord> GetAvailableRoadLocations(IPlayer player)
+        => _buildingManager.GetAvailableRoadLocations(player).Select(e => e.EdgeCoord).ToList();
 
     public List<HexVertex> GetAvailableSettlementsToUpgrade(IPlayer player) => _buildingManager.GetAvailableSettlementsToUpgrade(player);
 
-    public List<HexTile> GetAvailableRobberLocations(IPlayer player) => _buildingManager.GetAvailableRobberLocations(player);
+    public List<HexCoord> GetAvailableRobberLocations(IPlayer player)
+        => _buildingManager.GetAvailableRobberLocations(player).Select(t => t.HexCoordinates).ToList();
 
-    public List<IPlayer> GetPlayersWithBuildingsOnHexTile(HexTile hexTile) => _buildingManager.GetPlayersWithBuildingsOnHexTile(hexTile);
+    public List<IPlayer> GetPlayersWithBuildingsOnHexTile(HexCoord hexCoord)
+    {
+        if (!_hexTileMap.TryGetValue(hexCoord, out var hexTile))
+        {
+            return new List<IPlayer>();
+        }
+
+        return _buildingManager.GetPlayersWithBuildingsOnHexTile(hexTile);
+    }
 
     public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer) => _resourceManager.StealRandomResourceFromPlayer(fromPlayer, toPlayer);
 
@@ -621,12 +661,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
     {
         var playerColor = _turnManager.CurrentPlayer.PlayerColor;
 
-        var settlementLocationList = GetAvailableSettlementLocations(_turnManager.CurrentPlayer);
-        var settlementLocationsSet = new HashSet<HexVertex>(settlementLocationList);
+        var settlementLocations = new HashSet<VertexCoord>(
+            _buildingManager.GetAvailableSettlementLocations(_turnManager.CurrentPlayer)
+                .Select(v => v.VertexCoord));
 
         foreach (var hexVertex in _vertexMap.Values)
         {
-            var selectionEnabled = settlementLocationsSet.Contains(hexVertex);
+            var selectionEnabled = settlementLocations.Contains(hexVertex.VertexCoord);
             hexVertex.EnableSelection(selectionEnabled, playerColor);
         }
     }
@@ -643,12 +684,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
     {
         var playerColor = _turnManager.CurrentPlayer.PlayerColor;
 
-        var roadLocationList = GetAvailableRoadLocations(_turnManager.CurrentPlayer);
-        var roadLocationSet = new HashSet<HexEdge>(roadLocationList);
+        var roadLocations = new HashSet<EdgeCoord>(
+            _buildingManager.GetAvailableRoadLocations(_turnManager.CurrentPlayer)
+                .Select(e => e.EdgeCoord));
 
         foreach (var hexEdge in _edgeMap.Values)
         {
-            var selectionEnabled = roadLocationSet.Contains(hexEdge);
+            var selectionEnabled = roadLocations.Contains(hexEdge.EdgeCoord);
             hexEdge.EnableSelection(selectionEnabled, playerColor);
         }
     }
@@ -665,12 +707,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
     {
         var playerColor = _turnManager.CurrentPlayer.PlayerColor;
 
-        var settlementUpgradeList = GetAvailableSettlementsToUpgrade(_turnManager.CurrentPlayer);
-        var settlementUpgradeSet = new HashSet<HexVertex>(settlementUpgradeList);
+        var upgradeLocations = new HashSet<VertexCoord>(
+            _buildingManager.GetAvailableSettlementsToUpgrade(_turnManager.CurrentPlayer)
+                .Select(v => v.VertexCoord));
 
         foreach (var hexVertex in _vertexMap.Values)
         {
-            var selectionEnabled = settlementUpgradeSet.Contains(hexVertex);
+            var selectionEnabled = upgradeLocations.Contains(hexVertex.VertexCoord);
             hexVertex.EnableSelection(selectionEnabled, playerColor);
         }
     }
@@ -687,12 +730,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
     {
         var playerColor = _turnManager.CurrentPlayer.PlayerColor;
 
-        var robberLocationList = GetAvailableRobberLocations(_turnManager.CurrentPlayer);
-        var robberLocationSet = new HashSet<HexTile>(robberLocationList);
+        var robberLocations = new HashSet<HexCoord>(
+            _buildingManager.GetAvailableRobberLocations(_turnManager.CurrentPlayer)
+                .Select(t => t.HexCoordinates));
 
         foreach (var hexTile in _hexTileMap.Values)
         {
-            var selectionEnabled = robberLocationSet.Contains(hexTile);
+            var selectionEnabled = robberLocations.Contains(hexTile.HexCoordinates);
             hexTile.EnableSelection(selectionEnabled, playerColor);
         }
     }

@@ -1,3 +1,4 @@
+using Grid;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -8,10 +9,10 @@ using System.Threading.Tasks;
 /// </summary>
 public interface IBoardSelection
 {
-    public Task<HexVertex> GetManualSelectionForSettlementLocation(IPlayer player);
-    public Task<HexEdge> GetManualSelectionForRoadLocation(IPlayer player);
-    public Task<HexVertex> GetManualSelectionForSettlementUpgrade(IPlayer player);
-    public Task<HexTile> GetManualSelectionForRobberLocation(IPlayer player);
+    public Task<VertexCoord> GetManualSelectionForSettlementLocation(IPlayer player);
+    public Task<EdgeCoord> GetManualSelectionForRoadLocation(IPlayer player);
+    public Task<VertexCoord> GetManualSelectionForSettlementUpgrade(IPlayer player);
+    public Task<HexCoord> GetManualSelectionForRobberLocation(IPlayer player);
     public Task GetManualDiscardOnSevenRoll(IPlayer player, ResourceHand hand, int cardsToDiscard);
     public Task<IPlayer> GetManualSelectionForPlayerToStealFrom(IPlayer currentPlayer, List<IPlayer> availablePlayers);
     public Task<DevelopmentCardType> GetManualDevCardSelection(IPlayer player);
