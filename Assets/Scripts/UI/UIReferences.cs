@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -24,6 +25,7 @@ internal readonly struct UIReferences
     internal readonly Button PlayDevelopmentCardButton;
     internal readonly Button TradeButton;
     internal readonly Button EndTurnButton;
+    internal readonly TextMeshProUGUI StatusText;
 
     internal UIReferences(
         Canvas mainCanvas,
@@ -46,7 +48,8 @@ internal readonly struct UIReferences
         Button buyDevelopmentCardButton,
         Button playDevelopmentCardButton,
         Button tradeButton,
-        Button endTurnButton)
+        Button endTurnButton,
+        TextMeshProUGUI statusText)
     {
         MainCanvas = mainCanvas;
         SetupScreen = setupScreen;
@@ -69,5 +72,6 @@ internal readonly struct UIReferences
         PlayDevelopmentCardButton = playDevelopmentCardButton;
         TradeButton = tradeButton;
         EndTurnButton = endTurnButton;
+        StatusText = statusText;
     }
 }

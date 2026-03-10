@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour, IUIManager
 {
@@ -49,6 +49,7 @@ public class UIManager : MonoBehaviour, IUIManager
     private readonly List<PlayerUIPanel> _playerUIPanels = new();
     private IPlayer _currentPlayer;
     private IBoardManager _boardManagerInterface;
+    private TextMeshProUGUI _statusText;
 
     private void Awake()
     {
@@ -76,6 +77,7 @@ public class UIManager : MonoBehaviour, IUIManager
         _playDevelopmentCardButton = refs.PlayDevelopmentCardButton;
         _tradeButton = refs.TradeButton;
         _endTurnButton = refs.EndTurnButton;
+        _statusText = refs.StatusText;
 
         Initialize(_boardManager);
         _gameManager.RegisterUIManager(this);
@@ -192,6 +194,10 @@ public class UIManager : MonoBehaviour, IUIManager
 
         var diceRoll = await _boardManagerInterface.RollDice(_currentPlayer);
         Debug.Log($"Player {_currentPlayer.PlayerId} rolled: {diceRoll}");
+        if (_statusText != null && diceRoll.HasValue)
+        {
+            _statusText.text = $"Rolled: {diceRoll.Value}";
+        }
     }
 
     private async void OnBuildRoadClicked()
@@ -251,6 +257,10 @@ public class UIManager : MonoBehaviour, IUIManager
 
         var card = _boardManagerInterface.BuyDevelopmentCard(_currentPlayer);
         Debug.Log($"Player {_currentPlayer.PlayerId} bought a {card} card.");
+        if (_statusText != null)
+        {
+            _statusText.text = $"Bought: {card}";
+        }
     }
 
     private async void OnPlayDevelopmentCardClicked()
@@ -364,6 +374,11 @@ public class UIManager : MonoBehaviour, IUIManager
 
     public void SetActivePlayer(int playerId)
     {
+        if (_statusText != null)
+        {
+            _statusText.text = "";
+        }
+
         // Find and store the current player reference
         _currentPlayer = null;
         foreach (var panel in _playerUIPanels)

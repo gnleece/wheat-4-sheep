@@ -64,7 +64,8 @@ internal sealed class UISetup
             buyDevelopmentCardButton: actionPanelTransform.Find("Buy Dev Card")?.GetComponent<Button>(),
             playDevelopmentCardButton: actionPanelTransform.Find("Play Dev Card")?.GetComponent<Button>(),
             tradeButton: actionPanelTransform.Find("Trade")?.GetComponent<Button>(),
-            endTurnButton: actionPanelTransform.Find("End Turn")?.GetComponent<Button>()
+            endTurnButton: actionPanelTransform.Find("End Turn")?.GetComponent<Button>(),
+            statusText: actionPanelTransform.Find("Status Text")?.GetComponent<TextMeshProUGUI>()
         );
     }
 
@@ -1378,6 +1379,15 @@ internal sealed class UISetup
         ContentSizeFitter sizeFitter = actionPanel.AddComponent<ContentSizeFitter>();
         sizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
         sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        GameObject statusTextObj = CreateText("Status Text", actionPanel.transform, "", 24);
+        TextMeshProUGUI statusTextComponent = statusTextObj.GetComponent<TextMeshProUGUI>();
+        statusTextComponent.alignment = TextAlignmentOptions.Center;
+        LayoutElement statusTextLayout = statusTextObj.AddComponent<LayoutElement>();
+        statusTextLayout.preferredHeight = 40f;
+        statusTextLayout.preferredWidth = 200f;
+        statusTextLayout.flexibleWidth = 0;
+        statusTextLayout.flexibleHeight = 0;
 
         CreateActionButtons(actionPanel);
     }
