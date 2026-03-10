@@ -10,10 +10,10 @@ public class PlayerSelectionUIController : MonoBehaviour
     public Button[] playerButtons;
     public TextMeshProUGUI instructionText;
     
-    private IPlayer currentPlayer;
-    private List<IPlayer> availablePlayers;
-    private TaskCompletionSource<IPlayer> selectionCompletionSource;
-    private bool buttonsInitialized = false;
+    private IPlayer _currentPlayer;
+    private List<IPlayer> _availablePlayers;
+    private TaskCompletionSource<IPlayer> _selectionCompletionSource;
+    private bool _buttonsInitialized;
     
     private void Start()
     {
@@ -47,27 +47,27 @@ public class PlayerSelectionUIController : MonoBehaviour
             }
         }
         
-        buttonsInitialized = false;
+        _buttonsInitialized = false;
     }
     
     public void Initialize(IPlayer currentPlayer, List<IPlayer> availablePlayers)
     {
-        this.currentPlayer = currentPlayer;
-        this.availablePlayers = availablePlayers;
+        this._currentPlayer = currentPlayer;
+        this._availablePlayers = availablePlayers;
         
         UpdateUI();
     }
     
     public async Task<IPlayer> WaitForPlayerSelection()
     {
-        selectionCompletionSource = new TaskCompletionSource<IPlayer>();
-        return await selectionCompletionSource.Task;
+        _selectionCompletionSource = new TaskCompletionSource<IPlayer>();
+        return await _selectionCompletionSource.Task;
     }
     
     private void InitializePlayerButtons()
     {
         // Only initialize once
-        if (buttonsInitialized && playerButtons != null)
+        if (_buttonsInitialized && playerButtons != null)
             return;
             
         // Find player buttons if not assigned
@@ -102,24 +102,24 @@ public class PlayerSelectionUIController : MonoBehaviour
             }
         }
         
-        buttonsInitialized = true;
+        _buttonsInitialized = true;
     }
     
     private void OnPlayerButtonClicked(int playerIndex)
     {
         Debug.Log($"PlayerSelectionUIController: Player button {playerIndex} clicked");
         
-        if (availablePlayers == null || playerIndex >= availablePlayers.Count)
+        if (_availablePlayers == null || playerIndex >= _availablePlayers.Count)
         {
             Debug.LogError($"Invalid player index: {playerIndex}");
             return;
         }
         
-        IPlayer selectedPlayer = availablePlayers[playerIndex];
-        Debug.Log($"Player {currentPlayer.PlayerId} selected player {selectedPlayer.PlayerId}");
+        IPlayer selectedPlayer = _availablePlayers[playerIndex];
+        Debug.Log($"Player {_currentPlayer.PlayerId} selected player {selectedPlayer.PlayerId}");
         
         // Complete the selection
-        selectionCompletionSource?.SetResult(selectedPlayer);
+        _selectionCompletionSource?.SetResult(selectedPlayer);
     }
     
     private void UpdateUI()
@@ -127,17 +127,17 @@ public class PlayerSelectionUIController : MonoBehaviour
         // Update instruction text
         if (instructionText != null)
         {
-            instructionText.text = $"Player {currentPlayer.PlayerId + 1}, select a player to steal from:";
+            instructionText.text = $"Player {_currentPlayer.PlayerId + 1}, select a player to steal from:";
         }
         
         // Update player buttons
-        if (playerButtons != null && availablePlayers != null)
+        if (playerButtons != null && _availablePlayers != null)
         {
             for (int i = 0; i < playerButtons.Length; i++)
             {
                 if (playerButtons[i] != null)
                 {
-                    bool shouldShow = i < availablePlayers.Count;
+                    bool shouldShow = i < _availablePlayers.Count;
                     playerButtons[i].gameObject.SetActive(shouldShow);
                     
                     if (shouldShow)
@@ -146,7 +146,7 @@ public class PlayerSelectionUIController : MonoBehaviour
                         var buttonText = playerButtons[i].GetComponentInChildren<TextMeshProUGUI>();
                         if (buttonText != null)
                         {
-                            buttonText.text = $"Player {availablePlayers[i].PlayerId + 1}";
+                            buttonText.text = $"Player {_availablePlayers[i].PlayerId + 1}";
                         }
                         
                         // Enable/disable button

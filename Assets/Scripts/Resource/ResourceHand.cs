@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ResourceHand
 {
-    private Dictionary<ResourceType, int> _resourceCounts = new Dictionary<ResourceType, int>();
+    private readonly Dictionary<ResourceType, int> _resourceCounts = new();
 
     public ResourceHand()
     {
@@ -24,17 +24,23 @@ public class ResourceHand
 
     public void Add(ResourceType type, int amount)
     {
-        if (type == ResourceType.None) return;
-        if (!_resourceCounts.ContainsKey(type))
-            _resourceCounts[type] = 0;
+        if (type == ResourceType.None)
+        {
+            return;
+        }
+        
+        _resourceCounts.TryAdd(type, 0);
         _resourceCounts[type] += amount;
     }
 
     public void Remove(ResourceType type, int amount)
     {
-        if (type == ResourceType.None) return;
-        if (!_resourceCounts.ContainsKey(type))
-            _resourceCounts[type] = 0;
+        if (type == ResourceType.None)
+        {
+            return;
+        }
+        
+        _resourceCounts.TryAdd(type, 0);
         _resourceCounts[type] = Mathf.Max(0, _resourceCounts[type] - amount);
     }
 

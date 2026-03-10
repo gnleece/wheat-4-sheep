@@ -6,23 +6,23 @@ using TMPro;
 
 public class DevCardSelectionUIController : MonoBehaviour
 {
-    private IPlayer currentPlayer;
-    private Dictionary<DevelopmentCardType, int> availableCards;
-    private TaskCompletionSource<DevelopmentCardType> selectionCompletionSource;
+    private IPlayer _currentPlayer;
+    private Dictionary<DevelopmentCardType, int> _availableCards;
+    private TaskCompletionSource<DevelopmentCardType> _selectionCompletionSource;
 
-    private List<Button> cardButtons = new List<Button>();
+    private readonly List<Button> _cardButtons = new();
 
     public void Initialize(IPlayer player, Dictionary<DevelopmentCardType, int> hand)
     {
-        currentPlayer = player;
+        _currentPlayer = player;
 
         // Only show cards that can be actively played (exclude VP cards, which are passive)
-        availableCards = new Dictionary<DevelopmentCardType, int>();
+        _availableCards = new Dictionary<DevelopmentCardType, int>();
         foreach (var kvp in hand)
         {
             if (kvp.Key != DevelopmentCardType.VictoryPoint && kvp.Value > 0)
             {
-                availableCards[kvp.Key] = kvp.Value;
+                _availableCards[kvp.Key] = kvp.Value;
             }
         }
 
@@ -31,8 +31,8 @@ public class DevCardSelectionUIController : MonoBehaviour
 
     public async Task<DevelopmentCardType> WaitForCardSelection()
     {
-        selectionCompletionSource = new TaskCompletionSource<DevelopmentCardType>();
-        return await selectionCompletionSource.Task;
+        _selectionCompletionSource = new TaskCompletionSource<DevelopmentCardType>();
+        return await _selectionCompletionSource.Task;
     }
 
     private void UpdateUI()
@@ -41,21 +41,21 @@ public class DevCardSelectionUIController : MonoBehaviour
         var instructionText = transform.Find("Dev Card Selection Content/Instruction Text")?.GetComponent<TextMeshProUGUI>();
         if (instructionText != null)
         {
-            instructionText.text = $"Player {currentPlayer.PlayerId + 1}, choose a card to play:";
+            instructionText.text = $"Player {_currentPlayer.PlayerId + 1}, choose a card to play:";
         }
 
         // Clear existing card buttons
-        foreach (var btn in cardButtons)
+        foreach (var btn in _cardButtons)
         {
             if (btn != null) Destroy(btn.gameObject);
         }
-        cardButtons.Clear();
+        _cardButtons.Clear();
 
         // Create a button for each available card type
         var buttonContainer = transform.Find("Dev Card Selection Content/Card Buttons Container");
         if (buttonContainer == null) return;
 
-        foreach (var kvp in availableCards)
+        foreach (var kvp in _availableCards)
         {
             var cardType = kvp.Key;
             var count = kvp.Value;
@@ -87,19 +87,19 @@ public class DevCardSelectionUIController : MonoBehaviour
             text.alignment = TextAlignmentOptions.Center;
             text.color = Color.white;
 
-            cardButtons.Add(button);
+            _cardButtons.Add(button);
         }
     }
 
     private void OnCardButtonClicked(DevelopmentCardType cardType)
     {
         Debug.Log($"DevCardSelectionUIController: {cardType} selected");
-        selectionCompletionSource?.TrySetResult(cardType);
+        _selectionCompletionSource?.TrySetResult(cardType);
     }
 
     private void OnDestroy()
     {
-        foreach (var btn in cardButtons)
+        foreach (var btn in _cardButtons)
         {
             if (btn != null) btn.onClick.RemoveAllListeners();
         }

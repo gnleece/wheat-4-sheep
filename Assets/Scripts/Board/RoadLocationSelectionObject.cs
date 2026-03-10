@@ -6,21 +6,22 @@ using UnityEngine;
 
 public class RoadLocationSelectionObject : MonoBehaviour, IInteractable
 {
-    private new Renderer renderer;
-    private HexEdge hexEdge;
-    private Color hoverColor = Color.yellow;
+    private HexEdge _hexEdge;
+    private Renderer _renderer;
+    
+    private Color _hoverColor = Color.yellow;
 
     public event Action OnRoadLocationSelected;
 
     public void Initialize(HexEdge hexEdge)
     {
-        this.hexEdge = hexEdge;
-        renderer = gameObject.GetComponent<Renderer>();
+        _hexEdge = hexEdge;
+        _renderer = gameObject.GetComponent<Renderer>();
     }
 
     public void SetHoverColor(Color color)
     {
-        hoverColor = color;
+        _hoverColor = color;
     }
 
     public void Select()
@@ -30,27 +31,27 @@ public class RoadLocationSelectionObject : MonoBehaviour, IInteractable
 
     public void HoverOn()
     {
-        if (hexEdge.IsOccupied)
+        if (_hexEdge.IsOccupied)
         {
             return;
         }
 
-        if (renderer != null)
+        if (_renderer != null)
         {
-            renderer.material.color = hoverColor;
+            _renderer.material.color = _hoverColor;
         }
     }
 
     public void HoverOff()
     {
-        if (hexEdge.IsOccupied)
+        if (_hexEdge.IsOccupied)
         {
             return;
         }
 
-        if (renderer != null)
+        if (_renderer != null)
         {
-            renderer.material.color = Color.white;
+            _renderer.material.color = Color.white;
         }
     }
 }

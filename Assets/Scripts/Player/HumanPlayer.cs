@@ -7,31 +7,32 @@ using static GameManager;
 
 public class HumanPlayer : IPlayer
 {
-    public int PlayerId => playerId;
+    public int PlayerId => _playerId;
 
-    public Color PlayerColor => PlayerColorManager.GetPlayerColor(playerId);
+    public Color PlayerColor => PlayerColorManager.GetPlayerColor(_playerId);
 
-    private int playerId;
-    private IBoardManager boardManager;
-
+    private IBoardManager _boardManager;
+    
+    private int _playerId;
+    
     public void Initialize(int playerId, IBoardManager boardManager)
     {
-        this.playerId = playerId;
-        this.boardManager = boardManager;
+        _playerId = playerId;
+        _boardManager = boardManager;
     }
 
     public async Task PlaceFirstSettlementAndRoadAsync()
     {
-        boardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
+        _boardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
         await PlaceInitialSettlementAndRoad();
-        boardManager.EndPlayerTurn(this);
+        _boardManager.EndPlayerTurn(this);
     }
 
     public async Task PlaceSecondSettlementAndRoadAsync()
     {
-        boardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
+        _boardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
         await PlaceInitialSettlementAndRoad();
-        boardManager.EndPlayerTurn(this);
+        _boardManager.EndPlayerTurn(this);
     }
 
     private async Task PlaceInitialSettlementAndRoad()
@@ -39,23 +40,23 @@ public class HumanPlayer : IPlayer
         var settlementPlaced = false;
         while (!settlementPlaced)
         {
-            var chosenSettlmentLocation = await boardManager.GetManualSelectionForSettlementLocation(this);
-            settlementPlaced = boardManager.BuildSettlement(this, chosenSettlmentLocation);
+            var chosenSettlmentLocation = await _boardManager.GetManualSelectionForSettlementLocation(this);
+            settlementPlaced = _boardManager.BuildSettlement(this, chosenSettlmentLocation);
         }
 
         var roadPlaced = false;
         while (!roadPlaced)
         {
-            var chosenRoadLocation = await boardManager.GetManualSelectionForRoadLocation(this);
-            roadPlaced = boardManager.BuildRoad(this, chosenRoadLocation);
+            var chosenRoadLocation = await _boardManager.GetManualSelectionForRoadLocation(this);
+            roadPlaced = _boardManager.BuildRoad(this, chosenRoadLocation);
         }
     }
 
     public async Task PlayTurnAsync()
     {
-        boardManager.BeginPlayerTurn(this, PlayerTurnType.RegularTurn);
+        _boardManager.BeginPlayerTurn(this, PlayerTurnType.RegularTurn);
 
-        while (boardManager.IsPlayerTurn(this))
+        while (_boardManager.IsPlayerTurn(this))
         {
             await Task.Yield();
         }
@@ -63,32 +64,32 @@ public class HumanPlayer : IPlayer
 
     public async Task DiscardOnSevenRoll(ResourceHand hand, int cardsToDiscard)
     {
-        Debug.Log($"Human Player {playerId} must discard {cardsToDiscard} cards...");
+        Debug.Log($"Human Player {_playerId} must discard {cardsToDiscard} cards...");
         
         // Use BoardManager to show discard UI
-        await boardManager.GetManualDiscardOnSevenRoll(this, hand, cardsToDiscard);
+        await _boardManager.GetManualDiscardOnSevenRoll(this, hand, cardsToDiscard);
     }
 
     public async Task MoveRobber()
     {
-        var chosenRobberLocation = await boardManager.GetManualSelectionForRobberLocation(this);
-        boardManager.MoveRobber(this, chosenRobberLocation);
+        var chosenRobberLocation = await _boardManager.GetManualSelectionForRobberLocation(this);
+        _boardManager.MoveRobber(this, chosenRobberLocation);
     }
 
     public async Task<IPlayer> ChoosePlayerToStealFrom(List<IPlayer> availablePlayers)
     {
         if (availablePlayers == null || availablePlayers.Count == 0)
         {
-            Debug.Log($"Human Player {playerId} has no players to steal from");
+            Debug.Log($"Human Player {_playerId} has no players to steal from");
             return null;
         }
 
         // Use BoardManager to show player selection UI
-        return await boardManager.GetManualSelectionForPlayerToStealFrom(this, availablePlayers);
+        return await _boardManager.GetManualSelectionForPlayerToStealFrom(this, availablePlayers);
     }
 
     public async Task<bool> ConsiderTradeOffer(TradeOffer offer)
     {
-        return await boardManager.GetManualTradeOfferResponse(this, offer);
+        return await _boardManager.GetManualTradeOfferResponse(this, offer);
     }
 }

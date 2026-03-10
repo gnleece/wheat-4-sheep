@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class DiscardUIController : MonoBehaviour
 {
@@ -12,13 +13,13 @@ public class DiscardUIController : MonoBehaviour
     public Button[] incrementButtons;
     public Button[] decrementButtons;
     
-    private IPlayer currentPlayer;
-    private ResourceHand playerHand;
-    private int cardsToDiscard;
-    private int cardsDiscarded = 0;
-    private Dictionary<ResourceType, int> discardCounts = new Dictionary<ResourceType, int>();
-    private TaskCompletionSource<bool> discardCompletionSource;
-    private bool buttonsInitialized = false;
+    private IPlayer _currentPlayer;
+    private ResourceHand _playerHand;
+    private int _cardsToDiscard;
+    private int _cardsDiscarded;
+    private readonly Dictionary<ResourceType, int> _discardCounts = new();
+    private TaskCompletionSource<bool> _discardCompletionSource;
+    private bool _buttonsInitialized;
     
     private void Start()
     {
@@ -82,23 +83,23 @@ public class DiscardUIController : MonoBehaviour
             confirmDiscardButton.onClick.RemoveAllListeners();
         }
         
-        buttonsInitialized = false;
+        _buttonsInitialized = false;
     }
     
     public void Initialize(IPlayer player, ResourceHand hand, int cardsToDiscard)
     {
-        this.currentPlayer = player;
-        this.playerHand = hand;
-        this.cardsToDiscard = cardsToDiscard;
-        this.cardsDiscarded = 0;
-        this.discardCounts.Clear();
+        _currentPlayer = player;
+        _playerHand = hand;
+        _cardsToDiscard = cardsToDiscard;
+        _cardsDiscarded = 0;
+        _discardCounts.Clear();
         
         // Initialize discard counts
-        foreach (ResourceType type in System.Enum.GetValues(typeof(ResourceType)))
+        foreach (ResourceType type in Enum.GetValues(typeof(ResourceType)))
         {
             if (type != ResourceType.None)
             {
-                discardCounts[type] = 0;
+                _discardCounts[type] = 0;
             }
         }
         
@@ -107,14 +108,14 @@ public class DiscardUIController : MonoBehaviour
     
     public async Task WaitForDiscardCompletion()
     {
-        discardCompletionSource = new TaskCompletionSource<bool>();
-        await discardCompletionSource.Task;
+        _discardCompletionSource = new TaskCompletionSource<bool>();
+        await _discardCompletionSource.Task;
     }
     
     private void InitializeResourceButtons()
     {
         // Only initialize once
-        if (buttonsInitialized && incrementButtons != null && decrementButtons != null)
+        if (_buttonsInitialized && incrementButtons != null && decrementButtons != null)
         {
             return;
         }
@@ -199,7 +200,7 @@ public class DiscardUIController : MonoBehaviour
             }
         }
         
-        buttonsInitialized = true;
+        _buttonsInitialized = true;
         Debug.Log($"DiscardUIController: Initialized {incrementButtons.Count(b => b != null)} increment and {decrementButtons.Count(b => b != null)} decrement buttons out of {resourceNames.Length} resources");
     }
     
@@ -207,15 +208,15 @@ public class DiscardUIController : MonoBehaviour
     {
         Debug.Log($"DiscardUIController: Increment button clicked for {resourceType}");
         
-        if (cardsDiscarded >= cardsToDiscard)
+        if (_cardsDiscarded >= _cardsToDiscard)
         {
             Debug.Log("Already discarded enough cards!");
             return;
         }
         
         // Check if player has this resource
-        int currentCount = playerHand.GetCount(resourceType);
-        int alreadyDiscarded = discardCounts[resourceType];
+        int currentCount = _playerHand.GetCount(resourceType);
+        int alreadyDiscarded = _discardCounts[resourceType];
         
         if (alreadyDiscarded >= currentCount)
         {
@@ -224,10 +225,10 @@ public class DiscardUIController : MonoBehaviour
         }
         
         // Add to discard count
-        discardCounts[resourceType]++;
-        cardsDiscarded++;
+        _discardCounts[resourceType]++;
+        _cardsDiscarded++;
         
-        Debug.Log($"Added 1 {resourceType} to discard ({cardsDiscarded}/{cardsToDiscard})");
+        Debug.Log($"Added 1 {resourceType} to discard ({_cardsDiscarded}/{_cardsToDiscard})");
         
         UpdateUI();
     }
@@ -236,7 +237,7 @@ public class DiscardUIController : MonoBehaviour
     {
         Debug.Log($"DiscardUIController: Decrement button clicked for {resourceType}");
         
-        int alreadyDiscarded = discardCounts[resourceType];
+        int alreadyDiscarded = _discardCounts[resourceType];
         
         if (alreadyDiscarded <= 0)
         {
@@ -245,10 +246,10 @@ public class DiscardUIController : MonoBehaviour
         }
         
         // Remove from discard count
-        discardCounts[resourceType]--;
-        cardsDiscarded--;
+        _discardCounts[resourceType]--;
+        _cardsDiscarded--;
         
-        Debug.Log($"Removed 1 {resourceType} from discard ({cardsDiscarded}/{cardsToDiscard})");
+        Debug.Log($"Removed 1 {resourceType} from discard ({_cardsDiscarded}/{_cardsToDiscard})");
         
         UpdateUI();
     }
@@ -257,26 +258,26 @@ public class DiscardUIController : MonoBehaviour
     {
         Debug.Log("DiscardUIController: Confirm discard button clicked!");
         
-        if (cardsDiscarded != cardsToDiscard)
+        if (_cardsDiscarded != _cardsToDiscard)
         {
-            Debug.Log($"Must discard exactly {cardsToDiscard} cards! Currently discarded: {cardsDiscarded}");
+            Debug.Log($"Must discard exactly {_cardsToDiscard} cards! Currently discarded: {_cardsDiscarded}");
             return;
         }
         
         // Apply the discard to the player's hand
-        foreach (var kvp in discardCounts)
+        foreach (var kvp in _discardCounts)
         {
             if (kvp.Value > 0)
             {
-                playerHand.Remove(kvp.Key, kvp.Value);
+                _playerHand.Remove(kvp.Key, kvp.Value);
                 Debug.Log($"Removed {kvp.Value} {kvp.Key} from player's hand");
             }
         }
         
-        Debug.Log($"Player {currentPlayer.PlayerId} completed discarding {cardsDiscarded} cards");
+        Debug.Log($"Player {_currentPlayer.PlayerId} completed discarding {_cardsDiscarded} cards");
         
         // Complete the discard
-        discardCompletionSource?.SetResult(true);
+        _discardCompletionSource?.SetResult(true);
     }
     
     private void UpdateUI()
@@ -300,8 +301,8 @@ public class DiscardUIController : MonoBehaviour
                 TextMeshProUGUI countText = countTransform.GetComponent<TextMeshProUGUI>();
                 if (countText != null)
                 {
-                    int currentCount = playerHand.GetCount(resourceTypes[i]);
-                    int alreadyDiscarded = discardCounts[resourceTypes[i]];
+                    int currentCount = _playerHand.GetCount(resourceTypes[i]);
+                    int alreadyDiscarded = _discardCounts[resourceTypes[i]];
                     countText.text = (currentCount - alreadyDiscarded).ToString();
                 }
             }
@@ -313,7 +314,7 @@ public class DiscardUIController : MonoBehaviour
                 TextMeshProUGUI discardText = discardTransform.GetComponent<TextMeshProUGUI>();
                 if (discardText != null)
                 {
-                    discardText.text = discardCounts[resourceTypes[i]].ToString();
+                    discardText.text = _discardCounts[resourceTypes[i]].ToString();
                 }
             }
         }
@@ -325,14 +326,14 @@ public class DiscardUIController : MonoBehaviour
             TextMeshProUGUI progressText = progressTransform.GetComponent<TextMeshProUGUI>();
             if (progressText != null)
             {
-                progressText.text = $"Discarded: {cardsDiscarded}/{cardsToDiscard}";
+                progressText.text = $"Discarded: {_cardsDiscarded}/{_cardsToDiscard}";
             }
         }
         
         // Update confirm button state
         if (confirmDiscardButton != null)
         {
-            confirmDiscardButton.interactable = (cardsDiscarded == cardsToDiscard);
+            confirmDiscardButton.interactable = (_cardsDiscarded == _cardsToDiscard);
         }
         
         // Update increment button states
@@ -342,9 +343,9 @@ public class DiscardUIController : MonoBehaviour
             {
                 if (incrementButtons[i] != null)
                 {
-                    int currentCount = playerHand.GetCount(resourceTypes[i]);
-                    int alreadyDiscarded = discardCounts[resourceTypes[i]];
-                    incrementButtons[i].interactable = (cardsDiscarded < cardsToDiscard && alreadyDiscarded < currentCount);
+                    int currentCount = _playerHand.GetCount(resourceTypes[i]);
+                    int alreadyDiscarded = _discardCounts[resourceTypes[i]];
+                    incrementButtons[i].interactable = (_cardsDiscarded < _cardsToDiscard && alreadyDiscarded < currentCount);
                 }
             }
         }
@@ -356,7 +357,7 @@ public class DiscardUIController : MonoBehaviour
             {
                 if (decrementButtons[i] != null)
                 {
-                    int alreadyDiscarded = discardCounts[resourceTypes[i]];
+                    int alreadyDiscarded = _discardCounts[resourceTypes[i]];
                     decrementButtons[i].interactable = (alreadyDiscarded > 0);
                 }
             }

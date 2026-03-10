@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class TurnManager
 {
-    private PlayerTurn _currentTurn = null;
+    private PlayerTurn _currentTurn;
 
     public IPlayer CurrentPlayer => _currentTurn?.Player;
     public PlayerTurnType? CurrentTurnType => _currentTurn?.TurnType;

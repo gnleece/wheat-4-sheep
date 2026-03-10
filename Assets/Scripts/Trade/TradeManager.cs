@@ -6,7 +6,8 @@ public class TradeManager
     private readonly ResourceManager _resourceManager;
     private readonly TurnManager _turnManager;
     private readonly IBankTradeRateProvider _bankRateProvider;
-    private List<IPlayer> _allPlayers = new List<IPlayer>();
+    
+    private List<IPlayer> _allPlayers = new();
 
     public TradeManager(ResourceManager resourceManager, TurnManager turnManager, IBankTradeRateProvider bankRateProvider = null)
     {

@@ -18,8 +18,8 @@ public class HexVertexObject : MonoBehaviour
 
     #region Private fields
 
-    private IBoardManager boardManager;
-    private HexVertex hexVertex;
+    private IBoardManager _boardManager;
+    private HexVertex _hexVertex;
 
     #endregion
 
@@ -27,8 +27,9 @@ public class HexVertexObject : MonoBehaviour
 
     public void Initialize(IBoardManager boardManager, HexVertex hexVertex)
     {
-        this.boardManager = boardManager;
-        this.hexVertex = hexVertex;
+        _boardManager = boardManager;
+        _hexVertex = hexVertex;
+        
         if (selectionObject != null)
         {
             selectionObject.Initialize(hexVertex);
@@ -42,18 +43,18 @@ public class HexVertexObject : MonoBehaviour
     {
         if (settlementObject != null)
         {
-            settlementObject.Refresh(hexVertex.Building);
+            settlementObject.Refresh(_hexVertex.Building);
         }
 
         if (cityObject != null)
         {
-            cityObject.Refresh(hexVertex.Building);
+            cityObject.Refresh(_hexVertex.Building);
         }
     }
 
     private void HandleBuildingLocationSelected()
     {
-        boardManager.CompleteSelection(hexVertex);
+        _boardManager.CompleteSelection(_hexVertex);
     }
 
     public void EnableSelection(bool enable, Color? hoverColor = null)

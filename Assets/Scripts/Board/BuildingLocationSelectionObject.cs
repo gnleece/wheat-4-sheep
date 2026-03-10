@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 {
-    private new Renderer renderer;
+    private Renderer _renderer;
     private HexVertex hexVertex;
     private Color hoverColor = Color.yellow;
 
@@ -15,7 +15,7 @@ public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
     public void Initialize(HexVertex hexVertex)
     {
         this.hexVertex = hexVertex;
-        renderer = gameObject.GetComponent<Renderer>();
+        _renderer = gameObject.GetComponent<Renderer>();
     }
 
     public void SetHoverColor(Color color)
@@ -30,17 +30,17 @@ public class BuildingLocationSelectionObject : MonoBehaviour, IInteractable
 
     public void HoverOn()
     {
-        if (renderer != null)
+        if (_renderer != null)
         {
-            renderer.material.color = hoverColor;
+            _renderer.material.color = hoverColor;
         }
     }
 
     public void HoverOff()
     {
-        if (renderer != null)
+        if (_renderer != null)
         {
-            renderer.material.color = Color.white;
+            _renderer.material.color = Color.white;
         }
     }
 }

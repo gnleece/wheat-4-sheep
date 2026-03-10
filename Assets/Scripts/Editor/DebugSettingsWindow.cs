@@ -3,9 +3,9 @@ using UnityEditor;
 
 public class DebugSettingsWindow : EditorWindow
 {
-    private DebugSettings debugSettings;
-    private SerializedObject serializedObject;
-    private SerializedProperty showHexCoordinatesProperty;
+    private DebugSettings _debugSettings;
+    private SerializedObject _serializedObject;
+    private SerializedProperty _showHexCoordinatesProperty;
 
     [MenuItem("Window/Wheat4Sheep/Debug Settings")]
     public static void ShowWindow()
@@ -26,40 +26,40 @@ public class DebugSettingsWindow : EditorWindow
         if (guids.Length > 0)
         {
             var path = AssetDatabase.GUIDToAssetPath(guids[0]);
-            debugSettings = AssetDatabase.LoadAssetAtPath<DebugSettings>(path);
+            _debugSettings = AssetDatabase.LoadAssetAtPath<DebugSettings>(path);
         }
         else
         {
             // Create new settings asset if none exists
-            debugSettings = CreateInstance<DebugSettings>();
-            AssetDatabase.CreateAsset(debugSettings, "Assets/Settings/DebugSettings.asset");
+            _debugSettings = CreateInstance<DebugSettings>();
+            AssetDatabase.CreateAsset(_debugSettings, "Assets/Settings/DebugSettings.asset");
             AssetDatabase.SaveAssets();
         }
 
-        serializedObject = new SerializedObject(debugSettings);
-        showHexCoordinatesProperty = serializedObject.FindProperty("showHexCoordinates");
+        _serializedObject = new SerializedObject(_debugSettings);
+        _showHexCoordinatesProperty = _serializedObject.FindProperty("showHexCoordinates");
     }
 
     private void OnGUI()
     {
-        if (debugSettings == null)
+        if (_debugSettings == null)
         {
             LoadSettings();
             return;
         }
 
-        serializedObject.Update();
+        _serializedObject.Update();
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Debug Settings", EditorStyles.boldLabel);
         EditorGUILayout.Space(5);
 
         EditorGUI.BeginChangeCheck();
-        EditorGUILayout.PropertyField(showHexCoordinatesProperty, new GUIContent("Show Hex Coordinates"));
+        EditorGUILayout.PropertyField(_showHexCoordinatesProperty, new GUIContent("Show Hex Coordinates"));
         if (EditorGUI.EndChangeCheck())
         {
-            serializedObject.ApplyModifiedProperties();
-            debugSettings.ShowHexCoordinates = showHexCoordinatesProperty.boolValue;
+            _serializedObject.ApplyModifiedProperties();
+            _debugSettings.ShowHexCoordinates = _showHexCoordinatesProperty.boolValue;
         }
 
         EditorGUILayout.Space(10);

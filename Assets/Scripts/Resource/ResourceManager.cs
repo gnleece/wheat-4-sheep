@@ -5,39 +5,39 @@ using UnityEngine;
 
 public class ResourceManager
 {
-    private readonly Dictionary<IPlayer, ResourceHand> playerResourceHands = new Dictionary<IPlayer, ResourceHand>();
-    private readonly IRandomProvider random;
-
+    private readonly IRandomProvider _random;
+    private readonly Dictionary<IPlayer, ResourceHand> _playerResourceHands = new();
+    
     public ResourceManager(IRandomProvider random)
     {
-        this.random = random;
+        _random = random;
     }
 
     public void Initialize(IEnumerable<IPlayer> players, Dictionary<ResourceType, int> extraStartingResources = null)
     {
-        playerResourceHands.Clear();
+        _playerResourceHands.Clear();
         foreach (var player in players)
         {
-            playerResourceHands[player] = new ResourceHand();
+            _playerResourceHands[player] = new ResourceHand();
             if (extraStartingResources != null)
             {
                 foreach (var kvp in extraStartingResources)
                 {
                     if (kvp.Value > 0)
                     {
-                        playerResourceHands[player].Add(kvp.Key, kvp.Value);
+                        _playerResourceHands[player].Add(kvp.Key, kvp.Value);
                     }
                 }
             }
         }
     }
 
-    public bool ContainsPlayer(IPlayer player) => playerResourceHands.ContainsKey(player);
+    public bool ContainsPlayer(IPlayer player) => _playerResourceHands.ContainsKey(player);
 
     // Returns a copy of the resource hand for the given player, or null if not found
     public Dictionary<ResourceType, int> GetResourceHandForPlayer(IPlayer player)
     {
-        if (playerResourceHands.TryGetValue(player, out var hand))
+        if (_playerResourceHands.TryGetValue(player, out var hand))
         {
             return hand.GetAll(); // returns a copy
         }
@@ -46,19 +46,19 @@ public class ResourceManager
 
     public ResourceHand GetHand(IPlayer player)
     {
-        playerResourceHands.TryGetValue(player, out var hand);
+        _playerResourceHands.TryGetValue(player, out var hand);
         return hand;
     }
 
     public bool HasEnoughResources(IPlayer player, Dictionary<ResourceType, int> cost)
     {
-        var hand = playerResourceHands.GetValueOrDefault(player);
+        var hand = _playerResourceHands.GetValueOrDefault(player);
         return hand != null && hand.HasEnoughResources(cost);
     }
 
     public void DeductResources(IPlayer player, Dictionary<ResourceType, int> cost)
     {
-        if (playerResourceHands.TryGetValue(player, out var hand))
+        if (_playerResourceHands.TryGetValue(player, out var hand))
         {
             hand.Remove(cost);
         }
@@ -67,7 +67,7 @@ public class ResourceManager
     public void GivePlayerResourcesForNeighborHexTiles(IPlayer player, HexVertex hexVertex)
     {
         if (player == null || hexVertex == null) return;
-        if (!playerResourceHands.TryGetValue(player, out var hand)) return;
+        if (!_playerResourceHands.TryGetValue(player, out var hand)) return;
         if (hexVertex.Building == null) return;
 
         int amount = hexVertex.Building.Type == Building.BuildingType.City ? 2 : 1;
@@ -92,7 +92,7 @@ public class ResourceManager
         {
             if (vertex == null || vertex.Building == null || vertex.Owner == null) continue;
             if (hexTile == robberTile) continue;
-            if (!playerResourceHands.TryGetValue(vertex.Owner, out var hand)) continue;
+            if (!_playerResourceHands.TryGetValue(vertex.Owner, out var hand)) continue;
 
             int amount = vertex.Building.Type == Building.BuildingType.City ? 2 : 1;
             hand.Add(resourceType, amount);
@@ -107,7 +107,7 @@ public class ResourceManager
 
         // Find all players with more than 7 cards
         var playersToDiscard = new List<IPlayer>();
-        foreach (var kvp in playerResourceHands)
+        foreach (var kvp in _playerResourceHands)
         {
             var player = kvp.Key;
             var hand = kvp.Value;
@@ -123,7 +123,7 @@ public class ResourceManager
         // Handle discard for each player
         foreach (var player in playersToDiscard)
         {
-            var hand = playerResourceHands[player];
+            var hand = _playerResourceHands[player];
             var totalCards = hand.GetAll().Values.Sum();
             var cardsToDiscard = totalCards / 2;
 
@@ -135,7 +135,7 @@ public class ResourceManager
 
     public void GiveResourcesToPlayer(IPlayer player, ResourceType resourceType, int amount)
     {
-        if (playerResourceHands.TryGetValue(player, out var hand))
+        if (_playerResourceHands.TryGetValue(player, out var hand))
         {
             hand.Add(resourceType, amount);
         }
@@ -144,8 +144,8 @@ public class ResourceManager
     public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer)
     {
         if (fromPlayer == null || toPlayer == null) return null;
-        if (!playerResourceHands.TryGetValue(fromPlayer, out var fromHand)) return null;
-        if (!playerResourceHands.TryGetValue(toPlayer, out var toHand)) return null;
+        if (!_playerResourceHands.TryGetValue(fromPlayer, out var fromHand)) return null;
+        if (!_playerResourceHands.TryGetValue(toPlayer, out var toHand)) return null;
 
         // Get all resources the player has
         var allResources = fromHand.GetAll();
@@ -167,7 +167,7 @@ public class ResourceManager
         }
 
         // Randomly select a resource to steal
-        var randomIndex = random.Next(resourcesList.Count);
+        var randomIndex = _random.Next(resourcesList.Count);
         var resourceToSteal = resourcesList[randomIndex];
 
         // Remove from the victim and add to the thief
@@ -183,7 +183,7 @@ public class ResourceManager
     public string GetAllPlayerResourceHandsDebugString()
     {
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
-        foreach (var kvp in playerResourceHands)
+        foreach (var kvp in _playerResourceHands)
         {
             var player = kvp.Key;
             var hand = kvp.Value;

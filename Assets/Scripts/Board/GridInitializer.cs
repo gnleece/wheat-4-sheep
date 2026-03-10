@@ -11,12 +11,12 @@ public class GridInitializer
 {
     #region Private members
 
-    private readonly GameConfig gameConfig;
-    private readonly IRandomProvider random;
-    private readonly float horizontalSpacing;
-    private readonly float verticalSpacing;
+    private readonly GameConfig _gameConfig;
+    private readonly IRandomProvider _random;
+    private readonly float _horizontalSpacing;
+    private readonly float _verticalSpacing;
 
-    private readonly BoardPrefabConfig prefabConfig;
+    private readonly BoardPrefabConfig _prefabConfig;
 
     #endregion
 
@@ -27,11 +27,11 @@ public class GridInitializer
         float verticalSpacing,
         BoardPrefabConfig prefabConfig)
     {
-        this.gameConfig = gameConfig;
-        this.random = random;
-        this.horizontalSpacing = horizontalSpacing;
-        this.verticalSpacing = verticalSpacing;
-        this.prefabConfig = prefabConfig;
+        _gameConfig = gameConfig;
+        _random = random;
+        _horizontalSpacing = horizontalSpacing;
+        _verticalSpacing = verticalSpacing;
+        _prefabConfig = prefabConfig;
     }
 
     /// <summary>
@@ -98,13 +98,13 @@ public class GridInitializer
         {
             var offsetCoord = GridHelpers.AxialHexToOffsetCoord(hex.HexCoordinates);
 
-            var tilePosition = new Vector3(offsetCoord.x * horizontalSpacing, 0, offsetCoord.y * verticalSpacing);
+            var tilePosition = new Vector3(offsetCoord.x * _horizontalSpacing, 0, offsetCoord.y * _verticalSpacing);
             if (offsetCoord.y % 2 == 0)
             {
-                tilePosition.x -= horizontalSpacing / 2;
+                tilePosition.x -= _horizontalSpacing / 2;
             }
 
-            var tilePrefab = prefabConfig.WaterTilePrefab;
+            var tilePrefab = _prefabConfig.WaterTilePrefab;
             int? diceNumber = null;
             if (hex.Ring <= shuffleableGridSize)
             {
@@ -137,7 +137,7 @@ public class GridInitializer
                     continue;
                 }
 
-                var vertexObject = UnityEngine.Object.Instantiate(prefabConfig.HexVertexPrefab, Vector3.zero, Quaternion.identity);
+                var vertexObject = UnityEngine.Object.Instantiate(_prefabConfig.HexVertexPrefab, Vector3.zero, Quaternion.identity);
 
                 vertex.VertexObject = vertexObject.GetComponent<HexVertexObject>();
                 vertex.VertexObject.Initialize(boardManager, vertex);
@@ -181,7 +181,7 @@ public class GridInitializer
                     continue;
                 }
 
-                var edgeObject = UnityEngine.Object.Instantiate(prefabConfig.HexEdgePrefab, Vector3.zero, Quaternion.identity);
+                var edgeObject = UnityEngine.Object.Instantiate(_prefabConfig.HexEdgePrefab, Vector3.zero, Quaternion.identity);
 
                 edge.EdgeObject = edgeObject.GetComponent<HexEdgeObject>();
                 edge.EdgeObject.Initialize(boardManager, edge);
@@ -215,7 +215,7 @@ public class GridInitializer
         AssignPorts(edgeMap);
 
         // Spawn the robber object and place it on the desert tile
-        var robberGO = UnityEngine.Object.Instantiate(prefabConfig.RobberPrefab, Vector3.zero, Quaternion.identity);
+        var robberGO = UnityEngine.Object.Instantiate(_prefabConfig.RobberPrefab, Vector3.zero, Quaternion.identity);
         robberObject = robberGO.GetComponent<RobberObject>();
         robberStartTile = null;
 
@@ -299,7 +299,7 @@ public class GridInitializer
             }
         }
 
-        Util.Shuffle(boundaryEdges, random);
+        Util.Shuffle(boundaryEdges, _random);
 
         var portTypes = GetShuffledPortTypes();
 
@@ -389,10 +389,10 @@ public class GridInitializer
 
                     vertex.Port = port;
 
-                    if (prefabConfig.PortVertexIndicatorPrefab != null && vertex.VertexObject != null)
+                    if (_prefabConfig.PortVertexIndicatorPrefab != null && vertex.VertexObject != null)
                     {
                         var markerGO = UnityEngine.Object.Instantiate(
-                            prefabConfig.PortVertexIndicatorPrefab,
+                            _prefabConfig.PortVertexIndicatorPrefab,
                             Vector3.zero,
                             Quaternion.identity,
                             vertex.VertexObject.transform);
@@ -402,7 +402,7 @@ public class GridInitializer
             }
 
             // Spawn a port label on the water-side tile if a prefab is configured.
-            if (prefabConfig.PortIndicatorPrefab != null)
+            if (_prefabConfig.PortIndicatorPrefab != null)
             {
                 HexTile waterTile = null;
                 foreach (var hex in edge.NeighborHexTiles)
@@ -417,7 +417,7 @@ public class GridInitializer
                 if (waterTile?.TileObject != null)
                 {
                     var indicatorGO = UnityEngine.Object.Instantiate(
-                        prefabConfig.PortIndicatorPrefab,
+                        _prefabConfig.PortIndicatorPrefab,
                         Vector3.zero,
                         Quaternion.identity,
                         waterTile.TileObject.transform);
@@ -446,13 +446,13 @@ public class GridInitializer
             PortType.Wheat,
             PortType.Ore,
         };
-        Util.Shuffle(types, random);
+        Util.Shuffle(types, _random);
         return types;
     }
 
     private List<TileType> GetShuffledTileTypes()
     {
-        var tileCounts = gameConfig.GetShuffleableTileCounts();
+        var tileCounts = _gameConfig.GetShuffleableTileCounts();
         var tileTypesList = new List<TileType>();
         foreach (var type in tileCounts.Keys)
         {
@@ -460,7 +460,7 @@ public class GridInitializer
             tileTypesList.AddRange(Enumerable.Repeat(type, count));
         }
 
-        Util.Shuffle(tileTypesList, random);
+        Util.Shuffle(tileTypesList, _random);
 
         return tileTypesList;
     }
@@ -469,21 +469,21 @@ public class GridInitializer
     {
         switch (type)
         {
-            case TileType.Wood:     return prefabConfig.WoodTilePrefab;
-            case TileType.Clay:     return prefabConfig.ClayTilePrefab;
-            case TileType.Sheep:    return prefabConfig.SheepTilePrefab;
-            case TileType.Wheat:    return prefabConfig.WheatTilePrefab;
-            case TileType.Ore:      return prefabConfig.OreTilePrefab;
-            case TileType.Desert:   return prefabConfig.DesertTilePrefab;
-            case TileType.Water:    return prefabConfig.WaterTilePrefab;
+            case TileType.Wood:     return _prefabConfig.WoodTilePrefab;
+            case TileType.Clay:     return _prefabConfig.ClayTilePrefab;
+            case TileType.Sheep:    return _prefabConfig.SheepTilePrefab;
+            case TileType.Wheat:    return _prefabConfig.WheatTilePrefab;
+            case TileType.Ore:      return _prefabConfig.OreTilePrefab;
+            case TileType.Desert:   return _prefabConfig.DesertTilePrefab;
+            case TileType.Water:    return _prefabConfig.WaterTilePrefab;
             default:                return null;
         }
     }
 
     private List<int> GetShuffledTileDiceNumbers()
     {
-        var diceNumbers = gameConfig.TileDiceNumbers.ToList();
-        Util.Shuffle(diceNumbers, random);
+        var diceNumbers = _gameConfig.TileDiceNumbers.ToList();
+        Util.Shuffle(diceNumbers, _random);
         return diceNumbers;
     }
 }

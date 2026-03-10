@@ -33,23 +33,29 @@ public class GameManager : MonoBehaviour, IGameManager
 
     #endregion
 
-    private StateMachine<GameState> gameStateMachine = null;
+    #region Private members
+    
+    private IUIManager _uiManager;
+    private IRandomProvider _randomProvider;
+    
+    private StateMachine<GameState> _gameStateMachine;
 
-    private int playerCount = 0;
-    private List<IPlayer> playerList = new List<IPlayer>();
-    private IUIManager uiManager;
-    private IRandomProvider randomProvider;
-    private bool playerCountSelected = false;
-    private bool boardConfirmed = false;
+    private int _playerCount;
+    private List<IPlayer> _playerList = new();
+    
+    private bool _playerCountSelected;
+    private bool _boardConfirmed;
 
+    #endregion
+    
     public void RegisterUIManager(IUIManager uiManager)
     {
-        this.uiManager = uiManager;
+        this._uiManager = uiManager;
     }
 
-    public IReadOnlyList<IPlayer> PlayerList => playerList.AsReadOnly();
+    public IReadOnlyList<IPlayer> PlayerList => _playerList.AsReadOnly();
 
-    public GameState CurrentGameState => gameStateMachine != null ? gameStateMachine.CurrentState : GameState.None;
+    public GameState CurrentGameState => _gameStateMachine != null ? _gameStateMachine.CurrentState : GameState.None;
 
     public bool SettlementsMustConnectToRoad => CurrentGameState != GameState.FirstSettlementPlacement && 
                                                 CurrentGameState != GameState.SecondSettlementPlacement;
@@ -61,9 +67,9 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void Update()
     {
-        if (gameStateMachine != null)
+        if (_gameStateMachine != null)
         {
-            gameStateMachine.Update();
+            _gameStateMachine.Update();
         }
     }
 
@@ -75,34 +81,34 @@ public class GameManager : MonoBehaviour, IGameManager
             return;
         }
         
-        gameStateMachine = new StateMachine<GameState>("GameState");
+        _gameStateMachine = new StateMachine<GameState>("GameState");
 
-        gameStateMachine.AddState(GameState.PlayerSetup, OnEnterPlayerSetup, OnUpdatePlayerSetup, OnExitPlayerSetup);
-        gameStateMachine.AddState(GameState.BoardSetup, OnEnterBoardSetup, OnUpdateBoardSetup, null);
-        gameStateMachine.AddState(GameState.FirstSettlementPlacement, OnEnterFirstSettlementPlacement, OnUpdateFirstSettlementPlacement, null);
-        gameStateMachine.AddState(GameState.SecondSettlementPlacement, OnEnterSecondSettlementPlacement, OnUpdateSecondSettlementPlacement, null);
-        gameStateMachine.AddState(GameState.Playing, OnEnterPlaying, OnUpdatePlaying, null);
-        gameStateMachine.AddState(GameState.GameOver, OnEnterGameOver, null, null);
+        _gameStateMachine.AddState(GameState.PlayerSetup, OnEnterPlayerSetup, OnUpdatePlayerSetup, OnExitPlayerSetup);
+        _gameStateMachine.AddState(GameState.BoardSetup, OnEnterBoardSetup, OnUpdateBoardSetup, null);
+        _gameStateMachine.AddState(GameState.FirstSettlementPlacement, OnEnterFirstSettlementPlacement, OnUpdateFirstSettlementPlacement, null);
+        _gameStateMachine.AddState(GameState.SecondSettlementPlacement, OnEnterSecondSettlementPlacement, OnUpdateSecondSettlementPlacement, null);
+        _gameStateMachine.AddState(GameState.Playing, OnEnterPlaying, OnUpdatePlaying, null);
+        _gameStateMachine.AddState(GameState.GameOver, OnEnterGameOver, null, null);
 
-        gameStateMachine.GoToState(GameState.PlayerSetup);
+        _gameStateMachine.GoToState(GameState.PlayerSetup);
     }
 
     #region Player setup
 
     private void OnEnterPlayerSetup()
     {
-        if (uiManager != null)
+        if (_uiManager != null)
         {
-            uiManager.ShowSetupScreen();
+            _uiManager.ShowSetupScreen();
         }
     }
 
     private void OnUpdatePlayerSetup()
     {
         // Check if player count has been selected via UI buttons
-        if (playerCountSelected)
+        if (_playerCountSelected)
         {
-            gameStateMachine.GoToState(GameState.BoardSetup);
+            _gameStateMachine.GoToState(GameState.BoardSetup);
         }
         
         // Keep legacy keyboard support as backup
@@ -120,56 +126,56 @@ public class GameManager : MonoBehaviour, IGameManager
     {
         if (count >= 3 && count <= 4)
         {
-            playerCount = count;
-            playerCountSelected = true;
-            Debug.Log($"Player count selected: {playerCount}");
+            _playerCount = count;
+            _playerCountSelected = true;
+            Debug.Log($"Player count selected: {_playerCount}");
             
-            if (uiManager != null)
+            if (_uiManager != null)
             {
-                uiManager.HideSetupScreen();
+                _uiManager.HideSetupScreen();
             }
         }
     }
     
     public void ConfirmBoard()
     {
-        boardConfirmed = true;
+        _boardConfirmed = true;
         Debug.Log("Board layout confirmed");
         
-        if (uiManager != null)
+        if (_uiManager != null)
         {
-            uiManager.HideBoardConfirmationScreen();
+            _uiManager.HideBoardConfirmationScreen();
         }
     }
     
     public void RegenerateBoard()
     {
         Debug.Log("Regenerating board...");
-        boardManager.StartNewGame(this, uiManager);
+        boardManager.StartNewGame(this, _uiManager);
     }
 
     private void OnExitPlayerSetup()
     {
-        randomProvider = new SystemRandomProvider();
-        playerList = new List<IPlayer>(playerCount);
+        _randomProvider = new SystemRandomProvider();
+        _playerList = new List<IPlayer>(_playerCount);
 
-        for (int i = 0; i < playerCount; i++)
+        for (int i = 0; i < _playerCount; i++)
         {
-            IPlayer player = i == 0 ? new HumanPlayer() : new AIPlayer(randomProvider);
+            IPlayer player = i == 0 ? new HumanPlayer() : new AIPlayer(_randomProvider);
             player.Initialize(i, boardManager);
-            playerList.Add(player);
+            _playerList.Add(player);
         }
 
-        boardManager.InitializePlayerResourceHands(playerList, randomProvider);
+        boardManager.InitializePlayerResourceHands(_playerList, _randomProvider);
         
-        if (uiManager != null)
+        if (_uiManager != null)
         {
             Debug.Log("GameManager: Initializing UI player panels");
-            uiManager.InitializePlayerPanels(playerList);
+            _uiManager.InitializePlayerPanels(_playerList);
         }
         
-        playerCountSelected = false; // Reset for next game
-        boardConfirmed = false; // Reset for next game
+        _playerCountSelected = false; // Reset for next game
+        _boardConfirmed = false; // Reset for next game
     }
 
     #endregion
@@ -178,20 +184,20 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void OnEnterBoardSetup()
     {
-        boardManager.StartNewGame(this, uiManager);
+        boardManager.StartNewGame(this, _uiManager);
 
-        if (uiManager != null)
+        if (_uiManager != null)
         {
-            uiManager.ShowBoardConfirmationScreen();
+            _uiManager.ShowBoardConfirmationScreen();
         }
     }
 
     private void OnUpdateBoardSetup()
     {
         // Check if board has been confirmed via UI buttons
-        if (boardConfirmed)
+        if (_boardConfirmed)
         {
-            gameStateMachine.GoToState(GameState.FirstSettlementPlacement);
+            _gameStateMachine.GoToState(GameState.FirstSettlementPlacement);
         }
         
         // Keep legacy keyboard support as backup
@@ -221,13 +227,13 @@ public class GameManager : MonoBehaviour, IGameManager
         if (placementTask != null && placementTask.IsCompleted)
         {
             placementTask = null; // Clear the task reference
-            gameStateMachine.GoToState(GameState.SecondSettlementPlacement);
+            _gameStateMachine.GoToState(GameState.SecondSettlementPlacement);
         }
     }
 
     private async Task RunFirstSettlementPlacement()
     {
-        foreach (var player in playerList)
+        foreach (var player in _playerList)
         {
             Debug.Log($"Player {player.PlayerId} placing first settlement and road");
             await player.PlaceFirstSettlementAndRoadAsync();
@@ -248,15 +254,15 @@ public class GameManager : MonoBehaviour, IGameManager
         if (placementTask != null && placementTask.IsCompleted)
         {
             placementTask = null; // Clear the task reference
-            gameStateMachine.GoToState(GameState.Playing);
+            _gameStateMachine.GoToState(GameState.Playing);
         }
     }
 
     private async Task RunSecondSettlementPlacement()
     {
-        for (int i = playerCount - 1; i >= 0; i--)
+        for (int i = _playerCount - 1; i >= 0; i--)
         {
-            var player = playerList[i];
+            var player = _playerList[i];
 
             Debug.Log($"Player {player.PlayerId} placing second settlement and road");
 
@@ -272,9 +278,9 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void OnEnterPlaying()
     {
-        if (uiManager != null)
+        if (_uiManager != null)
         {
-            uiManager.ShowGameplayUI();
+            _uiManager.ShowGameplayUI();
         }
         
         playingTask = RunPlaying();
@@ -285,7 +291,7 @@ public class GameManager : MonoBehaviour, IGameManager
         if (playingTask != null && playingTask.IsCompleted)
         {
             playingTask = null; // Clear the task reference
-            gameStateMachine.GoToState(GameState.GameOver);
+            _gameStateMachine.GoToState(GameState.GameOver);
         }
     }
 
@@ -294,14 +300,14 @@ public class GameManager : MonoBehaviour, IGameManager
         var isGameOver = false;
         while (!isGameOver)
         {
-            foreach (var player in playerList)
+            foreach (var player in _playerList)
             {
                 Debug.Log($"Player {player.PlayerId} turn");
                 
-                if (uiManager != null)
+                if (_uiManager != null)
                 {
-                    uiManager.SetActivePlayer(player.PlayerId);
-                    uiManager.UpdatePlayerPanels();
+                    _uiManager.SetActivePlayer(player.PlayerId);
+                    _uiManager.UpdatePlayerPanels();
                 }
                 
                 await player.PlayTurnAsync();
@@ -317,7 +323,7 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private bool IsGameOver()
     {
-        foreach (var player in playerList)
+        foreach (var player in _playerList)
         {
             if (boardManager.GetPlayerScore(player) >= gameConfig.VictoryPointsToWin)
             {
@@ -340,9 +346,9 @@ public class GameManager : MonoBehaviour, IGameManager
         int winningScore = winner != null ? boardManager.GetPlayerScore(winner) : 0;
         
         // Show the game over screen
-        if (uiManager != null && winner != null)
+        if (_uiManager != null && winner != null)
         {
-            uiManager.ShowGameOverScreen(winner, winningScore);
+            _uiManager.ShowGameOverScreen(winner, winningScore);
         }
     }
     
@@ -351,7 +357,7 @@ public class GameManager : MonoBehaviour, IGameManager
         IPlayer winner = null;
         int highestScore = 0;
         
-        foreach (var player in playerList)
+        foreach (var player in _playerList)
         {
             int score = boardManager.GetPlayerScore(player);
             if (score > highestScore)
@@ -369,9 +375,9 @@ public class GameManager : MonoBehaviour, IGameManager
         Debug.Log("Restarting game...");
         
         // Hide game over screen
-        if (uiManager != null)
+        if (_uiManager != null)
         {
-            uiManager.HideGameOverScreen();
+            _uiManager.HideGameOverScreen();
         }
         
         // Reset the game state

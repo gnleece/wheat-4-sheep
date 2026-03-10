@@ -6,7 +6,7 @@ public class SettlementObject : MonoBehaviour
 
     public void Refresh(Building building)
     {
-        var active = building != null && building.Type == Building.BuildingType.Settlement;
+        var active = building is { Type: Building.BuildingType.Settlement };
 
         gameObject.SetActive(active);
 

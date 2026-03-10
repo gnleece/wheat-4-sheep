@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Serialization;
 
 public class UIManager : MonoBehaviour, IUIManager
 {
@@ -12,15 +13,16 @@ public class UIManager : MonoBehaviour, IUIManager
     [SerializeField]
     private BoardManager _boardManager;
 
+    [FormerlySerializedAs("_defaultFont")]
     [Header("Art Assets")]
     [SerializeField]
-    private Font _defaultFont;
+    private Font defaultFont;
 
-    [SerializeField]
-    private Sprite _buttonSprite;
+    [FormerlySerializedAs("_buttonSprite")] [SerializeField]
+    private Sprite buttonSprite;
 
-    [SerializeField]
-    private Sprite _panelSprite;
+    [FormerlySerializedAs("_panelSprite")] [SerializeField]
+    private Sprite panelSprite;
 
     private Canvas _mainCanvas;
     private GameObject _setupScreen;
@@ -44,7 +46,7 @@ public class UIManager : MonoBehaviour, IUIManager
     private Button _tradeButton;
     private Button _endTurnButton;
 
-    private List<PlayerUIPanel> _playerUIPanels = new List<PlayerUIPanel>();
+    private readonly List<PlayerUIPanel> _playerUIPanels = new();
     private IPlayer _currentPlayer;
     private IBoardManager _boardManagerInterface;
 

@@ -8,13 +8,13 @@ public class HexEdgeObject : MonoBehaviour
     [SerializeField]
     private RoadObject roadObject;
 
-    private IBoardManager boardManager;
-    private HexEdge hexEdge;
+    private IBoardManager _boardManager;
+    private HexEdge _hexEdge;
 
     public void Initialize(IBoardManager boardManager, HexEdge hexEdge)
     {
-        this.boardManager = boardManager;
-        this.hexEdge = hexEdge;
+        _boardManager = boardManager;
+        _hexEdge = hexEdge;
 
         if (selectionObject != null)
         {
@@ -29,13 +29,13 @@ public class HexEdgeObject : MonoBehaviour
     {
         if (roadObject != null)
         {
-            roadObject.Refresh(hexEdge.Road);
+            roadObject.Refresh(_hexEdge.Road);
         }
     }
 
     private void HandleRoadLocationSelected()
     {
-        boardManager.CompleteSelection(hexEdge);
+        _boardManager.CompleteSelection(_hexEdge);
     }
 
     public void EnableSelection(bool enable, Color? hoverColor = null)

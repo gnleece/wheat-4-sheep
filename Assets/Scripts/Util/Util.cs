@@ -10,9 +10,7 @@ public static class Util
         {
             n--;
             int k = random.Next(n + 1);
-            T value = list[k];
-            list[k] = list[n];
-            list[n] = value;
+            (list[k], list[n]) = (list[n], list[k]);
         }
     }
 }

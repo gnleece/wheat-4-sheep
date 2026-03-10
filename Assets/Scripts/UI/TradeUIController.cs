@@ -36,16 +36,16 @@ public class TradeUIController : MonoBehaviour
     // Bank trade state
     private ResourceType _bankGiving = ResourceType.None;
     private ResourceType _bankReceiving = ResourceType.None;
-    private List<Button> _bankGivingButtons = new List<Button>();
-    private List<Button> _bankReceivingButtons = new List<Button>();
+    private List<Button> _bankGivingButtons = new();
+    private List<Button> _bankReceivingButtons = new();
     private TextMeshProUGUI _bankRateLabel;
     private Button _bankConfirmButton;
 
     // Player trade state
-    private Dictionary<ResourceType, int> _playerOffering = new Dictionary<ResourceType, int>();
-    private Dictionary<ResourceType, int> _playerRequesting = new Dictionary<ResourceType, int>();
-    private Dictionary<ResourceType, TextMeshProUGUI> _offeringCountLabels = new Dictionary<ResourceType, TextMeshProUGUI>();
-    private Dictionary<ResourceType, TextMeshProUGUI> _requestingCountLabels = new Dictionary<ResourceType, TextMeshProUGUI>();
+    private readonly Dictionary<ResourceType, int> _playerOffering = new();
+    private readonly Dictionary<ResourceType, int> _playerRequesting = new();
+    private Dictionary<ResourceType, TextMeshProUGUI> _offeringCountLabels = new();
+    private Dictionary<ResourceType, TextMeshProUGUI> _requestingCountLabels = new();
     private Button _proposeButton;
 
     public void Initialize(IPlayer player, IBoardManager boardManager)

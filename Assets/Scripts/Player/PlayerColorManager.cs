@@ -2,12 +2,11 @@ using UnityEngine;
 
 public class PlayerColorManager : MonoBehaviour
 {
-    private static readonly Color[] PlayerColors = new Color[]
-    {
-        new Color(0.8f, 0.2f, 0.2f), // Red
-        new Color(0.2f, 0.2f, 0.8f), // Blue
-        new Color(0.2f, 0.8f, 0.2f), // Green
-        new Color(0.8f, 0.8f, 0.2f)  // Yellow
+    private static readonly Color[] PlayerColors = {
+        new(0.8f, 0.2f, 0.2f), // Red
+        new(0.2f, 0.2f, 0.8f), // Blue
+        new(1.0f, 0.6f, 0.2f), // Orange
+        new(0.8f, 0.8f, 0.2f)  // Yellow
     };
 
     public static Color GetPlayerColor(int playerId)

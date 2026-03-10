@@ -36,9 +36,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     #region Properties
 
-    public IReadOnlyDictionary<HexCoord, HexTile> HexMap => hexTileMap;
-    public IReadOnlyDictionary<VertexCoord, HexVertex> VertexMap => vertexMap;
-    public IReadOnlyDictionary<EdgeCoord, HexEdge> EdgeMap => edgeMap;
+    public IReadOnlyDictionary<HexCoord, HexTile> HexMap => _hexTileMap;
+    public IReadOnlyDictionary<VertexCoord, HexVertex> VertexMap => _vertexMap;
+    public IReadOnlyDictionary<EdgeCoord, HexEdge> EdgeMap => _edgeMap;
 
     public Action BoardStateChanged { get; set; } = null;
 
@@ -46,31 +46,22 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     #region Private members
 
-    private IRandomProvider random;
+    private IRandomProvider _random;
+    private IUIManager _uiManager;
+    private ResourceManager _resourceManager;
+    private BuildingManager _buildingManager;
+    private DevelopmentCardManager _devCardManager;
+    private TradeManager _tradeManager;
+    private GridInitializer _gridInitializer;
+    private readonly TurnManager _turnManager = new();
 
-    private IGameManager gameManager;
+    private StateMachine<BoardMode> _boardStateMachine;
 
-    private IUIManager uiManager;
-
-    private StateMachine<BoardMode> boardStateMachine;
-
-    private Dictionary<HexCoord, HexTile> hexTileMap = new Dictionary<HexCoord, HexTile>();
-    private Dictionary<VertexCoord, HexVertex> vertexMap = new Dictionary<VertexCoord, HexVertex>();
-    private Dictionary<EdgeCoord, HexEdge> edgeMap = new Dictionary<EdgeCoord, HexEdge>();
-
-    private ResourceManager resourceManager;
-
-    private TurnManager turnManager = new TurnManager();
-
-    private BuildingManager buildingManager;
-
-    private DevelopmentCardManager devCardManager;
-
-    private TradeManager tradeManager;
-
-    private GridInitializer gridInitializer;
-
-    private TaskCompletionSource<object> pendingSelection;
+    private readonly Dictionary<HexCoord, HexTile> _hexTileMap = new();
+    private readonly Dictionary<VertexCoord, HexVertex> _vertexMap = new();
+    private readonly Dictionary<EdgeCoord, HexEdge> _edgeMap = new();
+    
+    private TaskCompletionSource<object> _pendingSelection;
 
     #endregion
 
@@ -83,37 +74,37 @@ public class BoardManager : MonoBehaviour, IBoardManager
             Debug.LogError("Game manager cannot be null");
             return;
         }
-        this.gameManager = gameManager;
-        this.uiManager = uiManager;
 
-        buildingManager = new BuildingManager(vertexMap, edgeMap, hexTileMap, turnManager, resourceManager, gameManager);
+        _uiManager = uiManager;
 
-        gridInitializer = new GridInitializer(gameConfig, random, horizontalSpacing, verticalSpacing, boardPrefabConfig);
+        _buildingManager = new BuildingManager(_vertexMap, _edgeMap, _hexTileMap, _turnManager, _resourceManager, gameManager);
+
+        _gridInitializer = new GridInitializer(gameConfig, _random, horizontalSpacing, verticalSpacing, boardPrefabConfig);
 
         ClearBoard();
-        gridInitializer.InitializeBoard(
+        _gridInitializer.InitializeBoard(
             INNER_SHUFFLEABLE_GRID_SIZE, FULL_GRID_SIZE,
-            hexTileMap, vertexMap, edgeMap,
+            _hexTileMap, _vertexMap, _edgeMap,
             this,
             out var robberObj, out var robberTile);
-        buildingManager.InitializeRobber(robberObj, robberTile);
+        _buildingManager.InitializeRobber(robberObj, robberTile);
 
-        boardStateMachine = new StateMachine<BoardMode>("BoardMode");
+        _boardStateMachine = new StateMachine<BoardMode>("BoardMode");
 
-        boardStateMachine.AddState(BoardMode.Idle, OnEnterIdleMode, null, null);
-        boardStateMachine.AddState(BoardMode.ChooseSettlementLocation, OnEnterSettlementLocationSelectionMode, null, OnExitSettlementLocationSelectionMode);
-        boardStateMachine.AddState(BoardMode.ChooseRoadLocation, OnEnterRoadLocationSelectionMode, null, OnExitRoadLocationSelectionMode);
-        boardStateMachine.AddState(BoardMode.ChooseSettlementToUpgrade, OnEnterSettlementUpgradeSelectionMode, null, OnExitSettlementUpgradeSelectionMode);
-        boardStateMachine.AddState(BoardMode.ChooseRobberLocation, OnEnterRobberLocationSelectionMode, null, OnExitRobberLocationSelectionMode);
+        _boardStateMachine.AddState(BoardMode.Idle, OnEnterIdleMode, null, null);
+        _boardStateMachine.AddState(BoardMode.ChooseSettlementLocation, OnEnterSettlementLocationSelectionMode, null, OnExitSettlementLocationSelectionMode);
+        _boardStateMachine.AddState(BoardMode.ChooseRoadLocation, OnEnterRoadLocationSelectionMode, null, OnExitRoadLocationSelectionMode);
+        _boardStateMachine.AddState(BoardMode.ChooseSettlementToUpgrade, OnEnterSettlementUpgradeSelectionMode, null, OnExitSettlementUpgradeSelectionMode);
+        _boardStateMachine.AddState(BoardMode.ChooseRobberLocation, OnEnterRobberLocationSelectionMode, null, OnExitRobberLocationSelectionMode);
 
-        boardStateMachine.GoToState(BoardMode.Idle);
+        _boardStateMachine.GoToState(BoardMode.Idle);
     }
     
     public async Task<HexVertex> GetManualSelectionForSettlementLocation(IPlayer player)
     {
-        if (boardStateMachine.CurrentState != BoardMode.Idle)
+        if (_boardStateMachine.CurrentState != BoardMode.Idle)
         {
-            Debug.LogError($"Cannot get manual selection for settlement location: board is not in idle mode, current state is {boardStateMachine.CurrentState}");
+            Debug.LogError($"Cannot get manual selection for settlement location: board is not in idle mode, current state is {_boardStateMachine.CurrentState}");
             return null;
         }
 
@@ -129,9 +120,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public async Task<HexEdge> GetManualSelectionForRoadLocation(IPlayer player)
     {
-        if (boardStateMachine.CurrentState != BoardMode.Idle)
+        if (_boardStateMachine.CurrentState != BoardMode.Idle)
         {
-            Debug.LogError($"Cannot get manual selection for road location: board is not in idle mode, current state is {boardStateMachine.CurrentState}");
+            Debug.LogError($"Cannot get manual selection for road location: board is not in idle mode, current state is {_boardStateMachine.CurrentState}");
             return null;
         }
 
@@ -147,9 +138,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public async Task<HexVertex> GetManualSelectionForSettlementUpgrade(IPlayer player)
     {
-        if (boardStateMachine.CurrentState != BoardMode.Idle)
+        if (_boardStateMachine.CurrentState != BoardMode.Idle)
         {
-            Debug.LogError($"Cannot get manual selection for settlement upgrade: board is not in idle mode, current state is {boardStateMachine.CurrentState}");
+            Debug.LogError($"Cannot get manual selection for settlement upgrade: board is not in idle mode, current state is {_boardStateMachine.CurrentState}");
             return null;
         }
 
@@ -165,9 +156,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public async Task<HexTile> GetManualSelectionForRobberLocation(IPlayer player)
     {
-        if (boardStateMachine.CurrentState != BoardMode.Idle)
+        if (_boardStateMachine.CurrentState != BoardMode.Idle)
         {
-            Debug.LogError($"Cannot get manual selection for robber location: board is not in idle mode, current state is {boardStateMachine.CurrentState}");
+            Debug.LogError($"Cannot get manual selection for robber location: board is not in idle mode, current state is {_boardStateMachine.CurrentState}");
             return null;
         }
 
@@ -183,16 +174,16 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public void CompleteSelection(object selection)
     {
-        pendingSelection?.TrySetResult(selection);
+        _pendingSelection?.TrySetResult(selection);
     }
 
     private async Task<T> AwaitBoardSelection<T>(BoardMode mode)
     {
-        pendingSelection = new TaskCompletionSource<object>();
-        boardStateMachine.GoToState(mode);
-        var result = (T)await pendingSelection.Task;
-        boardStateMachine.GoToState(BoardMode.Idle);
-        pendingSelection = null;
+        _pendingSelection = new TaskCompletionSource<object>();
+        _boardStateMachine.GoToState(mode);
+        var result = (T)await _pendingSelection.Task;
+        _boardStateMachine.GoToState(BoardMode.Idle);
+        _pendingSelection = null;
         return result;
     }
 
@@ -201,9 +192,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
         Debug.Log($"Showing manual discard UI for Player {player.PlayerId} to discard {cardsToDiscard} cards...");
         
         // Show discard UI for human player
-        if (uiManager != null)
+        if (_uiManager != null)
         {
-            await uiManager.ShowDiscardUI(player, hand, cardsToDiscard);
+            await _uiManager.ShowDiscardUI(player, hand, cardsToDiscard);
         }
         else
         {
@@ -216,9 +207,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
         Debug.Log($"Showing player selection UI for Player {currentPlayer.PlayerId} to choose who to steal from...");
         
         // Show player selection UI for human player
-        if (uiManager != null)
+        if (_uiManager != null)
         {
-            return await uiManager.ShowPlayerSelectionUI(currentPlayer, availablePlayers);
+            return await _uiManager.ShowPlayerSelectionUI(currentPlayer, availablePlayers);
         }
         else
         {
@@ -229,28 +220,28 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool BuildSettlement(IPlayer player, HexVertex hexVertex)
     {
-        var success = buildingManager.BuildSettlement(player, hexVertex);
+        var success = _buildingManager.BuildSettlement(player, hexVertex);
         BoardStateChanged?.Invoke();
         return success;
     }
 
     public bool BuildRoad(IPlayer player, HexEdge hexEdge)
     {
-        var success = buildingManager.BuildRoad(player, hexEdge);
+        var success = _buildingManager.BuildRoad(player, hexEdge);
         BoardStateChanged?.Invoke();
         return success;
     }
 
     public bool UpgradeSettlementToCity(IPlayer player, HexVertex hexVertex)
     {
-        var success = buildingManager.UpgradeSettlementToCity(player, hexVertex);
+        var success = _buildingManager.UpgradeSettlementToCity(player, hexVertex);
         BoardStateChanged?.Invoke();
         return success;
     }
 
     public bool MoveRobber(IPlayer player, HexTile hexTile)
     {
-        var success = buildingManager.MoveRobber(player, hexTile);
+        var success = _buildingManager.MoveRobber(player, hexTile);
         BoardStateChanged?.Invoke();
         return success;
     }
@@ -258,8 +249,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
     // Call this before StartNewGame to set up player resource hands and dev card system
     public void InitializePlayerResourceHands(IEnumerable<IPlayer> players, IRandomProvider randomProvider)
     {
-        random = randomProvider;
-        resourceManager = new ResourceManager(random);
+        _random = randomProvider;
+        _resourceManager = new ResourceManager(_random);
 
         var playerList = new System.Collections.Generic.List<IPlayer>(players);
         var extraResources = new System.Collections.Generic.Dictionary<ResourceType, int>
@@ -270,44 +261,44 @@ public class BoardManager : MonoBehaviour, IBoardManager
             { ResourceType.Wheat, gameConfig.StartingWheatCardCount },
             { ResourceType.Ore,   gameConfig.StartingOreCardCount   },
         };
-        resourceManager.Initialize(playerList, extraResources);
-        devCardManager = new DevelopmentCardManager(resourceManager, turnManager, random);
-        devCardManager.Initialize(playerList);
-        tradeManager = new TradeManager(resourceManager, turnManager, new PortAwareBankTradeRateProvider(this));
-        tradeManager.Initialize(playerList);
+        _resourceManager.Initialize(playerList, extraResources);
+        _devCardManager = new DevelopmentCardManager(_resourceManager, _turnManager, _random);
+        _devCardManager.Initialize(playerList);
+        _tradeManager = new TradeManager(_resourceManager, _turnManager, new PortAwareBankTradeRateProvider(this));
+        _tradeManager.Initialize(playerList);
     }
 
     // Returns a copy of the resource hand for the given player, or null if not found
     public Dictionary<ResourceType, int> GetResourceHandForPlayer(IPlayer player)
     {
-        return resourceManager.GetResourceHandForPlayer(player);
+        return _resourceManager.GetResourceHandForPlayer(player);
     }
 
     public int GetPlayerScore(IPlayer player)
     {
-        var score = buildingManager?.GetPlayerBuildingScore(player) ?? 0;
-        score += devCardManager?.GetVictoryPointBonus(player) ?? 0;
-        score += devCardManager?.GetLargestArmyBonus(player) ?? 0;
+        var score = _buildingManager?.GetPlayerBuildingScore(player) ?? 0;
+        score += _devCardManager?.GetVictoryPointBonus(player) ?? 0;
+        score += _devCardManager?.GetLargestArmyBonus(player) ?? 0;
         return score;
     }
 
-    public bool CanBuyDevelopmentCard(IPlayer player) => devCardManager?.CanBuyDevelopmentCard(player) ?? false;
+    public bool CanBuyDevelopmentCard(IPlayer player) => _devCardManager?.CanBuyDevelopmentCard(player) ?? false;
 
     public DevelopmentCardType BuyDevelopmentCard(IPlayer player)
     {
-        var card = devCardManager.BuyDevelopmentCard(player);
+        var card = _devCardManager.BuyDevelopmentCard(player);
         BoardStateChanged?.Invoke();
         return card;
     }
 
     public Dictionary<DevelopmentCardType, int> GetDevCardHandForPlayer(IPlayer player)
-        => devCardManager?.GetPlayerHand(player) ?? new Dictionary<DevelopmentCardType, int>();
+        => _devCardManager?.GetPlayerHand(player) ?? new Dictionary<DevelopmentCardType, int>();
 
-    public bool CanPlayAnyDevCard(IPlayer player) => devCardManager?.CanPlayAnyDevCard(player) ?? false;
+    public bool CanPlayAnyDevCard(IPlayer player) => _devCardManager?.CanPlayAnyDevCard(player) ?? false;
 
     public async Task PlayDevelopmentCard(IPlayer player, DevelopmentCardType cardType)
     {
-        if (devCardManager == null || !devCardManager.ConsumeDevCard(player, cardType))
+        if (_devCardManager == null || !_devCardManager.ConsumeDevCard(player, cardType))
         {
             return;
         }
@@ -315,24 +306,24 @@ public class BoardManager : MonoBehaviour, IBoardManager
         switch (cardType)
         {
             case DevelopmentCardType.Knight:
-                devCardManager.RecordKnightPlayed(player);
+                _devCardManager.RecordKnightPlayed(player);
                 await HandleMoveRobber();
                 break;
 
             case DevelopmentCardType.YearOfPlenty:
                 var resource1 = await GetManualResourceTypeSelection(player, "Choose first resource:");
-                devCardManager.GiveResourcesToPlayer(player, resource1, 1);
+                _devCardManager.GiveResourcesToPlayer(player, resource1, 1);
                 var resource2 = await GetManualResourceTypeSelection(player, "Choose second resource:");
-                devCardManager.GiveResourcesToPlayer(player, resource2, 1);
+                _devCardManager.GiveResourcesToPlayer(player, resource2, 1);
                 break;
 
             case DevelopmentCardType.Monopoly:
                 var monopolyResource = await GetManualResourceTypeSelection(player, "Choose resource to monopolize:");
-                devCardManager.ExecuteMonopoly(player, monopolyResource);
+                _devCardManager.ExecuteMonopoly(player, monopolyResource);
                 break;
 
             case DevelopmentCardType.RoadBuilding:
-                turnManager.AddFreeRoads(2);
+                _turnManager.AddFreeRoads(2);
                 Debug.Log($"Player {player.PlayerId} played Road Building: 2 free roads granted.");
                 break;
 
@@ -347,75 +338,75 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public async Task<DevelopmentCardType> GetManualDevCardSelection(IPlayer player)
     {
-        if (uiManager == null)
+        if (_uiManager == null)
         {
             Debug.LogError("UIManager not set! Cannot show dev card selection UI.");
             return default;
         }
 
         var hand = GetDevCardHandForPlayer(player);
-        return await uiManager.ShowDevCardSelectionUI(player, hand);
+        return await _uiManager.ShowDevCardSelectionUI(player, hand);
     }
 
     public async Task<ResourceType> GetManualResourceTypeSelection(IPlayer player, string prompt)
     {
-        if (uiManager == null)
+        if (_uiManager == null)
         {
             Debug.LogError("UIManager not set! Cannot show resource type selection UI.");
             return ResourceType.None;
         }
 
-        return await uiManager.ShowResourceTypeSelectionUI(player, prompt);
+        return await _uiManager.ShowResourceTypeSelectionUI(player, prompt);
     }
 
-    public bool CanInitiateTrade(IPlayer player) => tradeManager?.CanInitiateTrade(player) ?? false;
+    public bool CanInitiateTrade(IPlayer player) => _tradeManager?.CanInitiateTrade(player) ?? false;
 
     public int GetBankTradeRate(IPlayer player, ResourceType resourceType)
-        => tradeManager?.GetBankTradeRate(player, resourceType) ?? 4;
+        => _tradeManager?.GetBankTradeRate(player, resourceType) ?? 4;
 
     public bool CanBankTrade(IPlayer player, ResourceType giving, ResourceType receiving)
-        => tradeManager?.CanBankTrade(player, giving, receiving) ?? false;
+        => _tradeManager?.CanBankTrade(player, giving, receiving) ?? false;
 
     public void ExecuteBankTrade(IPlayer player, ResourceType giving, ResourceType receiving)
     {
-        tradeManager?.ExecuteBankTrade(player, giving, receiving);
+        _tradeManager?.ExecuteBankTrade(player, giving, receiving);
         BoardStateChanged?.Invoke();
     }
 
     public async Task GetManualTradeSelection(IPlayer player)
     {
-        if (uiManager == null)
+        if (_uiManager == null)
         {
             Debug.LogError("UIManager not set! Cannot show trade UI.");
             return;
         }
 
-        await uiManager.ShowTradeUI(player);
+        await _uiManager.ShowTradeUI(player);
         BoardStateChanged?.Invoke();
     }
 
     public async Task<bool> GetManualTradeOfferResponse(IPlayer player, TradeOffer offer)
     {
-        if (uiManager == null)
+        if (_uiManager == null)
         {
             Debug.LogError("UIManager not set! Cannot show trade offer UI.");
             return false;
         }
 
-        return await uiManager.ShowTradeOfferUI(player, offer);
+        return await _uiManager.ShowTradeOfferUI(player, offer);
     }
 
     public async Task<bool> ProposePlayerTrade(IPlayer initiator, TradeOffer offer)
     {
-        if (tradeManager == null)
+        if (_tradeManager == null)
         {
             return false;
         }
 
-        var otherPlayers = tradeManager.GetOtherPlayers(initiator);
+        var otherPlayers = _tradeManager.GetOtherPlayers(initiator);
         foreach (var player in otherPlayers)
         {
-            if (!tradeManager.CanExecutePlayerTrade(offer, player))
+            if (!_tradeManager.CanExecutePlayerTrade(offer, player))
             {
                 continue;
             }
@@ -423,7 +414,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             bool accepted = await player.ConsiderTradeOffer(offer);
             if (accepted)
             {
-                tradeManager.ExecutePlayerTrade(offer, player);
+                _tradeManager.ExecutePlayerTrade(offer, player);
                 BoardStateChanged?.Invoke();
                 return true;
             }
@@ -432,34 +423,34 @@ public class BoardManager : MonoBehaviour, IBoardManager
         return false;
     }
 
-    public List<HexVertex> GetAvailableSettlementLocations(IPlayer player) => buildingManager.GetAvailableSettlementLocations(player);
+    public List<HexVertex> GetAvailableSettlementLocations(IPlayer player) => _buildingManager.GetAvailableSettlementLocations(player);
 
-    public List<HexEdge> GetAvailableRoadLocations(IPlayer player) => buildingManager.GetAvailableRoadLocations(player);
+    public List<HexEdge> GetAvailableRoadLocations(IPlayer player) => _buildingManager.GetAvailableRoadLocations(player);
 
-    public List<HexVertex> GetAvailableSettlementsToUpgrade(IPlayer player) => buildingManager.GetAvailableSettlementsToUpgrade(player);
+    public List<HexVertex> GetAvailableSettlementsToUpgrade(IPlayer player) => _buildingManager.GetAvailableSettlementsToUpgrade(player);
 
-    public List<HexTile> GetAvailableRobberLocations(IPlayer player) => buildingManager.GetAvailableRobberLocations(player);
+    public List<HexTile> GetAvailableRobberLocations(IPlayer player) => _buildingManager.GetAvailableRobberLocations(player);
 
-    public List<IPlayer> GetPlayersWithBuildingsOnHexTile(HexTile hexTile) => buildingManager.GetPlayersWithBuildingsOnHexTile(hexTile);
+    public List<IPlayer> GetPlayersWithBuildingsOnHexTile(HexTile hexTile) => _buildingManager.GetPlayersWithBuildingsOnHexTile(hexTile);
 
-    public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer) => resourceManager.StealRandomResourceFromPlayer(fromPlayer, toPlayer);
+    public ResourceType? StealRandomResourceFromPlayer(IPlayer fromPlayer, IPlayer toPlayer) => _resourceManager.StealRandomResourceFromPlayer(fromPlayer, toPlayer);
 
-    public bool CanBuildSettlement(IPlayer player) => buildingManager.CanBuildSettlement(player);
+    public bool CanBuildSettlement(IPlayer player) => _buildingManager.CanBuildSettlement(player);
 
-    public bool CanBuildRoad(IPlayer player) => buildingManager.CanBuildRoad(player);
+    public bool CanBuildRoad(IPlayer player) => _buildingManager.CanBuildRoad(player);
 
-    public bool CanUpgradeSettlement(IPlayer player) => buildingManager.CanUpgradeSettlement(player);
+    public bool CanUpgradeSettlement(IPlayer player) => _buildingManager.CanUpgradeSettlement(player);
 
     public bool CanRollDice(IPlayer player)
     {
         // Is it this player's turn?
-        if (!turnManager.IsPlayerTurn(player))
+        if (!_turnManager.IsPlayerTurn(player))
         {
             return false;
         }
 
         // Have they already rolled the dice?
-        if (turnManager.HasRolledDice)
+        if (_turnManager.HasRolledDice)
         {
             return false;
         }
@@ -469,7 +460,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool BeginPlayerTurn(IPlayer player, PlayerTurnType turnType)
     {
-        if (player == null || !resourceManager.ContainsPlayer(player))
+        if (player == null || !_resourceManager.ContainsPlayer(player))
         {
             Debug.LogError("Cannot begin player turn: player is null or not initialized");
             return false;
@@ -477,50 +468,50 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         // TODO: confirm that the board is in a valid state for the turn to begin
 
-        var success = turnManager.BeginTurn(player, turnType);
+        var success = _turnManager.BeginTurn(player, turnType);
         if (success) BoardStateChanged?.Invoke();
         return success;
     }
 
     public bool EndPlayerTurn(IPlayer player)
     {
-        var success = turnManager.EndTurn(player);
+        var success = _turnManager.EndTurn(player);
         if (success) BoardStateChanged?.Invoke();
         return success;
     }
 
     public bool IsPlayerTurn(IPlayer player)
     {
-        return turnManager.IsPlayerTurn(player);
+        return _turnManager.IsPlayerTurn(player);
     }
 
     public bool CanEndTurn(IPlayer player)
     {
-        return turnManager.CanEndTurn(player);
+        return _turnManager.CanEndTurn(player);
     }
 
     public async Task<int?> RollDice(IPlayer player)
     {
-        if (!turnManager.IsPlayerTurn(player))
+        if (!_turnManager.IsPlayerTurn(player))
         {
             Debug.LogError($"Cannot roll dice: no player turn in progress for player {player.PlayerId}");
             return null;
         }
 
-        if (turnManager.HasRolledDice)
+        if (_turnManager.HasRolledDice)
         {
             Debug.LogError($"Cannot roll dice: player {player.PlayerId} has already rolled this turn");
             return null;
         }
 
-        var dieA = random.Next(1, 7);
-        var dieB = random.Next(1, 7);
+        var dieA = _random.Next(1, 7);
+        var dieB = _random.Next(1, 7);
         var diceRoll = dieA + dieB;
 
         Debug.Log($"Player {player.PlayerId} rolled a {diceRoll} ({dieA} + {dieB})");
 
         // Award resources to players who have tiles with the same dice roll
-        foreach (var hexTile in hexTileMap.Values)
+        foreach (var hexTile in _hexTileMap.Values)
         {
             if (hexTile.DiceNumber == diceRoll)
             {
@@ -535,7 +526,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
             await HandleMoveRobber();
         }
 
-        turnManager.SetHasRolledDice();
+        _turnManager.SetHasRolledDice();
 
         BoardStateChanged?.Invoke();
         return diceRoll;
@@ -543,33 +534,33 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private async Task HandleSevenRollDiscard()
     {
-        await resourceManager.HandleSevenRollDiscard();
+        await _resourceManager.HandleSevenRollDiscard();
     }
 
     private async Task HandleMoveRobber()
     {
-        await turnManager.CurrentPlayer.MoveRobber();
+        await _turnManager.CurrentPlayer.MoveRobber();
 
         // After moving the robber, let the current player choose another player on the robber's hex to steal from
-        var playersOnRobberHex = buildingManager.GetPlayersWithBuildingsOnHexTile(buildingManager.CurrentRobberHexTile);
+        var playersOnRobberHex = _buildingManager.GetPlayersWithBuildingsOnHexTile(_buildingManager.CurrentRobberHexTile);
         
         // Remove the current player from the list (can't steal from yourself)
-        playersOnRobberHex.RemoveAll(p => p == turnManager.CurrentPlayer);
+        playersOnRobberHex.RemoveAll(p => p == _turnManager.CurrentPlayer);
         
         if (playersOnRobberHex.Count > 0)
         {
-            Debug.Log($"Player {turnManager.CurrentPlayer.PlayerId} can steal from {playersOnRobberHex.Count} players on the robber's hex");
+            Debug.Log($"Player {_turnManager.CurrentPlayer.PlayerId} can steal from {playersOnRobberHex.Count} players on the robber's hex");
             
             // Let the current player choose who to steal from
-            var playerToStealFrom = await turnManager.CurrentPlayer.ChoosePlayerToStealFrom(playersOnRobberHex);
+            var playerToStealFrom = await _turnManager.CurrentPlayer.ChoosePlayerToStealFrom(playersOnRobberHex);
             
             if (playerToStealFrom != null)
             {
                 // Steal a random resource from the chosen player
-                var stolenResource = StealRandomResourceFromPlayer(playerToStealFrom, turnManager.CurrentPlayer);
+                var stolenResource = StealRandomResourceFromPlayer(playerToStealFrom, _turnManager.CurrentPlayer);
                 if (stolenResource.HasValue)
                 {
-                    Debug.Log($"Player {turnManager.CurrentPlayer.PlayerId} successfully stole 1 {stolenResource.Value} from Player {playerToStealFrom.PlayerId}");
+                    Debug.Log($"Player {_turnManager.CurrentPlayer.PlayerId} successfully stole 1 {stolenResource.Value} from Player {playerToStealFrom.PlayerId}");
                 }
                 else
                 {
@@ -589,7 +580,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void GiveAllPlayersResourcesForHexTile(HexTile hexTile)
     {
-        resourceManager.GiveAllPlayersResourcesForHexTile(hexTile, buildingManager.CurrentRobberHexTile);
+        _resourceManager.GiveAllPlayersResourcesForHexTile(hexTile, _buildingManager.CurrentRobberHexTile);
     }
 
     #endregion
@@ -598,12 +589,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void Update()
     {
-        if (boardStateMachine == null)
+        if (_boardStateMachine == null)
         {
             return;
         }
 
-        boardStateMachine.Update();
+        _boardStateMachine.Update();
     }
 
     #endregion
@@ -612,15 +603,15 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnEnterIdleMode()
     {
-        foreach (var hexVertex in vertexMap.Values)
+        foreach (var hexVertex in _vertexMap.Values)
         {
             hexVertex.EnableSelection(false);
         }
-        foreach (var hexEdge in edgeMap.Values)
+        foreach (var hexEdge in _edgeMap.Values)
         {
             hexEdge.EnableSelection(false);
         }
-        foreach (var hexTile in hexTileMap.Values)
+        foreach (var hexTile in _hexTileMap.Values)
         {
             hexTile.EnableSelection(false);
         }
@@ -628,12 +619,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnEnterSettlementLocationSelectionMode()
     {
-        var playerColor = turnManager.CurrentPlayer.PlayerColor;
+        var playerColor = _turnManager.CurrentPlayer.PlayerColor;
 
-        var settlementLocationList = GetAvailableSettlementLocations(turnManager.CurrentPlayer);
+        var settlementLocationList = GetAvailableSettlementLocations(_turnManager.CurrentPlayer);
         var settlementLocationsSet = new HashSet<HexVertex>(settlementLocationList);
 
-        foreach (var hexVertex in vertexMap.Values)
+        foreach (var hexVertex in _vertexMap.Values)
         {
             var selectionEnabled = settlementLocationsSet.Contains(hexVertex);
             hexVertex.EnableSelection(selectionEnabled, playerColor);
@@ -642,7 +633,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnExitSettlementLocationSelectionMode()
     {
-        foreach (var hexVertex in vertexMap.Values)
+        foreach (var hexVertex in _vertexMap.Values)
         {
             hexVertex.EnableSelection(false);
         }
@@ -650,12 +641,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnEnterRoadLocationSelectionMode()
     {
-        var playerColor = turnManager.CurrentPlayer.PlayerColor;
+        var playerColor = _turnManager.CurrentPlayer.PlayerColor;
 
-        var roadLocationList = GetAvailableRoadLocations(turnManager.CurrentPlayer);
+        var roadLocationList = GetAvailableRoadLocations(_turnManager.CurrentPlayer);
         var roadLocationSet = new HashSet<HexEdge>(roadLocationList);
 
-        foreach (var hexEdge in edgeMap.Values)
+        foreach (var hexEdge in _edgeMap.Values)
         {
             var selectionEnabled = roadLocationSet.Contains(hexEdge);
             hexEdge.EnableSelection(selectionEnabled, playerColor);
@@ -664,7 +655,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnExitRoadLocationSelectionMode()
     {
-        foreach (var hexEdge in edgeMap.Values)
+        foreach (var hexEdge in _edgeMap.Values)
         {
             hexEdge.EnableSelection(false);
         }
@@ -672,12 +663,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnEnterSettlementUpgradeSelectionMode()
     {
-        var playerColor = turnManager.CurrentPlayer.PlayerColor;
+        var playerColor = _turnManager.CurrentPlayer.PlayerColor;
 
-        var settlementUpgradeList = GetAvailableSettlementsToUpgrade(turnManager.CurrentPlayer);
+        var settlementUpgradeList = GetAvailableSettlementsToUpgrade(_turnManager.CurrentPlayer);
         var settlementUpgradeSet = new HashSet<HexVertex>(settlementUpgradeList);
 
-        foreach (var hexVertex in vertexMap.Values)
+        foreach (var hexVertex in _vertexMap.Values)
         {
             var selectionEnabled = settlementUpgradeSet.Contains(hexVertex);
             hexVertex.EnableSelection(selectionEnabled, playerColor);
@@ -686,7 +677,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnExitSettlementUpgradeSelectionMode()
     {
-        foreach (var hexVertex in vertexMap.Values)
+        foreach (var hexVertex in _vertexMap.Values)
         {
             hexVertex.EnableSelection(false);
         }
@@ -694,12 +685,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnEnterRobberLocationSelectionMode()
     {
-        var playerColor = turnManager.CurrentPlayer.PlayerColor;
+        var playerColor = _turnManager.CurrentPlayer.PlayerColor;
 
-        var robberLocationList = GetAvailableRobberLocations(turnManager.CurrentPlayer);
+        var robberLocationList = GetAvailableRobberLocations(_turnManager.CurrentPlayer);
         var robberLocationSet = new HashSet<HexTile>(robberLocationList);
 
-        foreach (var hexTile in hexTileMap.Values)
+        foreach (var hexTile in _hexTileMap.Values)
         {
             var selectionEnabled = robberLocationSet.Contains(hexTile);
             hexTile.EnableSelection(selectionEnabled, playerColor);
@@ -708,7 +699,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void OnExitRobberLocationSelectionMode()
     {
-        foreach (var hexTile in hexTileMap.Values)
+        foreach (var hexTile in _hexTileMap.Values)
         {
             hexTile.EnableSelection(false);
         }
@@ -718,8 +709,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     private void ClearBoard()
     {
-        turnManager.Clear();
-        gridInitializer?.ClearBoard(hexTileMap, vertexMap, edgeMap);
+        _turnManager.Clear();
+        _gridInitializer?.ClearBoard(_hexTileMap, _vertexMap, _edgeMap);
     }
 
     #region Debugging
@@ -727,7 +718,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
     // Returns a string with the current resource hands of each player for debugging
     public string GetAllPlayerResourceHandsDebugString()
     {
-        return resourceManager.GetAllPlayerResourceHandsDebugString();
+        return _resourceManager.GetAllPlayerResourceHandsDebugString();
     }
 
     #endregion

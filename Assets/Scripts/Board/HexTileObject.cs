@@ -48,16 +48,16 @@ public class HexTileObject : MonoBehaviour
 
     #region Private fields
 
-    private IBoardManager boardManager;
-    private HexTile hexTile;
+    private IBoardManager _boardManager;
+    private HexTile _hexTile;
 
     #endregion
 
     public void Initialize(IBoardManager boardManager, HexTile hexTile, int? diceNumber)
     {
-        this.boardManager = boardManager;
-        this.hexTile = hexTile;
-        this.DiceNumber = diceNumber;
+        _boardManager = boardManager;
+        _hexTile = hexTile;
+        DiceNumber = diceNumber;
 
         if (selectionObject != null)
         {
@@ -86,7 +86,7 @@ public class HexTileObject : MonoBehaviour
 
     private void HexTileSelected()
     {
-        boardManager.CompleteSelection(hexTile);
+        _boardManager.CompleteSelection(_hexTile);
     }
 
     public void EnableSelection(bool enable, Color? hoverColor = null)
@@ -103,12 +103,12 @@ public class HexTileObject : MonoBehaviour
 
     public void RefreshDebugText()
     {
-        if (debugText != null && hexTile != null)
+        if (debugText != null && _hexTile != null)
         {
             var text = "";
             if (DebugSettings.Instance.ShowHexCoordinates)
             {
-                text += $"{hexTile.HexCoordinates}\n";
+                text += $"{_hexTile.HexCoordinates}\n";
             }
             if (DiceNumber.HasValue)
             {

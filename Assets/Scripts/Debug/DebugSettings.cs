@@ -4,21 +4,22 @@ using UnityEditor;
 [CreateAssetMenu(fileName = "DebugSettings", menuName = "Wheat4Sheep/Debug Settings")]
 public class DebugSettings : ScriptableObject
 {
-    private static DebugSettings instance;
+    private static DebugSettings s_instance;
+    
     public static DebugSettings Instance
     {
         get
         {
-            if (instance == null)
+            if (s_instance == null)
             {
                 var guids = AssetDatabase.FindAssets("t:DebugSettings");
                 if (guids.Length > 0)
                 {
                     var path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                    instance = AssetDatabase.LoadAssetAtPath<DebugSettings>(path);
+                    s_instance = AssetDatabase.LoadAssetAtPath<DebugSettings>(path);
                 }
             }
-            return instance;
+            return s_instance;
         }
     }
 

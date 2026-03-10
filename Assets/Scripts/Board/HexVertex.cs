@@ -16,13 +16,13 @@ public class HexVertex
 
     public Port Port { get; set; }
 
-    public IReadOnlyList<HexTile> NeighborHexTiles => neighborHexes;
-    public IReadOnlyList<HexVertex> NeighborVertices => neighborVertices;
-    public IReadOnlyList<HexEdge> NeighborEdges => neighborEdges;
+    public IReadOnlyList<HexTile> NeighborHexTiles => _neighborHexes;
+    public IReadOnlyList<HexVertex> NeighborVertices => _neighborVertices;
+    public IReadOnlyList<HexEdge> NeighborEdges => _neighborEdges;
 
-    private List<HexTile> neighborHexes = null;
-    private List<HexVertex> neighborVertices = null;
-    private List<HexEdge> neighborEdges = null;
+    private List<HexTile> _neighborHexes;
+    private List<HexVertex> _neighborVertices;
+    private List<HexEdge> _neighborEdges;
 
     public HexVertex(VertexCoord coord)
     {
@@ -44,13 +44,13 @@ public class HexVertex
 
     public bool CanHaveBuildings()
     {
-        if (neighborHexes == null || neighborHexes.Count == 0)
+        if (_neighborHexes == null || _neighborHexes.Count == 0)
         {
             Debug.LogWarning($"No neighbor hex tiles initialized for {this}");
             return false;
         }
 
-        foreach (var hex in neighborHexes)
+        foreach (var hex in _neighborHexes)
         {
             if (hex.CanHaveBuildingsAndRoads)
             {
@@ -72,9 +72,9 @@ public class HexVertex
 
     public void InitializeNeighbors(IBoardManager boardManager)
     {
-        neighborHexes = new List<HexTile>();
-        neighborVertices = new List<HexVertex>();
-        neighborEdges = new List<HexEdge>();
+        _neighborHexes = new List<HexTile>();
+        _neighborVertices = new List<HexVertex>();
+        _neighborEdges = new List<HexEdge>();
 
         foreach (var hexCoord in GridHelpers.GetVertexNeighborHexCoords(VertexCoord))
         {
@@ -96,7 +96,7 @@ public class HexVertex
     {
         if (boardManager.HexMap.TryGetValue(hexCoord, out var hex))
         {
-            neighborHexes.Add(hex);
+            _neighborHexes.Add(hex);
         }
     }
 
@@ -104,7 +104,7 @@ public class HexVertex
     {
         if (boardManager.VertexMap.TryGetValue(vertexCoord, out var vertex))
         {
-            neighborVertices.Add(vertex);
+            _neighborVertices.Add(vertex);
         }
     }
 
@@ -112,7 +112,7 @@ public class HexVertex
     {
         if (boardManager.EdgeMap.TryGetValue(edgeCoord, out var edge))
         {
-            neighborEdges.Add(edge);
+            _neighborEdges.Add(edge);
         }
     }
 }

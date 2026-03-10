@@ -23,37 +23,37 @@ public class StateMachine<T> where T : struct
 
     public Action<T?, T?> OnStateChange;
 
-    public T CurrentState => currentState != null ? currentState.Id : default;
+    public T CurrentState => _currentState?.Id ?? default;
 
     public bool EnableDebugLogging = true;
 
-    private Dictionary<T, State> stateMap = new Dictionary<T, State>();
-    private State currentState = null;
+    private readonly Dictionary<T, State> _stateMap = new();
+    private State _currentState;
 
-    private string name;
+    private readonly string _name;
 
     public StateMachine(string name)
     {
-        this.name = name;
+        _name = name;
     }
 
     public void AddState(T stateId, Action onStateEnter, Action onStateUpdate, Action onStateExit)
     {
         var state = new State(stateId, onStateEnter, onStateUpdate, onStateExit);
-        stateMap.Add(stateId, state);
+        _stateMap.Add(stateId, state);
     }
 
     public bool GoToState(T stateId)
     {
-        if (stateMap != null && stateMap.TryGetValue(stateId, out var newState))
+        if (_stateMap != null && _stateMap.TryGetValue(stateId, out var newState))
         {
-            var previousState = currentState;
+            var previousState = _currentState;
 
             DebugLogStateTransition(previousState, newState);
 
             previousState?.OnStateExit?.Invoke();
 
-            currentState = newState;
+            _currentState = newState;
             newState.OnStateEnter?.Invoke();
 
             OnStateChange?.Invoke(previousState?.Id, newState?.Id);
@@ -68,9 +68,9 @@ public class StateMachine<T> where T : struct
 
     public void Update()
     {
-        if (currentState != null)
+        if (_currentState != null)
         {
-            currentState.OnStateUpdate?.Invoke();
+            _currentState.OnStateUpdate?.Invoke();
         }
     }
 
@@ -84,6 +84,6 @@ public class StateMachine<T> where T : struct
         var oldStateId = oldState != null ? oldState.Id.ToString() : "none";
         var newStateId = newState != null ? newState.Id.ToString() : "none";
 
-        Debug.Log($"State machine {name} transition: {oldStateId} -> {newStateId}");
+        Debug.Log($"State machine {_name} transition: {oldStateId} -> {newStateId}");
     }
 }

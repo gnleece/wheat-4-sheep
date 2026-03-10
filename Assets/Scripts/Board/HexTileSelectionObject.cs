@@ -6,21 +6,23 @@ using UnityEngine;
 
 public class HexTileSelectionObject : MonoBehaviour, IInteractable
 {
-    private new Renderer renderer;
-    private HexTile hexTile;
-    private Color hoverColor = Color.yellow;
+    public HexTile Tile { get; private set; }
+    
+    private Renderer _renderer;
+    
+    private Color _hoverColor = Color.yellow;
 
     public event Action OnHexTileSelected;
 
     public void Initialize(HexTile hexTile)
     {
-        this.hexTile = hexTile;
-        renderer = gameObject.GetComponent<Renderer>();
+        Tile = hexTile;
+        _renderer = gameObject.GetComponent<Renderer>();
     }
 
     public void SetHoverColor(Color color)
     {
-        hoverColor = color;
+        _hoverColor = color;
     }
 
     public void Select()
@@ -30,17 +32,17 @@ public class HexTileSelectionObject : MonoBehaviour, IInteractable
 
     public void HoverOn()
     {
-        if (renderer != null)
+        if (_renderer != null)
         {
-            renderer.material.color = hoverColor;
+            _renderer.material.color = _hoverColor;
         }
     }
 
     public void HoverOff()
     {
-        if (renderer != null)
+        if (_renderer != null)
         {
-            renderer.material.color = Color.white;
+            _renderer.material.color = Color.white;
         }
     }
 }
