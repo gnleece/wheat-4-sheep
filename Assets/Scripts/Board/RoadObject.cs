@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class RoadObject : MonoBehaviour
 {
-    private new Renderer renderer;
+    private Renderer _renderer;
 
     public void Refresh(Road road)
     {
@@ -13,14 +13,14 @@ public class RoadObject : MonoBehaviour
 
         if (active)
         {
-            if (renderer == null)
+            if (_renderer == null)
             {
-                renderer = GetComponentInChildren<Renderer>();
+                _renderer = GetComponentInChildren<Renderer>();
             }
 
-            if (renderer != null)
+            if (_renderer != null)
             {
-                renderer.material.color = road.Owner.PlayerColor;
+                _renderer.material.color = road.Owner.PlayerColor;
             }
         }
     }

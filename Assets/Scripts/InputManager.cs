@@ -7,7 +7,7 @@ public class InputManager : MonoBehaviour
     [SerializeField]
     private Camera mainCamera;
 
-    private IInteractable previousInteractable = null;
+    private IInteractable _previousInteractable = null;
 
     private void Update()
     {
@@ -18,17 +18,17 @@ public class InputManager : MonoBehaviour
         {
             var objectHit = hit.transform.gameObject;
             var interactable = objectHit.GetComponent<IInteractable>();
-            if (interactable != previousInteractable)
+            if (interactable != _previousInteractable)
             {
-                if (previousInteractable != null)
+                if (_previousInteractable != null)
                 {
-                    previousInteractable.HoverOff();
+                    _previousInteractable.HoverOff();
                 }
                 if (interactable != null)
                 {
                     interactable.HoverOn();
                 }
-                previousInteractable = interactable;
+                _previousInteractable = interactable;
             }
         }
 

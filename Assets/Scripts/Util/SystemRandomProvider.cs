@@ -1,18 +1,18 @@
 public class SystemRandomProvider : IRandomProvider
 {
-    private readonly System.Random random;
+    private readonly System.Random _random;
 
     public SystemRandomProvider()
     {
-        random = new System.Random();
+        _random = new System.Random();
     }
 
     public SystemRandomProvider(int seed)
     {
-        random = new System.Random(seed);
+        _random = new System.Random(seed);
     }
 
-    public int Next(int maxValue) => random.Next(maxValue);
-    public int Next(int minValue, int maxValue) => random.Next(minValue, maxValue);
-    public double NextDouble() => random.NextDouble();
+    public int Next(int maxValue) => _random.Next(maxValue);
+    public int Next(int minValue, int maxValue) => _random.Next(minValue, maxValue);
+    public double NextDouble() => _random.NextDouble();
 }

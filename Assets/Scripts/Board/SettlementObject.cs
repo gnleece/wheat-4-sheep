@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class SettlementObject : MonoBehaviour
 {
-    private new Renderer renderer;
+    private Renderer _renderer;
 
     public void Refresh(Building building)
     {
@@ -12,14 +12,14 @@ public class SettlementObject : MonoBehaviour
 
         if (active)
         {
-            if (renderer == null)
+            if (_renderer == null)
             {
-                renderer = GetComponentInChildren<Renderer>();
+                _renderer = GetComponentInChildren<Renderer>();
             }
 
-            if (renderer != null)
+            if (_renderer != null)
             {
-                renderer.material.color = building.Owner.PlayerColor;
+                _renderer.material.color = building.Owner.PlayerColor;
             }
         }
     }

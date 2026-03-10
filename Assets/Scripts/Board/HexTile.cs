@@ -11,8 +11,8 @@ public class HexTile
 
     public HexTileObject TileObject { get; set; }
 
-    private List<HexVertex> neighborVertices = new List<HexVertex>();
-    public IReadOnlyList<HexVertex> NeighborVertices => neighborVertices;
+    private List<HexVertex> _neighborVertices = new List<HexVertex>();
+    public IReadOnlyList<HexVertex> NeighborVertices => _neighborVertices;
 
     public HexTile(HexCoord coord, bool isValidForBuilding)
     {
@@ -43,12 +43,12 @@ public class HexTile
 
     public void InitializeNeighbors(IBoardManager boardManager)
     {
-        neighborVertices = new List<HexVertex>();
+        _neighborVertices = new List<HexVertex>();
         foreach (var vertex in boardManager.VertexMap.Values)
         {
             if (vertex.NeighborHexTiles.Any(h => h.HexCoordinates.Equals(this.HexCoordinates)))
             {
-                neighborVertices.Add(vertex);
+                _neighborVertices.Add(vertex);
             }
         }
     }

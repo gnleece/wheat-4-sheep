@@ -2,24 +2,24 @@ using UnityEngine;
 
 public class CityObject : MonoBehaviour
 {
-    private new Renderer renderer;
+    private Renderer _renderer;
 
     public void Refresh(Building building)
     {
-        var active = building != null && building.Type == Building.BuildingType.City;
+        var active = building is { Type: Building.BuildingType.City };
 
         gameObject.SetActive(active);
 
         if (active)
         {
-            if (renderer == null)
+            if (_renderer == null)
             {
-                renderer = GetComponentInChildren<Renderer>();
+                _renderer = GetComponentInChildren<Renderer>();
             }
 
-            if (renderer != null)
+            if (_renderer != null)
             {
-                renderer.material.color = building.Owner.PlayerColor;
+                _renderer.material.color = building.Owner.PlayerColor;
             }
         }
     }

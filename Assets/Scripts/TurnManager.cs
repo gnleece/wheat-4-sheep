@@ -2,96 +2,96 @@ using UnityEngine;
 
 public class TurnManager
 {
-    private PlayerTurn currentTurn = null;
+    private PlayerTurn _currentTurn = null;
 
-    public IPlayer CurrentPlayer => currentTurn?.Player;
-    public PlayerTurnType? CurrentTurnType => currentTurn?.TurnType;
-    public bool HasRolledDice => currentTurn?.HasRolledDice ?? false;
-    public bool DevCardBoughtThisTurn => currentTurn?.DevCardBoughtThisTurn ?? false;
-    public bool DevCardPlayedThisTurn => currentTurn?.DevCardPlayedThisTurn ?? false;
-    public bool IsActive => currentTurn != null;
+    public IPlayer CurrentPlayer => _currentTurn?.Player;
+    public PlayerTurnType? CurrentTurnType => _currentTurn?.TurnType;
+    public bool HasRolledDice => _currentTurn?.HasRolledDice ?? false;
+    public bool DevCardBoughtThisTurn => _currentTurn?.DevCardBoughtThisTurn ?? false;
+    public bool DevCardPlayedThisTurn => _currentTurn?.DevCardPlayedThisTurn ?? false;
+    public bool IsActive => _currentTurn != null;
 
     public bool BeginTurn(IPlayer player, PlayerTurnType turnType)
     {
-        if (currentTurn != null)
+        if (_currentTurn != null)
         {
-            Debug.LogError($"Cannot begin player turn: a player turn is already in progress for player {currentTurn.Player.PlayerId}");
+            Debug.LogError($"Cannot begin player turn: a player turn is already in progress for player {_currentTurn.Player.PlayerId}");
             return false;
         }
 
-        currentTurn = new PlayerTurn { Player = player, TurnType = turnType };
+        _currentTurn = new PlayerTurn { Player = player, TurnType = turnType };
         Debug.Log($"Player {player.PlayerId} turn started");
         return true;
     }
 
     public bool EndTurn(IPlayer player)
     {
-        if (currentTurn == null || currentTurn.Player != player)
+        if (_currentTurn == null || _currentTurn.Player != player)
         {
             Debug.LogError($"Cannot end player turn: no player turn in progress for player {player.PlayerId}");
             return false;
         }
 
-        if (!currentTurn.CanEndTurn)
+        if (!_currentTurn.CanEndTurn)
         {
             Debug.LogError($"Cannot end player turn");
             return false;
         }
 
         Debug.Log($"Player {player.PlayerId} turn ended");
-        currentTurn = null;
+        _currentTurn = null;
         return true;
     }
 
-    public bool IsPlayerTurn(IPlayer player) => currentTurn != null && currentTurn.Player == player;
+    public bool IsPlayerTurn(IPlayer player) => _currentTurn != null && _currentTurn.Player == player;
 
     public bool CanEndTurn(IPlayer player)
     {
-        if (currentTurn == null || currentTurn.Player != player) return false;
-        return currentTurn.CanEndTurn;
+        if (_currentTurn == null || _currentTurn.Player != player) return false;
+        return _currentTurn.CanEndTurn;
     }
 
     public void SetHasRolledDice()
     {
-        if (currentTurn != null)
+        if (_currentTurn != null)
         {
-            currentTurn.HasRolledDice = true;
+            _currentTurn.HasRolledDice = true;
         }
     }
 
     public void SetDevCardBoughtThisTurn()
     {
-        if (currentTurn != null)
+        if (_currentTurn != null)
         {
-            currentTurn.DevCardBoughtThisTurn = true;
+            _currentTurn.DevCardBoughtThisTurn = true;
         }
     }
 
     public void SetDevCardPlayedThisTurn()
     {
-        if (currentTurn != null)
+        if (_currentTurn != null)
         {
-            currentTurn.DevCardPlayedThisTurn = true;
+            _currentTurn.DevCardPlayedThisTurn = true;
         }
     }
 
-    public int FreeRoadsRemaining => currentTurn?.FreeRoadsRemaining ?? 0;
+    public int FreeRoadsRemaining => _currentTurn?.FreeRoadsRemaining ?? 0;
 
     public void AddFreeRoads(int count)
     {
-        if (currentTurn != null)
+        if (_currentTurn != null)
         {
-            currentTurn.FreeRoadsRemaining += count;
+            _currentTurn.FreeRoadsRemaining += count;
         }
     }
 
     public void UseOneRoad()
     {
-        if (currentTurn != null && currentTurn.FreeRoadsRemaining > 0)
+        if (_currentTurn != null && _currentTurn.FreeRoadsRemaining > 0)
         {
-            currentTurn.FreeRoadsRemaining--;
+            _currentTurn.FreeRoadsRemaining--;
         }
     }
 
-    public void Clear() => currentTurn = null;
+    public void Clear() => _currentTurn = null;
 }

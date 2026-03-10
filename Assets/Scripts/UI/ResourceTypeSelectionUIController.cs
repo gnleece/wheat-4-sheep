@@ -14,7 +14,7 @@ public class ResourceTypeSelectionUIController : MonoBehaviour
         ResourceType.Ore,
     };
 
-    private TaskCompletionSource<ResourceType> selectionCompletionSource;
+    private TaskCompletionSource<ResourceType> _selectionCompletionSource;
 
     public void Initialize(IPlayer player, string prompt)
     {
@@ -29,8 +29,8 @@ public class ResourceTypeSelectionUIController : MonoBehaviour
 
     public async Task<ResourceType> WaitForResourceTypeSelection()
     {
-        selectionCompletionSource = new TaskCompletionSource<ResourceType>();
-        return await selectionCompletionSource.Task;
+        _selectionCompletionSource = new TaskCompletionSource<ResourceType>();
+        return await _selectionCompletionSource.Task;
     }
 
     private void SetupResourceButtons()
@@ -62,12 +62,12 @@ public class ResourceTypeSelectionUIController : MonoBehaviour
     private void OnResourceButtonClicked(ResourceType resourceType)
     {
         Debug.Log($"ResourceTypeSelectionUIController: {resourceType} selected");
-        selectionCompletionSource?.TrySetResult(resourceType);
+        _selectionCompletionSource?.TrySetResult(resourceType);
     }
 
     private void OnDisable()
     {
         // If the modal is hidden before a selection is made, cancel the task
-        selectionCompletionSource?.TrySetCanceled();
+        _selectionCompletionSource?.TrySetCanceled();
     }
 }
