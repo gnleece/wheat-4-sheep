@@ -11,6 +11,8 @@ public class HumanPlayer : IPlayer
 
     public Color PlayerColor => PlayerColorManager.GetPlayerColor(_playerId);
 
+    public bool IsHuman => true;
+
     private IBoardManager _boardManager;
     
     private int _playerId;

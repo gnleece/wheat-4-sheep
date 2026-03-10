@@ -11,6 +11,8 @@ public class AIPlayer : IPlayer
 
     public Color PlayerColor => PlayerColorManager.GetPlayerColor(_playerId);
 
+    public bool IsHuman => false;
+
     private IBoardManager _boardManager;
     private readonly IRandomProvider _random;
     

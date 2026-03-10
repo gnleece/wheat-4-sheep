@@ -605,9 +605,9 @@ public class UIManager : MonoBehaviour, IUIManager
 
     private void UpdateActionButtonStates()
     {
-        if (_currentPlayer == null || _boardManagerInterface == null)
+        if (_currentPlayer == null || _boardManagerInterface == null || !_currentPlayer.IsHuman)
         {
-            // Disable all buttons if no current player or board manager
+            // Disable all buttons if no current player, no board manager, or it's an AI player's turn
             SetButtonInteractable(_rollDiceButton, false);
             SetButtonInteractable(_buildRoadButton, false);
             SetButtonInteractable(_buildSettlementButton, false);

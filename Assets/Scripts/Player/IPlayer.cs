@@ -10,6 +10,8 @@ public interface IPlayer
 
     public Color PlayerColor { get; }
 
+    public bool IsHuman { get; }
+
     public void Initialize(int playerId, IBoardManager boardManager);
 
     public Task PlaceFirstSettlementAndRoadAsync();
