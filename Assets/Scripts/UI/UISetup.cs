@@ -582,11 +582,11 @@ internal sealed class UISetup
 
         string[] resources = { "Wood", "Clay", "Sheep", "Wheat", "Ore" };
         Color[] resourceColors = {
-            new Color(0.6f, 0.4f, 0.2f), // Brown for wood
-            new Color(0.8f, 0.4f, 0.2f), // Orange for clay
-            new Color(0.9f, 0.9f, 0.9f), // Light gray for sheep
-            new Color(1f, 0.8f, 0.2f),   // Yellow for wheat
-            new Color(0.6f, 0.6f, 0.6f)  // Gray for ore
+            ResourceColors.GetColor(ResourceType.Wood),
+            ResourceColors.GetColor(ResourceType.Clay),
+            ResourceColors.GetColor(ResourceType.Sheep),
+            ResourceColors.GetColor(ResourceType.Wheat),
+            ResourceColors.GetColor(ResourceType.Ore),
         };
 
         for (int i = 0; i < resources.Length; i++)
@@ -861,11 +861,11 @@ internal sealed class UISetup
         string[] resourceNames = { "Wood", "Clay", "Sheep", "Wheat", "Ore" };
         Color[] resourceColors =
         {
-            new Color(0.6f, 0.4f, 0.2f),
-            new Color(0.8f, 0.4f, 0.2f),
-            new Color(0.9f, 0.9f, 0.9f),
-            new Color(1f, 0.8f, 0.2f),
-            new Color(0.6f, 0.6f, 0.6f),
+            ResourceColors.GetColor(ResourceType.Wood),
+            ResourceColors.GetColor(ResourceType.Clay),
+            ResourceColors.GetColor(ResourceType.Sheep),
+            ResourceColors.GetColor(ResourceType.Wheat),
+            ResourceColors.GetColor(ResourceType.Ore),
         };
 
         for (int i = 0; i < resourceNames.Length; i++)
@@ -977,11 +977,11 @@ internal sealed class UISetup
         string[] resourceNames = { "Wood", "Clay", "Sheep", "Wheat", "Ore" };
         Color[] resourceColors =
         {
-            new Color(0.6f, 0.4f, 0.2f),
-            new Color(0.8f, 0.4f, 0.2f),
-            new Color(0.7f, 0.85f, 0.7f),
-            new Color(1f, 0.8f, 0.2f),
-            new Color(0.6f, 0.6f, 0.6f),
+            ResourceColors.GetColor(ResourceType.Wood),
+            ResourceColors.GetColor(ResourceType.Clay),
+            ResourceColors.GetColor(ResourceType.Sheep),
+            ResourceColors.GetColor(ResourceType.Wheat),
+            ResourceColors.GetColor(ResourceType.Ore),
         };
 
         var givingButtons = new System.Collections.Generic.List<Button>();
@@ -1546,11 +1546,11 @@ internal sealed class UISetup
 
         string[] resources = { "Wood", "Clay", "Sheep", "Wheat", "Ore" };
         Color[] resourceColors = {
-            new Color(0.6f, 0.4f, 0.2f), // Brown for wood
-            new Color(0.8f, 0.4f, 0.2f), // Orange for clay
-            new Color(0.9f, 0.9f, 0.9f), // Light gray for sheep
-            new Color(1f, 0.8f, 0.2f),   // Yellow for wheat
-            new Color(0.6f, 0.6f, 0.6f)  // Gray for ore
+            ResourceColors.GetColor(ResourceType.Wood),
+            ResourceColors.GetColor(ResourceType.Clay),
+            ResourceColors.GetColor(ResourceType.Sheep),
+            ResourceColors.GetColor(ResourceType.Wheat),
+            ResourceColors.GetColor(ResourceType.Ore),
         };
 
         for (int i = 0; i < resources.Length; i++)
