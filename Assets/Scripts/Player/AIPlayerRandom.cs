@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Grid;
 using UnityEngine;
 
@@ -25,6 +26,35 @@ public class AIPlayerRandom : AIPlayerBase
     protected override EdgeCoord ChooseSecondRoadLocation()
     {
         return GetRandomRoadLocation();
+    }
+
+    protected override HexCoord ChooseRobberLocation(List<HexCoord> availableLocations)
+    {
+        return availableLocations[Random.Next(availableLocations.Count)];
+    }
+
+    protected override List<ResourceType> ChooseResourcesToDiscard(ResourceHand hand, int cardsToDiscard)
+    {
+        var allResources = hand.GetAll();
+        var resourcesList = new List<ResourceType>();
+
+        foreach (var kvp in allResources)
+        {
+            for (int i = 0; i < kvp.Value; i++)
+            {
+                resourcesList.Add(kvp.Key);
+            }
+        }
+
+        var discarded = new List<ResourceType>();
+        for (int i = 0; i < cardsToDiscard && resourcesList.Count > 0; i++)
+        {
+            var randomIndex = Random.Next(resourcesList.Count);
+            discarded.Add(resourcesList[randomIndex]);
+            resourcesList.RemoveAt(randomIndex);
+        }
+
+        return discarded;
     }
 
     private VertexCoord GetRandomSettlementLocation()

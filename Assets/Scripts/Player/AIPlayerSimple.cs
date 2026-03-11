@@ -33,6 +33,16 @@ public class AIPlayerSimple : AIPlayerBase
     {
         throw new System.NotImplementedException();
     }
+
+    protected override HexCoord ChooseRobberLocation(List<HexCoord> availableLocations)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    protected override List<ResourceType> ChooseResourcesToDiscard(ResourceHand hand, int cardsToDiscard)
+    {
+        throw new System.NotImplementedException();
+    }
     
     // Numbers that are more common are better (assumes 2D6 dice)
     private readonly Dictionary<int, int> _tileDiceNumberScores = new()

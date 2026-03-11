@@ -35,10 +35,13 @@ public abstract class AIPlayerBase : IPlayer
 
     protected abstract VertexCoord ChooseFirstSettlementLocation();
     protected abstract EdgeCoord ChooseFirstRoadLocation();
-    
+
     protected abstract VertexCoord ChooseSecondSettlementLocation();
     protected abstract EdgeCoord ChooseSecondRoadLocation();
-    
+
+    protected abstract HexCoord ChooseRobberLocation(List<HexCoord> availableLocations);
+    protected abstract List<ResourceType> ChooseResourcesToDiscard(ResourceHand hand, int cardsToDiscard);
+
     #endregion
     
     public async Task PlaceFirstSettlementAndRoadAsync()
@@ -159,30 +162,15 @@ public abstract class AIPlayerBase : IPlayer
 
     public async Task DiscardOnSevenRoll(ResourceHand hand, int cardsToDiscard)
     {
-        Debug.Log($"AI Player {_playerId} discarding {cardsToDiscard} cards randomly...");
-        
-        var allResources = hand.GetAll();
-        var resourcesList = new List<ResourceType>();
-        
-        // Create a list of all resources (including duplicates)
-        foreach (var kvp in allResources)
+        Debug.Log($"AI Player {_playerId} discarding {cardsToDiscard} cards...");
+
+        var resourcesToDiscard = ChooseResourcesToDiscard(hand, cardsToDiscard);
+        foreach (var resource in resourcesToDiscard)
         {
-            for (int i = 0; i < kvp.Value; i++)
-            {
-                resourcesList.Add(kvp.Key);
-            }
+            hand.Remove(resource, 1);
+            Debug.Log($"AI Player {_playerId} discarded 1 {resource}");
         }
-        
-        // Randomly select cards to discard
-        for (int i = 0; i < cardsToDiscard && resourcesList.Count > 0; i++)
-        {
-            var randomIndex = Random.Next(resourcesList.Count);
-            var resourceToDiscard = resourcesList[randomIndex];
-            hand.Remove(resourceToDiscard, 1);
-            resourcesList.RemoveAt(randomIndex);
-            Debug.Log($"AI Player {_playerId} discarded 1 {resourceToDiscard}");
-        }
-        
+
         await Task.Delay(500); // Small delay for visual feedback
     }
 
@@ -192,7 +180,7 @@ public abstract class AIPlayerBase : IPlayer
 
         if (locations.Count > 0)
         {
-            var choice = locations[Random.Next(locations.Count)];
+            var choice = ChooseRobberLocation(locations);
             var success = BoardManager.MoveRobber(this, choice);
             if (!success)
             {
