@@ -1,11 +1,13 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Grid;
 using UnityEngine;
 
-public class AIPlayer : IPlayer
+public abstract class AIPlayerBase : IPlayer
 {
     private const int MAX_ACTIONS_PER_TURN = 10;
-    private const int THINKING_DELAY_TIME_MS = 100;
+    private const int THINKING_DELAY_TIME_MS = 1000;
 
     public int PlayerId => _playerId;
 
@@ -13,60 +15,96 @@ public class AIPlayer : IPlayer
 
     public bool IsHuman => false;
 
-    private IBoardManager _boardManager;
-    private readonly IRandomProvider _random;
+    protected IBoardManager BoardManager;
+    protected readonly IRandomProvider Random;
     
     private int _playerId;
     
-    public AIPlayer(IRandomProvider random)
+    public AIPlayerBase(IRandomProvider random)
     {
-        _random = random;
+        Random = random;
     }
 
     public void Initialize(int playerId, IBoardManager boardManager)
     {
         _playerId = playerId;
-        _boardManager = boardManager;
+        BoardManager = boardManager;
     }
 
+    #region Abstract methods
+
+    protected abstract VertexCoord ChooseFirstSettlementLocation();
+    protected abstract EdgeCoord ChooseFirstRoadLocation();
+    
+    protected abstract VertexCoord ChooseSecondSettlementLocation();
+    protected abstract EdgeCoord ChooseSecondRoadLocation();
+    
+    #endregion
+    
     public async Task PlaceFirstSettlementAndRoadAsync()
     {
-        _boardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
+        BoardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
 
-        await PlaceRandomSettlementAsync();
-        await PlaceRandomRoadAsync();
+        var settlementLocation = ChooseFirstSettlementLocation();
+        var buildSettlementSuccess = BoardManager.BuildSettlement(this, settlementLocation);
+        if (!buildSettlementSuccess)
+        {
+            Debug.LogWarning($"AI Player {_playerId} failed to place first settlement at {settlementLocation}.");
+        }
+        await Task.Delay(THINKING_DELAY_TIME_MS);
 
-        _boardManager.EndPlayerTurn(this);
+        var roadLocation = ChooseFirstRoadLocation();
+        var buildRoadSuccess = BoardManager.BuildRoad(this, roadLocation);
+        if (!buildRoadSuccess)
+        {
+            Debug.LogWarning($"AI Player {_playerId} failed to place first road at {roadLocation}.");
+        }
+        await Task.Delay(THINKING_DELAY_TIME_MS);
+
+        BoardManager.EndPlayerTurn(this);
     }
 
     public async Task PlaceSecondSettlementAndRoadAsync()
     {
-        _boardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
+        BoardManager.BeginPlayerTurn(this, PlayerTurnType.InitialPlacement);
 
-        await PlaceRandomSettlementAsync();
-        await PlaceRandomRoadAsync();
+        var settlementLocation = ChooseSecondSettlementLocation();
+        var buildSettlementSuccess = BoardManager.BuildSettlement(this, settlementLocation);
+        if (!buildSettlementSuccess)
+        {
+            Debug.LogWarning($"AI Player {_playerId} failed to place second settlement at {settlementLocation}.");
+        }
+        await Task.Delay(THINKING_DELAY_TIME_MS);
 
-        _boardManager.EndPlayerTurn(this);
+        var roadLocation = ChooseSecondRoadLocation();
+        var buildRoadSuccess = BoardManager.BuildRoad(this, roadLocation);
+        if (!buildRoadSuccess)
+        {
+            Debug.LogWarning($"AI Player {_playerId} failed to place second road at {roadLocation}.");
+        }
+        await Task.Delay(THINKING_DELAY_TIME_MS);
+
+        BoardManager.EndPlayerTurn(this);
     }
 
     public async Task PlayTurnAsync()
     {
-        _boardManager.BeginPlayerTurn(this, PlayerTurnType.RegularTurn);
+        BoardManager.BeginPlayerTurn(this, PlayerTurnType.RegularTurn);
 
         await Task.Delay(THINKING_DELAY_TIME_MS);
 
         // Play a Knight card before rolling if one is available
-        if (_boardManager.CanPlayAnyDevCard(this))
+        if (BoardManager.CanPlayAnyDevCard(this))
         {
-            var hand = _boardManager.GetDevCardHandForPlayer(this);
+            var hand = BoardManager.GetDevCardHandForPlayer(this);
             if (hand.TryGetValue(DevelopmentCardType.Knight, out int knightCount) && knightCount > 0)
             {
-                await _boardManager.PlayDevelopmentCard(this, DevelopmentCardType.Knight);
+                await BoardManager.PlayDevelopmentCard(this, DevelopmentCardType.Knight);
                 await Task.Delay(THINKING_DELAY_TIME_MS);
             }
         }
 
-        await _boardManager.RollDice(this);
+        await BoardManager.RollDice(this);
 
         await Task.Delay(THINKING_DELAY_TIME_MS);
 
@@ -74,10 +112,10 @@ public class AIPlayer : IPlayer
         while (actionCount < MAX_ACTIONS_PER_TURN)  // Prevent infinite loops
         {
             // Check what I can afford to build
-            var resources = _boardManager.GetResourceHandForPlayer(this);
+            var resources = BoardManager.GetResourceHandForPlayer(this);
             var canAffordSettlement = ResourceHand.HasEnoughResources(resources, BuildingCosts.SettlementCost);
             var canAffordRoad = ResourceHand.HasEnoughResources(resources, BuildingCosts.RoadCost);
-            var canAffordDevCard = _boardManager.CanBuyDevelopmentCard(this);
+            var canAffordDevCard = BoardManager.CanBuyDevelopmentCard(this);
 
             if (!canAffordSettlement && !canAffordRoad && !canAffordDevCard)
             {
@@ -87,11 +125,11 @@ public class AIPlayer : IPlayer
             }
 
             // Try to build something (priority: settlement > road > dev card)
-            var settlementLocations = _boardManager.GetAvailableSettlementLocations(this);
-            var roadLocations = _boardManager.GetAvailableRoadLocations(this);
+            var settlementLocations = BoardManager.GetAvailableSettlementLocations(this);
+            var roadLocations = BoardManager.GetAvailableRoadLocations(this);
             if (settlementLocations.Count > 0 && canAffordSettlement)
             {
-                var success = _boardManager.BuildSettlement(this, settlementLocations[0]);
+                var success = BoardManager.BuildSettlement(this, settlementLocations[0]);
                 if (!success)
                 {
                     Debug.LogWarning($"AI Player {_playerId} failed to place settlement at {settlementLocations[0]}. This should not happen if the game is set up correctly.");
@@ -100,7 +138,7 @@ public class AIPlayer : IPlayer
             }
             else if (roadLocations.Count > 0 && canAffordRoad)
             {
-                var success = _boardManager.BuildRoad(this, roadLocations[0]);
+                var success = BoardManager.BuildRoad(this, roadLocations[0]);
                 if (!success)
                 {
                     Debug.LogWarning($"AI Player {_playerId} failed to place road at {roadLocations[0]}. This should not happen if the game is set up correctly.");
@@ -109,14 +147,14 @@ public class AIPlayer : IPlayer
             }
             else if (canAffordDevCard)
             {
-                _boardManager.BuyDevelopmentCard(this);
+                BoardManager.BuyDevelopmentCard(this);
             }
 
             actionCount++;
             await Task.Delay(THINKING_DELAY_TIME_MS);
         }
 
-        _boardManager.EndPlayerTurn(this);
+        BoardManager.EndPlayerTurn(this);
     }
 
     public async Task DiscardOnSevenRoll(ResourceHand hand, int cardsToDiscard)
@@ -138,7 +176,7 @@ public class AIPlayer : IPlayer
         // Randomly select cards to discard
         for (int i = 0; i < cardsToDiscard && resourcesList.Count > 0; i++)
         {
-            var randomIndex = _random.Next(resourcesList.Count);
+            var randomIndex = Random.Next(resourcesList.Count);
             var resourceToDiscard = resourcesList[randomIndex];
             hand.Remove(resourceToDiscard, 1);
             resourcesList.RemoveAt(randomIndex);
@@ -150,12 +188,12 @@ public class AIPlayer : IPlayer
 
     public async Task MoveRobber()
     {
-        var locations = _boardManager.GetAvailableRobberLocations(this);
+        var locations = BoardManager.GetAvailableRobberLocations(this);
 
         if (locations.Count > 0)
         {
-            var choice = locations[_random.Next(locations.Count)];
-            var success = _boardManager.MoveRobber(this, choice);
+            var choice = locations[Random.Next(locations.Count)];
+            var success = BoardManager.MoveRobber(this, choice);
             if (!success)
             {
                 Debug.LogWarning($"AI Player {_playerId} failed to place robber at {choice}. This should not happen if the game is set up correctly.");
@@ -178,7 +216,7 @@ public class AIPlayer : IPlayer
         }
 
         // Choose a random player to steal from
-        var choice = availablePlayers[_random.Next(availablePlayers.Count)];
+        var choice = availablePlayers[Random.Next(availablePlayers.Count)];
         Debug.Log($"AI Player {_playerId} chose to steal from Player {choice.PlayerId}");
         
         await Task.Delay(THINKING_DELAY_TIME_MS);
@@ -189,47 +227,5 @@ public class AIPlayer : IPlayer
     {
         Debug.Log($"AI Player {_playerId} declined trade offer from Player {offer.Initiator.PlayerId}");
         return Task.FromResult(false);
-    }
-
-    private async Task PlaceRandomSettlementAsync()
-    {
-        var locations = _boardManager.GetAvailableSettlementLocations(this);
-
-        if (locations.Count > 0)
-        {
-            var choice = locations[_random.Next(locations.Count)];
-            var success = _boardManager.BuildSettlement(this, choice);
-            if (!success)
-            {
-                Debug.LogWarning($"AI Player {_playerId} failed to place settlement at {choice}. This should not happen if the game is set up correctly.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"AI Player {_playerId} could not find a valid settlement location. This should not happen if the game is set up correctly.");
-        }
-
-        await Task.Delay(THINKING_DELAY_TIME_MS);
-    }
-
-    private async Task PlaceRandomRoadAsync()
-    {
-        var locations = _boardManager.GetAvailableRoadLocations(this);
-
-        if (locations.Count > 0)
-        {
-            var choice = locations[_random.Next(locations.Count)];
-            var success = _boardManager.BuildRoad(this, choice);
-            if (!success)
-            {
-                Debug.LogWarning($"AI Player {_playerId} failed to place road at {choice}. This should not happen if the game is set up correctly.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"AI Player {_playerId} could not find a valid road location. This should not happen if the game is set up correctly.");
-        }
-
-        await Task.Delay(THINKING_DELAY_TIME_MS);
     }
 }

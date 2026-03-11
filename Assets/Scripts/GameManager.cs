@@ -161,7 +161,7 @@ public class GameManager : MonoBehaviour, IGameManager
 
         for (int i = 0; i < _playerCount; i++)
         {
-            IPlayer player = i == 0 ? new HumanPlayer() : new AIPlayer(_randomProvider);
+            IPlayer player = i == 0 ? new HumanPlayer() : new AIPlayerRandom(_randomProvider);
             player.Initialize(i, boardManager);
             _playerList.Add(player);
         }
