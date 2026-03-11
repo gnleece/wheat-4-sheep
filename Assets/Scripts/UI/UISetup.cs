@@ -15,6 +15,8 @@ internal sealed class UISetup
 
         Debug.Log("Creating main UI...");
         CreateCanvas();
+        CreateActionPanel();
+        CreatePlayerPanelsArea();
         CreateSetupScreen();
         CreateBoardConfirmationScreen();
         CreateGameOverScreen();
@@ -24,8 +26,6 @@ internal sealed class UISetup
         CreateResourceTypeSelectionScreen();
         CreateTradeScreen();
         CreateTradeOfferScreen();
-        CreateActionPanel();
-        CreatePlayerPanelsArea();
         Debug.Log("Main UI creation completed");
 
         return CollectReferences();
