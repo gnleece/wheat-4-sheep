@@ -41,6 +41,8 @@ public abstract class AIPlayerBase : IPlayer
 
     protected abstract HexCoord ChooseRobberLocation(List<HexCoord> availableLocations);
     protected abstract List<ResourceType> ChooseResourcesToDiscard(ResourceHand hand, int cardsToDiscard);
+    protected abstract IPlayer SelectPlayerToStealFrom(List<IPlayer> availablePlayers);
+    protected abstract bool EvaluateTradeOffer(TradeOffer offer);
 
     #endregion
     
@@ -203,17 +205,17 @@ public abstract class AIPlayerBase : IPlayer
             return null;
         }
 
-        // Choose a random player to steal from
-        var choice = availablePlayers[Random.Next(availablePlayers.Count)];
+        var choice = SelectPlayerToStealFrom(availablePlayers);
         Debug.Log($"AI Player {_playerId} chose to steal from Player {choice.PlayerId}");
-        
+
         await Task.Delay(THINKING_DELAY_TIME_MS);
         return choice;
     }
 
     public Task<bool> ConsiderTradeOffer(TradeOffer offer)
     {
-        Debug.Log($"AI Player {_playerId} declined trade offer from Player {offer.Initiator.PlayerId}");
-        return Task.FromResult(false);
+        var accepted = EvaluateTradeOffer(offer);
+        Debug.Log($"AI Player {_playerId} {(accepted ? "accepted" : "declined")} trade offer from Player {offer.Initiator.PlayerId}");
+        return Task.FromResult(accepted);
     }
 }

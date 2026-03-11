@@ -43,6 +43,16 @@ public class AIPlayerSimple : AIPlayerBase
     {
         throw new System.NotImplementedException();
     }
+
+    protected override IPlayer SelectPlayerToStealFrom(List<IPlayer> availablePlayers)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    protected override bool EvaluateTradeOffer(TradeOffer offer)
+    {
+        throw new System.NotImplementedException();
+    }
     
     // Numbers that are more common are better (assumes 2D6 dice)
     private readonly Dictionary<int, int> _tileDiceNumberScores = new()

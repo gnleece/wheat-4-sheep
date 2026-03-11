@@ -57,6 +57,16 @@ public class AIPlayerRandom : AIPlayerBase
         return discarded;
     }
 
+    protected override IPlayer SelectPlayerToStealFrom(List<IPlayer> availablePlayers)
+    {
+        return availablePlayers[Random.Next(availablePlayers.Count)];
+    }
+
+    protected override bool EvaluateTradeOffer(TradeOffer offer)
+    {
+        return false;
+    }
+
     private VertexCoord GetRandomSettlementLocation()
     {
         var locations = BoardManager.GetAvailableSettlementLocations(this);
